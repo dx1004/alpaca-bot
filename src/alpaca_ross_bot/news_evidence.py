@@ -170,23 +170,61 @@ def capture_news_frame(
             separators=(",", ":"),
             allow_nan=False,
         ).encode("utf-8")
-        state_updates: dict[str, object] = {
-            fingerprint_key: {"first_seen_at": first_seen_at.isoformat()}
-        }
+        state_updates: dict[str, object] = {}
         if article_state is None:
             state_updates[article_key] = {
                 "created_at": record["created_at"],
                 "first_seen_at": first_seen_at.isoformat(),
             }
-        journal.append_next(
-            source_id="alpaca_news",
-            feed="alpaca_news",
-            event_kind="NEWS_ARTICLE_VERSION",
-            payload=serialized,
-            system_first_seen_at=first_seen_at,
-            processed_at=processed_at,
-            state_updates=state_updates,
-        )
+        if duplicate_state is None:
+            appended = journal.append_next_if_state_missing(
+                state_key=fingerprint_key,
+                state_value={"first_seen_at": first_seen_at.isoformat()},
+                additional_state_updates=state_updates,
+                source_id="alpaca_news",
+                feed="alpaca_news",
+                event_kind="NEWS_ARTICLE_VERSION",
+                payload=serialized,
+                system_first_seen_at=first_seen_at,
+                processed_at=processed_at,
+            )
+            if appended is None:
+                duplicate_payload = _canonical_json(
+                    {
+                        "article_id": article_id,
+                        "fingerprint": fingerprint,
+                        "raw_frame_sequence": raw_frame_sequence,
+                        "first_seen_at": first_seen_at.isoformat(),
+                        "status": "DUPLICATE_OR_REPRINT",
+                        "news_eligibility": "BLOCKED_RESEARCH",
+                    }
+                )
+                journal.append_next(
+                    source_id="alpaca_news",
+                    feed="alpaca_news",
+                    event_kind="NEWS_DUPLICATE_OBSERVED",
+                    payload=duplicate_payload,
+                    system_first_seen_at=first_seen_at,
+                    processed_at=processed_at,
+                )
+                results.append(
+                    {
+                        "status": "DUPLICATE_OR_REPRINT",
+                        "eligibility": "BLOCKED",
+                        "raw_frame_sequence": raw_frame_sequence,
+                    }
+                )
+                continue
+        else:
+            journal.append_next(
+                source_id="alpaca_news",
+                feed="alpaca_news",
+                event_kind="NEWS_ARTICLE_VERSION",
+                payload=serialized,
+                system_first_seen_at=first_seen_at,
+                processed_at=processed_at,
+                state_updates=state_updates,
+            )
         results.append(payload_record)
     return tuple(results)
 

@@ -1,8 +1,10 @@
 import hashlib
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from threading import Barrier
 
 import pytest
 
@@ -40,6 +42,70 @@ def test_append_state_and_reopen_are_atomic(tmp_path: Path) -> None:
     reopened.append(envelope(2), PAYLOAD, {"cursor": {"sequence": 2}})
     assert reopened.read_state("cursor") == {"sequence": 2}
     reopened.close()
+
+
+def test_conditional_append_is_unique_across_journal_connections(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "var" / "journal.sqlite3"
+    barrier = Barrier(2)
+
+    def append_once(index: int) -> EventEnvelope | None:
+        journal = Journal(path, tmp_path / "var")
+        barrier.wait()
+        result = journal.append_next_if_state_missing(
+            state_key="once:key",
+            state_value={"winner": index},
+            source_id="test",
+            feed="test",
+            event_kind="ONCE",
+            payload=f"{index}".encode(),
+            system_first_seen_at=NOW,
+            processed_at=NOW + timedelta(milliseconds=1),
+        )
+        journal.close()
+        return result
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = tuple(executor.map(append_once, (1, 2)))
+
+    assert sum(result is not None for result in results) == 1
+    reopened = Journal(path, tmp_path / "var")
+    assert reopened.read_event(1) is not None
+    assert reopened.read_event(2) is None
+    state = reopened.read_state("once:key")
+    assert state in ({"winner": 1}, {"winner": 2})
+    reopened.close()
+
+
+def test_conditional_append_rolls_back_event_when_state_is_invalid(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "var" / "journal.sqlite3"
+    journal = Journal(path, tmp_path / "var")
+
+    def append(state_value: object) -> EventEnvelope | None:
+        return journal.append_next_if_state_missing(
+            state_key="once:key",
+            state_value=state_value,
+            source_id="test",
+            feed="test",
+            event_kind="ONCE",
+            payload=b"once",
+            system_first_seen_at=NOW,
+            processed_at=NOW + timedelta(milliseconds=1),
+        )
+
+    with pytest.raises(TypeError):
+        append({"invalid": object()})
+
+    assert journal.read_event(1) is None
+    assert journal.read_state("once:key") is None
+    inserted = append({"valid": True})
+    assert inserted is not None
+    assert journal.read_event(1) is not None
+    assert journal.read_state("once:key") == {"valid": True}
+    journal.close()
 
 
 def test_failed_state_write_rolls_back_event_and_state(tmp_path: Path) -> None:

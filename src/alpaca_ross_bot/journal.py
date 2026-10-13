@@ -153,6 +153,57 @@ class Journal:
             self._db.rollback()
             raise
 
+    def append_next_if_state_missing(
+        self,
+        *,
+        state_key: str,
+        state_value: object,
+        additional_state_updates: Mapping[str, object] | None = None,
+        source_id: str,
+        feed: str,
+        event_kind: str,
+        payload: bytes,
+        system_first_seen_at: datetime,
+        processed_at: datetime,
+    ) -> EventEnvelope | None:
+        """Atomically append once per state key; return None after a prior insert."""
+        if not state_key.strip():
+            raise JournalError("state key must be nonempty")
+        try:
+            self._db.execute("BEGIN IMMEDIATE")
+            exists = self._db.execute(
+                "SELECT 1 FROM state WHERE key=?", (state_key,)
+            ).fetchone()
+            if exists is not None:
+                self._db.rollback()
+                return None
+            sequence = self._db.execute(
+                "SELECT COALESCE(MAX(sequence), 0) + 1 FROM events"
+            ).fetchone()[0]
+            digest = "sha256:" + hashlib.sha256(payload).hexdigest()
+            event = EventEnvelope(
+                sequence=sequence,
+                source_id=source_id,
+                feed=feed,
+                event_kind=event_kind,
+                payload_ref=digest,
+                source_event_at=None,
+                provider_received_at=None,
+                system_first_seen_at=system_first_seen_at,
+                processed_at=processed_at,
+                available_at=processed_at,
+            )
+            updates = dict(additional_state_updates or {})
+            if state_key in updates:
+                raise JournalError("conditional state key is duplicated")
+            updates[state_key] = state_value
+            self._append_locked(event, payload, updates)
+            self._db.commit()
+            return event
+        except Exception:
+            self._db.rollback()
+            raise
+
     def _append_locked(
         self,
         event: EventEnvelope,

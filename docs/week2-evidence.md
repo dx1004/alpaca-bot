@@ -83,10 +83,12 @@ The stream `ReceivedFrame` now carries its feed and the sequence assigned when `
 
 `news_market_context.py` produces an idempotent temporal association from one journaled Alpaca article to pre/post exact-provider-symbol IEX observations. It verifies sequence, source-time and local-availability ordering; it records observed price and session-volume deltas only. It makes no ticker mapping, reaction-window choice, catalyst determination, threshold, or causal claim; result remains `NOT_ASSESSED_TEMPORAL_ASSOCIATION_ONLY` and `BLOCKED_RESEARCH`. This is not a Ross news rule, news-coverage proof, or strategy qualification.
 
+The journal now offers a single-transaction conditional append keyed by a state record. It prevents concurrent workers from both inserting the same first-seen news fingerprint or market-context idempotency key; a losing concurrent news capture retains its already-journaled raw frame and adds a compact `NEWS_DUPLICATE_OBSERVED` record. Repeated content no longer overwrites the fingerprint's original first-seen state. A two-connection SQLite concurrency test verifies that only one conditional event is inserted.
+
 Validation on 2026-10-13, locked and offline in `/mnt/t/alpaca-bot`:
 
 ```text
-rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest -q  -> 107 passed, 1 upstream websockets deprecation warning
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest -q  -> 109 passed, 1 upstream websockets deprecation warning
 rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest -q tests/test_replay.py  -> 4 passed
 rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline ruff check src tests  -> All checks passed
 rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline mypy --strict src tests  -> no issues in 37 source files
@@ -95,6 +97,16 @@ rtk git diff --check  -> passed
 ```
 
 W2-08's acceptance review and the independently testable components are verified. W2-05 and W2-06 remain blocked at strategy eligibility by the documented Ross/hybrid profile and data/news semantics gaps; W2-03 component acceptance does not establish continuity or G04; G03/G04/G05 remain open. No Alpaca API request, account lookup, order, paid data, live trading, or formal paper evaluation was used.
+
+### W2-05/06 source reconciliation (2026-10-13)
+
+Independent GPT-6.1 Sol Low public-source retrieval, followed by coordinator verification of the first-party pages/PDF, confirms that the [2025 v2 Small Account Challenge toolkit](https://cdn.warriortrading.com/warriortrading.com/assets/2025-Small-Account-Tool-Kit-1013.pdf) itself contains distinct contexts: its opening small-account criteria discuss a $1 minimum, under-$20 preference, at least 5× relative volume, preferred news and float under 20M; its later worksheet specifies $5–10, top five premarket gappers, a positive catalyst, and hot/cold-market float caps of 20M/10M. The toolkit defines RVOL using typical 30-day average volume in its general criteria but also contains a 50-day graphic label. The separate stock-selection criteria add +10% daily gain and a qualitative prior-day continuation exception. These are source-scoped statements, not one reconciled $500/1× Alpaca rule profile; the thresholds and account-stage applicability must not be fused.
+
+Warrior's [scanner support page](https://support.warriortrading.com/support/solutions/articles/19000117763), modified 2026-01-08, describes Top Gappers as the top 100 by percent gap versus prior close, updating every 30 seconds until 9:30 ET. It also says the Five Pillars list and alert do not enforce the news criterion, and the latter HOD momentum logic is not fully specified. This is evidence about Warrior's displayed product, not a published complete source universe or an Alpaca scanner specification. Alpaca's current [Trading API data tiers](https://docs.alpaca.markets/us/docs/about-market-data-api) describe Basic equities real-time as IEX, 30 streamed symbols, and Algo Trader Plus as all-exchange coverage. Therefore an IEX-only snapshot over explicitly supplied tickers cannot reproduce or claim Warrior's all-market ranking; retain `NOT_SIP_EQUIVALENT`.
+
+For news, the [2025 toolkit](https://cdn.warriortrading.com/warriortrading.com/assets/2025-Small-Account-Tool-Kit-1013.pdf) says Ross checks the catalyst and then analyzes the daily chart. Warrior's [News Room guide](https://support.warriortrading.com/support/solutions/articles/19000131769-news-room-and-squawk-audio-alerts-wt), modified 2025-05-15, describes Day Trade Dash's News Desk posts and optional squawk; the [quote-widget guide](https://support.warriortrading.com/support/solutions/articles/19000129722-using-the-stock-quote-widget-and-cashtags-for-news-wt), modified 2025-07-24, displays headline age/color, posted timestamp and a link to the article/source, and explicitly cautions that news alone does not mean a stock should be traded. These establish a human headline-review workflow and UI metadata, not a deterministic sentiment, catalyst-quality, provider-equivalence, revision, ticker-mapping or allowable-age algorithm. The scanner support page further documents that news markers may trail alert scans by up to five minutes and list scans by their 30-second refresh; those UI delays are not provider delivery guarantees.
+
+Accordingly the W2-05 price/change/RVOL observations remain measurements only; the W2-06 age bands and news-to-market event linkage remain descriptive only. Neither child can move to strategy eligibility from these sources. A public-only Ollama Cloud `gemma4:31b` review concurred that a complete $500/1× IEX scanner is unsupported; its suggestion that Warrior ranking weights were unspecified was rejected because the official scanner page specifies the top-100 gap ranking. No model output supplied a trading rule.
 
 ## W2-01 — Event envelope and clocks (2026-10-05)
 

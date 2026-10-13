@@ -120,15 +120,22 @@ def capture_news_market_context(
         "rows": context_rows,
         "idempotency_key": idempotency_key,
     }
-    journal.append_next(
+    appended = journal.append_next_if_state_missing(
+        state_key=state_key,
+        state_value={"status": status},
         source_id="news_market_context",
         feed="iex",
         event_kind="NEWS_MARKET_CONTEXT_OBSERVATION",
         payload=_canonical_json(report),
         system_first_seen_at=first_seen,
         processed_at=processed_at,
-        state_updates={state_key: {"status": status}},
     )
+    if appended is None:
+        return {
+            "status": "DUPLICATE",
+            "idempotency_key": idempotency_key,
+            "context_only": True,
+        }
     return report
 
 

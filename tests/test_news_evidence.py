@@ -165,6 +165,9 @@ def test_duplicate_does_not_refresh_first_seen_and_revision_is_unverified(
     assert first["content_relation"] == "INITIAL_VERSION"
     assert duplicate["content_relation"] == "EXACT_CONTENT_REPEAT"
     assert duplicate["article_first_seen_at"] == NOW.isoformat()
+    assert journal.read_state(f"news_fingerprint:{first['fingerprint']}") == {
+        "first_seen_at": NOW.isoformat()
+    }
     assert revision["content_relation"] == "REVISION_UNVERIFIED"
     assert revision["news_eligibility"] == "BLOCKED_RESEARCH"
     journal.close()
