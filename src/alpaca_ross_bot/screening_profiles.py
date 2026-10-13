@@ -7,6 +7,7 @@ from typing import Literal
 def measure_ross_screening_profiles(
     *,
     price: Decimal,
+    change_percent: Decimal,
     rvol_30d: Decimal | None,
     float_shares: int | None,
     float_status: str,
@@ -20,9 +21,13 @@ def measure_ross_screening_profiles(
     return [
         _general_toolkit_measurements(
             price=price,
-            rvol_30d=rvol_30d,
             float_shares=float_shares,
             float_status=float_status,
+        ),
+        _toolkit_stock_selection_measurements(
+            price=price,
+            change_percent=change_percent,
+            rvol_30d=rvol_30d,
         ),
         _challenge_worksheet_measurements(
             price=price,
@@ -35,18 +40,16 @@ def measure_ross_screening_profiles(
 def _general_toolkit_measurements(
     *,
     price: Decimal,
-    rvol_30d: Decimal | None,
     float_shares: int | None,
     float_status: str,
 ) -> dict[str, object]:
     return {
         "profile_id": "ROSS_TOOLKIT_GENERAL_2025_SCREEN",
-        "source_ids": ["ROSS_TOOLKIT_GENERAL_2025", "ROSS_TOOLKIT_RVOL_2025"],
+        "source_ids": ["ROSS_TOOLKIT_GENERAL_2025"],
         "classification": "ROSS_DIRECT_SOURCE_MEASUREMENT",
         "measurements": {
             "minimum_price_1_usd": _threshold(price, ">=", Decimal("1")),
             "under_20_usd_preference": _threshold(price, "<", Decimal("20")),
-            "rvol_30d_at_least_5x": _threshold(rvol_30d, ">=", Decimal("5")),
             "float_under_20m": _float_threshold(
                 float_shares,
                 float_status,
@@ -54,6 +57,34 @@ def _general_toolkit_measurements(
                 20_000_000,
             ),
             "news_preference": "UNAVAILABLE_HUMAN_REVIEW_NOT_A_HARD_FILTER",
+        },
+        "assessment_status": "BLOCKED_RESEARCH",
+        "strategy_eligibility": "BLOCKED_RESEARCH",
+    }
+
+
+def _toolkit_stock_selection_measurements(
+    *,
+    price: Decimal,
+    change_percent: Decimal,
+    rvol_30d: Decimal | None,
+) -> dict[str, object]:
+    return {
+        "profile_id": "ROSS_TOOLKIT_STOCK_SELECTION_2025_SCREEN",
+        "source_ids": ["ROSS_TOOLKIT_RVOL_2025"],
+        "classification": "ROSS_DIRECT_SOURCE_MEASUREMENT",
+        "measurements": {
+            "rvol_30d_at_least_5x": _threshold(rvol_30d, ">=", Decimal("5")),
+            "daily_gain_at_least_10pct": _threshold(
+                change_percent, ">=", Decimal("10")
+            ),
+            "continuation_exception": (
+                "UNAVAILABLE_PRIOR_DAY_MOVE_AND_HOLDING_PRICE_UNDEFINED"
+            ),
+            "price_between_1_and_20_usd_preference": _reported_range(
+                price, Decimal("1"), Decimal("20")
+            ),
+            "catalyst_review": ("UNAVAILABLE_CAUSAL_HEADLINE_REVIEW_NOT_AUTOMATED"),
         },
         "assessment_status": "BLOCKED_RESEARCH",
         "strategy_eligibility": "BLOCKED_RESEARCH",

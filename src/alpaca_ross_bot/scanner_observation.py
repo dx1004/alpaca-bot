@@ -63,6 +63,7 @@ def capture_scanner_observations(
         rvol_measurement = row["session_volume_over_30d_mean"]
         row["source_scoped_screening_measurements"] = measure_ross_screening_profiles(
             price=observation.latest_trade_price,
+            change_percent=Decimal(str(row["change_percent"])),
             rvol_30d=(
                 None if rvol_measurement is None else Decimal(str(rvol_measurement))
             ),

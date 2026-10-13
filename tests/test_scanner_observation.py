@@ -60,24 +60,36 @@ def test_measurements_rank_only_supplied_iex_symbols(tmp_path: Path) -> None:
     assert rows[0]["session_volume_over_30d_mean"] == "10"
     assert rows[0]["session_volume_over_50d_mean"] == "10"
     profiles = rows[0]["source_scoped_screening_measurements"]
-    assert isinstance(profiles, list) and len(profiles) == 2
-    general, worksheet = profiles
+    assert isinstance(profiles, list) and len(profiles) == 3
+    general, stock_selection, worksheet = profiles
     assert general["profile_id"] == "ROSS_TOOLKIT_GENERAL_2025_SCREEN"
     assert general["source_ids"] == [
         "ROSS_TOOLKIT_GENERAL_2025",
-        "ROSS_TOOLKIT_RVOL_2025",
     ]
+    assert stock_selection["profile_id"] == "ROSS_TOOLKIT_STOCK_SELECTION_2025_SCREEN"
+    assert stock_selection["source_ids"] == ["ROSS_TOOLKIT_RVOL_2025"]
     assert worksheet["profile_id"] == "ROSS_TOOLKIT_WORKSHEET_2025_SCREEN"
     assert worksheet["source_ids"] == ["ROSS_TOOLKIT_WORKSHEET_2025"]
     for profile in profiles:
         assert profile["assessment_status"] == "BLOCKED_RESEARCH"
         assert profile["strategy_eligibility"] == "BLOCKED_RESEARCH"
     general_measurements = general["measurements"]
+    stock_selection_measurements = stock_selection["measurements"]
     worksheet_measurements = worksheet["measurements"]
     assert isinstance(general_measurements, dict)
+    assert isinstance(stock_selection_measurements, dict)
     assert isinstance(worksheet_measurements, dict)
-    assert general_measurements["rvol_30d_at_least_5x"]["result"] == (
+    assert stock_selection_measurements["rvol_30d_at_least_5x"]["result"] == (
         "MEASURED_THRESHOLD_MET"
+    )
+    assert stock_selection_measurements["daily_gain_at_least_10pct"]["result"] == (
+        "MEASURED_THRESHOLD_MET"
+    )
+    assert stock_selection_measurements["continuation_exception"] == (
+        "UNAVAILABLE_PRIOR_DAY_MOVE_AND_HOLDING_PRICE_UNDEFINED"
+    )
+    assert stock_selection_measurements["catalyst_review"] == (
+        "UNAVAILABLE_CAUSAL_HEADLINE_REVIEW_NOT_AUTOMATED"
     )
     assert general_measurements["news_preference"] == (
         "UNAVAILABLE_HUMAN_REVIEW_NOT_A_HARD_FILTER"
@@ -117,6 +129,36 @@ def test_local_first_seen_cannot_precede_provider_observation(
             first_seen_at=AS_OF - timedelta(seconds=1),
             processed_at=AS_OF,
         )
+    journal.close()
+
+
+def test_unmet_daily_gain_keeps_continuation_exception_unresolved(
+    tmp_path: Path,
+) -> None:
+    journal = Journal(tmp_path / "var" / "journal.sqlite3", tmp_path / "var")
+    snapshot = capture_scanner_observations(
+        journal,
+        (_observation("ABC", price="10.9"),),
+        first_seen_at=AS_OF,
+        processed_at=AS_OF + timedelta(seconds=1),
+    )
+
+    rows = snapshot["rows"]
+    assert isinstance(rows, list)
+    row = rows[0]
+    assert isinstance(row, dict)
+    profiles = row["source_scoped_screening_measurements"]
+    assert isinstance(profiles, list)
+    stock_selection = profiles[1]
+    measurements = stock_selection["measurements"]
+    assert isinstance(measurements, dict)
+    assert measurements["daily_gain_at_least_10pct"]["result"] == (
+        "MEASURED_THRESHOLD_NOT_MET"
+    )
+    assert measurements["continuation_exception"] == (
+        "UNAVAILABLE_PRIOR_DAY_MOVE_AND_HOLDING_PRICE_UNDEFINED"
+    )
+    assert stock_selection["strategy_eligibility"] == "BLOCKED_RESEARCH"
     journal.close()
 
 
