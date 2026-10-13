@@ -165,6 +165,8 @@ class Journal:
         payload: bytes,
         system_first_seen_at: datetime,
         processed_at: datetime,
+        source_event_at: datetime | None = None,
+        provider_received_at: datetime | None = None,
     ) -> EventEnvelope | None:
         """Atomically append once per state key; return None after a prior insert."""
         if not state_key.strip():
@@ -187,8 +189,8 @@ class Journal:
                 feed=feed,
                 event_kind=event_kind,
                 payload_ref=digest,
-                source_event_at=None,
-                provider_received_at=None,
+                source_event_at=source_event_at,
+                provider_received_at=provider_received_at,
                 system_first_seen_at=system_first_seen_at,
                 processed_at=processed_at,
                 available_at=processed_at,
