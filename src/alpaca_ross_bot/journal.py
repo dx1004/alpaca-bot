@@ -26,21 +26,22 @@ class Journal:
         resolved.parent.mkdir(parents=True, exist_ok=True)
         self._db = sqlite3.connect(resolved, timeout=5)
         try:
+            self._migrate()
             self._db.execute("PRAGMA journal_mode=WAL")
             self._db.execute("PRAGMA synchronous=FULL")
-            self._migrate()
         except Exception:
             self._db.close()
             raise
 
     def _migrate(self) -> None:
-        version = self._db.execute("PRAGMA user_version").fetchone()[0]
-        if version == 3:
-            return
-        if version not in (0, 1, 2):
-            raise JournalError("unsupported journal schema version")
         try:
             self._db.execute("BEGIN IMMEDIATE")
+            version = self._db.execute("PRAGMA user_version").fetchone()[0]
+            if version == 3:
+                self._db.commit()
+                return
+            if version not in (0, 1, 2):
+                raise JournalError("unsupported journal schema version")
             if version == 0:
                 self._db.execute(
                     """CREATE TABLE events (

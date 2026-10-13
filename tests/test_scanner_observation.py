@@ -59,6 +59,41 @@ def test_measurements_rank_only_supplied_iex_symbols(tmp_path: Path) -> None:
     assert rows[0]["change_percent"] == "20.0"
     assert rows[0]["session_volume_over_30d_mean"] == "10"
     assert rows[0]["session_volume_over_50d_mean"] == "10"
+    profiles = rows[0]["source_scoped_screening_measurements"]
+    assert isinstance(profiles, list) and len(profiles) == 2
+    general, worksheet = profiles
+    assert general["profile_id"] == "ROSS_TOOLKIT_GENERAL_2025_SCREEN"
+    assert general["source_ids"] == [
+        "ROSS_TOOLKIT_GENERAL_2025",
+        "ROSS_TOOLKIT_RVOL_2025",
+    ]
+    assert worksheet["profile_id"] == "ROSS_TOOLKIT_WORKSHEET_2025_SCREEN"
+    assert worksheet["source_ids"] == ["ROSS_TOOLKIT_WORKSHEET_2025"]
+    for profile in profiles:
+        assert profile["assessment_status"] == "BLOCKED_RESEARCH"
+        assert profile["strategy_eligibility"] == "BLOCKED_RESEARCH"
+    general_measurements = general["measurements"]
+    worksheet_measurements = worksheet["measurements"]
+    assert isinstance(general_measurements, dict)
+    assert isinstance(worksheet_measurements, dict)
+    assert general_measurements["rvol_30d_at_least_5x"]["result"] == (
+        "MEASURED_THRESHOLD_MET"
+    )
+    assert general_measurements["news_preference"] == (
+        "UNAVAILABLE_HUMAN_REVIEW_NOT_A_HARD_FILTER"
+    )
+    assert worksheet_measurements["reported_price_range_5_to_10_usd"]["result"] == (
+        "MEASURED_OUTSIDE_REPORTED_RANGE"
+    )
+    assert worksheet_measurements["positive_catalyst"] == (
+        "UNAVAILABLE_NEWS_SEMANTICS_BLOCKED"
+    )
+    assert worksheet_measurements["top_five_premarket_gapper"] == (
+        "UNAVAILABLE_PREMARKET_RANK_MISSING"
+    )
+    assert worksheet_measurements["hot_cold_market_state"] == (
+        "UNAVAILABLE_REGIME_NOT_CLASSIFIED"
+    )
     assert snapshot["coverage_label"] == "NOT_SIP_EQUIVALENT"
     assert snapshot["full_market_coverage"] is False
     assert snapshot["scope"] == "EXPLICIT_OBSERVED_SYMBOLS_ONLY"
@@ -109,6 +144,15 @@ def test_float_provenance_and_short_rvol_history_stay_unverified(
     assert row["float_status"] == "SOURCE_TIMESTAMP_RECORDED_NOT_VALIDATED"
     assert row["session_volume_over_30d_mean"] == "10"
     assert row["session_volume_over_50d_mean"] is None
+    profiles = row["source_scoped_screening_measurements"]
+    assert isinstance(profiles, list)
+    general = profiles[0]
+    general_measurements = general["measurements"]
+    assert isinstance(general_measurements, dict)
+    float_result = general_measurements["float_under_20m"]
+    assert isinstance(float_result, dict)
+    assert float_result["result"] == "MEASUREMENT_ONLY_SOURCE_UNVERIFIED"
+    assert float_result["numeric_comparison"] == "MEASURED_THRESHOLD_MET"
 
     incomplete = capture_scanner_observations(
         journal,

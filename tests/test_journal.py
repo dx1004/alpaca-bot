@@ -48,11 +48,13 @@ def test_conditional_append_is_unique_across_journal_connections(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "var" / "journal.sqlite3"
-    barrier = Barrier(2)
+    start_barrier = Barrier(2)
+    append_barrier = Barrier(2)
 
     def append_once(index: int) -> EventEnvelope | None:
+        start_barrier.wait(timeout=5)
         journal = Journal(path, tmp_path / "var")
-        barrier.wait()
+        append_barrier.wait(timeout=5)
         result = journal.append_next_if_state_missing(
             state_key="once:key",
             state_value={"winner": index},

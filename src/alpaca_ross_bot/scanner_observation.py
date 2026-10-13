@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 from alpaca_ross_bot.journal import Journal
+from alpaca_ross_bot.screening_profiles import measure_ross_screening_profiles
 
 
 class ScannerObservationError(ValueError):
@@ -59,6 +60,15 @@ def capture_scanner_observations(
     measured: list[dict[str, object]] = []
     for observation in observations:
         row = _measure(observation)
+        rvol_measurement = row["session_volume_over_30d_mean"]
+        row["source_scoped_screening_measurements"] = measure_ross_screening_profiles(
+            price=observation.latest_trade_price,
+            rvol_30d=(
+                None if rvol_measurement is None else Decimal(str(rvol_measurement))
+            ),
+            float_shares=observation.float_shares,
+            float_status=str(row["float_status"]),
+        )
         if observation.as_of != as_of:
             raise ScannerObservationError(
                 "snapshot observations must share one as-of time"
