@@ -92,6 +92,7 @@ def test_news_is_separate_and_does_not_claim_iex_or_sip_coverage(
     assert "feed" not in query
     news_page = journal.read_event(1)
     assert news_page is not None and news_page[0].feed == "alpaca_news"
+    assert news_page[0].source_id == "alpaca_news"
     journal.close()
 
 

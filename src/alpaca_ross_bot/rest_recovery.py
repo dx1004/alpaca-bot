@@ -206,7 +206,7 @@ class AlpacaRestRecovery:
         if parse_error is not None:
             metadata["parse_error"] = parse_error
         self._journal.append_next(
-            source_id="alpaca_market_data",
+            source_id="alpaca_news" if kind == "news" else "alpaca_market_data",
             feed="iex" if kind != "news" else "alpaca_news",
             event_kind="REST_RECOVERY_PAGE",
             payload=json.dumps(
