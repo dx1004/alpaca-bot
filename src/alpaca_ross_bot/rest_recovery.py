@@ -9,12 +9,12 @@ import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from http.client import HTTPException, HTTPSConnection
 from math import isfinite
 from typing import Literal
 from urllib.parse import urlencode
 
 from alpaca_ross_bot.config import PaperCredentials
+from alpaca_ross_bot.http_transport import HttpTransportError, bounded_alpaca_get
 from alpaca_ross_bot.journal import Journal
 
 RecoveryKind = Literal["trades", "quotes", "news"]
@@ -272,46 +272,10 @@ def _next_token(raw: bytes, response_key: str) -> str | None:
 def _fetch_https_page(
     url: str, headers: Mapping[str, str], timeout_seconds: float, max_bytes: int
 ) -> bytes:
-    """Issue one HTTPS request with a total monotonic deadline and body cap."""
-    if not url.startswith("https://data.alpaca.markets/"):
-        raise RecoveryError("REST host is not allowed")
-    path = url.removeprefix("https://data.alpaca.markets")
-    deadline = time.monotonic() + timeout_seconds
-    if max_bytes < 1:
-        raise RecoveryError("REST response byte budget exhausted")
-    connection = HTTPSConnection("data.alpaca.markets", timeout=timeout_seconds)
+    """Keep gap-recovery failures inside its documented error contract."""
     try:
-        connection.connect()
-        _set_remaining_timeout(connection, deadline)
-        connection.request("GET", path, headers=dict(headers))
-        _set_remaining_timeout(connection, deadline)
-        response = connection.getresponse()
-        if response.status != 200:
-            raise RecoveryError(f"Alpaca REST returned HTTP {response.status}")
-        content_length = response.getheader("Content-Length")
-        if content_length is not None and int(content_length) > max_bytes:
-            raise RecoveryError("REST response byte budget exceeded")
-        body = bytearray()
-        while True:
-            _set_remaining_timeout(connection, deadline)
-            chunk = response.read1(min(65_536, max_bytes + 1 - len(body)))
-            if not chunk:
-                return bytes(body)
-            body.extend(chunk)
-            if len(body) > max_bytes:
-                raise RecoveryError("REST response byte budget exceeded")
-    except (HTTPException, TimeoutError, OSError, ValueError) as exc:
-        if isinstance(exc, RecoveryError):
-            raise
-        raise RecoveryError("Alpaca REST request failed or timed out") from exc
-    finally:
-        connection.close()
-
-
-def _set_remaining_timeout(connection: HTTPSConnection, deadline: float) -> None:
-    remaining = deadline - time.monotonic()
-    if remaining <= 0:
-        raise RecoveryError("REST request deadline expired")
-    if connection.sock is None:
-        raise RecoveryError("REST connection is unavailable")
-    connection.sock.settimeout(remaining)
+        if not url.startswith("https://data.alpaca.markets/"):
+            raise RecoveryError("REST host is not allowed")
+        return bounded_alpaca_get(url, headers, timeout_seconds, max_bytes)
+    except HttpTransportError as exc:
+        raise RecoveryError(str(exc)) from exc

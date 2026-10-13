@@ -357,6 +357,8 @@ def test_raw_frame_and_unresolved_gap_survive_journal_restart(tmp_path: Path) ->
             else received.raw
         )
         assert raw_event[1] == expected_payload
+        assert received.feed is FeedKind.EQUITIES
+        assert received.journal_sequence == raw_event[0].sequence
         assert journal.read_state("feed_session_active:equities") is True
         heartbeat_task = client._heartbeat_task
         assert heartbeat_task is not None

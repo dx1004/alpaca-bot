@@ -13,6 +13,7 @@ from typing import Any
 
 from alpaca_ross_bot.feed_health import FeedHealth, FeedKind
 from alpaca_ross_bot.journal import Journal
+from alpaca_ross_bot.stream_protocol import ReceivedFrame
 
 
 class NewsEvidenceError(ValueError):
@@ -28,6 +29,7 @@ def capture_news_frame(
     health: FeedHealth,
     health_now: datetime,
     max_heartbeat_age_seconds: float,
+    raw_frame_sequence: int | None = None,
 ) -> tuple[dict[str, object], ...]:
     """Journal article versions without inferring catalyst or freshness rules.
 
@@ -47,6 +49,21 @@ def capture_news_frame(
         raise ValueError("heartbeat age must be positive")
     if health.kind is not FeedKind.NEWS:
         raise NewsEvidenceError("news evidence requires the news feed health state")
+    raw_payload = raw.encode("utf-8") if isinstance(raw, str) else raw
+    if raw_frame_sequence is not None:
+        if type(raw_frame_sequence) is not int or raw_frame_sequence < 1:
+            raise NewsEvidenceError("raw frame sequence must be positive")
+        raw_event = journal.read_event(raw_frame_sequence)
+        if raw_event is None:
+            raise NewsEvidenceError("raw news frame is missing from the journal")
+        raw_envelope, recorded_payload = raw_event
+        if (
+            raw_envelope.event_kind != "RAW_FRAME"
+            or raw_envelope.feed != "alpaca_news"
+            or raw_envelope.system_first_seen_at != first_seen_at
+            or recorded_payload != raw_payload
+        ):
+            raise NewsEvidenceError("raw news frame provenance does not match")
     health_reasons = health.reasons(
         now=health_now,
         max_heartbeat_age=_seconds(max_heartbeat_age_seconds),
@@ -65,6 +82,7 @@ def capture_news_frame(
                     "reason": str(exc),
                     "raw_message": message,
                     "first_seen_at": first_seen_at.isoformat(),
+                    "raw_frame_sequence": raw_frame_sequence,
                 },
                 sort_keys=True,
                 separators=(",", ":"),
@@ -144,6 +162,7 @@ def capture_news_frame(
             "news_eligibility": "BLOCKED_RESEARCH",
             "market_reaction": "NOT_EVALUATED",
             "ticker_mapping": "PROVIDER_SYMBOLS_ONLY",
+            "raw_frame_sequence": raw_frame_sequence,
         }
         serialized = json.dumps(
             payload_record,
@@ -170,6 +189,32 @@ def capture_news_frame(
         )
         results.append(payload_record)
     return tuple(results)
+
+
+def capture_received_news_frame(
+    journal: Journal,
+    frame: ReceivedFrame,
+    *,
+    processed_at: datetime,
+    health: FeedHealth,
+    health_now: datetime,
+    max_heartbeat_age_seconds: float,
+) -> tuple[dict[str, object], ...]:
+    """Normalize only a news frame whose raw stream event is already durable."""
+    if frame.feed is not FeedKind.NEWS:
+        raise NewsEvidenceError("received frame is not from the news stream")
+    if frame.journal_sequence is None:
+        raise NewsEvidenceError("received frame lacks a durable raw journal event")
+    return capture_news_frame(
+        journal,
+        frame.raw,
+        first_seen_at=frame.first_seen_at,
+        processed_at=processed_at,
+        health=health,
+        health_now=health_now,
+        max_heartbeat_age_seconds=max_heartbeat_age_seconds,
+        raw_frame_sequence=frame.journal_sequence,
+    )
 
 
 def _decode_frame(raw: str | bytes) -> list[dict[str, Any]]:

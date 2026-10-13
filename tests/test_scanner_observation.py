@@ -48,6 +48,7 @@ def test_measurements_rank_only_supplied_iex_symbols(tmp_path: Path) -> None:
     snapshot = capture_scanner_observations(
         journal,
         (_observation("XYZ", price="12"), _observation("ABC", price="11")),
+        first_seen_at=AS_OF,
         processed_at=AS_OF + timedelta(seconds=1),
     )
 
@@ -65,6 +66,22 @@ def test_measurements_rank_only_supplied_iex_symbols(tmp_path: Path) -> None:
     assert rows[0]["float_status"] == "MISSING"
     event = journal.read_event(1)
     assert event is not None and event[0].event_kind == "SCANNER_OBSERVATION"
+    assert event[0].system_first_seen_at == AS_OF
+    assert event[0].processed_at == AS_OF + timedelta(seconds=1)
+    journal.close()
+
+
+def test_local_first_seen_cannot_precede_provider_observation(
+    tmp_path: Path,
+) -> None:
+    journal = Journal(tmp_path / "var" / "journal.sqlite3", tmp_path / "var")
+    with pytest.raises(ScannerObservationError, match="first-seen precedes"):
+        capture_scanner_observations(
+            journal,
+            (_observation("ABC"),),
+            first_seen_at=AS_OF - timedelta(seconds=1),
+            processed_at=AS_OF,
+        )
     journal.close()
 
 
@@ -80,7 +97,10 @@ def test_float_provenance_and_short_rvol_history_stay_unverified(
     )
     observation = replace(observation, trailing_daily_volumes=tuple([100] * 30))
     snapshot = capture_scanner_observations(
-        journal, (observation,), processed_at=AS_OF + timedelta(seconds=1)
+        journal,
+        (observation,),
+        first_seen_at=AS_OF,
+        processed_at=AS_OF + timedelta(seconds=1),
     )
     rows = snapshot["rows"]
     assert isinstance(rows, list)
@@ -99,6 +119,7 @@ def test_float_provenance_and_short_rvol_history_stay_unverified(
                 float_source="   ",
             ),
         ),
+        first_seen_at=AS_OF,
         processed_at=AS_OF + timedelta(seconds=1),
     )
     incomplete_rows = incomplete["rows"]
@@ -131,6 +152,7 @@ def test_incomplete_coverage_invalid_feed_and_future_float_fail_closed(
                     history_adjustment="raw",
                 ),
             ),
+            first_seen_at=AS_OF,
             processed_at=AS_OF + timedelta(seconds=1),
         )
 
@@ -145,6 +167,7 @@ def test_incomplete_coverage_invalid_feed_and_future_float_fail_closed(
                     float_observed_at=AS_OF + timedelta(seconds=1),
                 ),
             ),
+            first_seen_at=AS_OF + timedelta(seconds=2),
             processed_at=AS_OF + timedelta(seconds=2),
         )
     journal.close()
@@ -158,6 +181,7 @@ def test_sip_history_and_future_volume_records_are_not_mixed(
         capture_scanner_observations(
             journal,
             (replace(_observation("ABC"), historical_feed="sip"),),
+            first_seen_at=AS_OF + timedelta(seconds=1),
             processed_at=AS_OF + timedelta(seconds=1),
         )
     with pytest.raises(ScannerObservationError, match="future history"):
@@ -169,6 +193,7 @@ def test_sip_history_and_future_volume_records_are_not_mixed(
                     history_available_at=AS_OF + timedelta(seconds=1),
                 ),
             ),
+            first_seen_at=AS_OF + timedelta(seconds=2),
             processed_at=AS_OF + timedelta(seconds=2),
         )
     journal.close()

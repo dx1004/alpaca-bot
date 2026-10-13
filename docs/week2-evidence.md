@@ -48,26 +48,53 @@ The Week 1 dependency check remains unchanged: W1-05, W1-06 and W1-07 are accept
 
 The public Ross materials reviewed for this project have differing price and float examples and do not resolve a single applicable $500/1x profile, a point-in-time universe, the exact RVOL formula/session normalization, or the scanner's full-market discovery contract. See the source-scoped gaps in [Ross public pullback research](ross-public-pullback-r0.md). Therefore the measurement projector is accepted as an engineering component only; W2-05 remains blocked. Tests: `tests/test_scanner_observation.py` covers rank scope, measurement basis, missing/unverified float, feed mismatch and future data.
 
+Alpaca's official [Snapshots endpoint](https://docs.alpaca.markets/us/reference/stocksnapshots-1) accepts an explicit comma-separated symbol list and documents latest trade, quote, minute bar, daily bar and previous daily bar for each symbol; `feed=iex` is an explicit option. The [Assets endpoint](https://docs.alpaca.markets/us/reference/get-v2-assets-1) is a current asset master with status/class/exchange filters, not a point-in-time historical universe. These are potential observation inputs only. They do not promise complete fresh IEX observations or full-market Ross discovery, and the project has not made an authenticated REST call for this new scanner path.
+
 #### W2-06 news metadata and W2-07 shadow evaluator
 
 `news_evidence.py` now records Warrior's published headline-age display bands (0–2h, 2–12h, 12–24h, and over 24h) using the explicitly labeled approximation `Alpaca created_at` to local first-seen. Since the published ranges overlap at 2h, 12h and 24h and no boundary convention is documented, exact boundary timestamps produce `BOUNDARY_UNRESOLVED`; no cutoff is inferred. This is display metadata only; it does not represent an entry cutoff, catalyst determination or eligibility. The supporting first-party [Warrior scanner indicator documentation](https://support.warriortrading.com/support/solutions/articles/19000117763) and [news-layer evidence specification](news-layer-spec.md) explain this distinction. W2-06 remains blocked on source-scoped deduplication/revision, catalyst, delay, mapping and market-reaction semantics and verified source coverage.
 
 W2-07's isolated component contract is accepted. `news_shadow.py` reads only one already-journaled Alpaca article whose formal eligibility is still blocked, sends a bounded compact payload through an injected model callback, validates exact evidence substrings and restricts symbols to provider symbols, and appends a separate idempotent `NEWS_AI_SHADOW` event. Timeout, errors and invalid output cannot change article eligibility; malformed or authority-shaped model output is rejected. There is no provider transport, account data, raw article content/URL, scanner, strategy, risk or execution interface in this module. This establishes a tested shadow component, not Ross news fidelity, production inference connectivity or approval of a future paper path.
 
+The independent `news_market_context.py` helper joins one article version to pre/post `SCANNER_OBSERVATION` journal events only when the pre-event was available before article first-seen, the post observation follows it, and the exact provider symbol appears in both. It records source sequences, elapsed times and raw price/session-volume deltas with `NOT_SIP_EQUIVALENT`, `NOT_ASSESSED_TEMPORAL_ASSOCIATION_ONLY`, and `BLOCKED_RESEARCH`. It imposes no window, thresholds, remapping, catalyst decision or causal claim. Tests cover exact-symbol joins, delayed pre-news availability, unmatched symbols, sequence order and idempotency. The direct evidence is a deterministic event join, not proof that observed IEX prices represent a catalyst response.
+
 The W2-08 review remains accepted under its stated rule: implemented synthetic replay and component cases pass, and unsupported DST/session, halt, split, float, strategy-news and full-market paths remain explicitly blocked in the matrix above. This is not a release or paper-evaluation gate pass.
 
 Follow-up validation, locked and offline, in `/mnt/t/alpaca-bot`:
 
 ```text
-rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest -q  -> 93 passed, 1 upstream websockets deprecation warning
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest -q  -> 98 passed, 1 upstream websockets deprecation warning
 rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest tests/test_replay.py -q  -> 4 passed
 rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline ruff check src tests  -> All checks passed
-rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline mypy --strict  -> no issues in 32 source files
-rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline ruff format --check src tests  -> 32 files already formatted
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline mypy --strict  -> no issues in 34 source files
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline ruff format --check src tests  -> 34 files already formatted
 rtk git diff --check  -> passed
 ```
 
 No Alpaca connection, account credential, order, paid data, live endpoint or formal paper evaluation was used.
+
+### 2026-10-13 acceptance continuation: collection and evidence linkage
+
+`scanner_data.py` adds a read-only, fixed-host REST collector for the current active US-equity asset master and caller-supplied IEX snapshot batches. It preserves the exact bounded response bytes, digest, query, local request/receipt times, parse result and response sequence in the journal. It rejects mismatched asset filters, malformed/duplicate asset symbols, duplicate/ambiguous requested symbols, unrequested response symbols and malformed JSON. Missing symbols are reported explicitly. Asset metadata is labeled as a current broker catalog, not a historical universe; snapshot coverage is limited to explicit symbols and always `NOT_SIP_EQUIVALENT`, `full_market_coverage=false`, `strategy_eligibility=BLOCKED_RESEARCH`. No request was sent to Alpaca; tests use an injected fake fetcher. This collector supplies evidence inputs only and does not discover or qualify Ross candidates.
+
+`http_transport.py` consolidates the bounded GET implementation used by REST gap recovery and the scanner collector. It allows only HTTPS to the fixed Alpaca market-data and paper API hosts, rejects arbitrary/live trading hosts before network access, uses a monotonic request deadline and response byte cap, and only issues GET. The scanner asset query is metadata collection and does not enable a live trading endpoint. The remaining system resolver caveat for total wall-clock timing remains as previously documented for REST recovery.
+
+The stream `ReceivedFrame` now carries its feed and the sequence assigned when `receive()` durably appends the raw frame. `append_received_frame` validates and reuses that existing journal event instead of duplicating it. The news wrapper requires a NEWS frame with a durable sequence, verifies exact raw bytes/feed/first-seen against the journal, and records the raw-frame reference on article evidence. Scanner measurements now separately record provider observation `as_of`, local `first_seen_at` and processing time; local availability cannot precede source observation. These changes prevent lost raw-frame provenance and remove the prior conflation of source time with local observation time.
+
+`news_market_context.py` produces an idempotent temporal association from one journaled Alpaca article to pre/post exact-provider-symbol IEX observations. It verifies sequence, source-time and local-availability ordering; it records observed price and session-volume deltas only. It makes no ticker mapping, reaction-window choice, catalyst determination, threshold, or causal claim; result remains `NOT_ASSESSED_TEMPORAL_ASSOCIATION_ONLY` and `BLOCKED_RESEARCH`. This is not a Ross news rule, news-coverage proof, or strategy qualification.
+
+Validation on 2026-10-13, locked and offline in `/mnt/t/alpaca-bot`:
+
+```text
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest -q  -> 107 passed, 1 upstream websockets deprecation warning
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest -q tests/test_replay.py  -> 4 passed
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline ruff check src tests  -> All checks passed
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline mypy --strict src tests  -> no issues in 37 source files
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline ruff format --check src tests  -> 37 files already formatted
+rtk git diff --check  -> passed
+```
+
+W2-08's acceptance review and the independently testable components are verified. W2-05 and W2-06 remain blocked at strategy eligibility by the documented Ross/hybrid profile and data/news semantics gaps; W2-03 component acceptance does not establish continuity or G04; G03/G04/G05 remain open. No Alpaca API request, account lookup, order, paid data, live trading, or formal paper evaluation was used.
 
 ## W2-01 — Event envelope and clocks (2026-10-05)
 

@@ -38,3 +38,35 @@ def test_raw_frames_append_in_journal_order_with_first_seen_times(
     assert second.feed == "alpaca_news"
     assert journal.read_event(2) == (second, raw_news.encode())
     journal.close()
+
+
+def test_durably_received_frame_is_returned_without_duplicate_append(
+    tmp_path: Path,
+) -> None:
+    journal = Journal(tmp_path / "var" / "journal.sqlite3", tmp_path / "var")
+    raw = '[{"T":"t","S":"AAPL","p":1}]'
+    existing = journal.append_next(
+        source_id="alpaca_market_data",
+        feed="iex",
+        event_kind="RAW_FRAME",
+        payload=raw.encode(),
+        system_first_seen_at=NOW,
+        processed_at=NOW + timedelta(milliseconds=1),
+    )
+    received = ReceivedFrame(
+        raw,
+        NOW,
+        feed=FeedKind.EQUITIES,
+        journal_sequence=existing.sequence,
+    )
+
+    returned = append_received_frame(
+        journal,
+        FeedKind.EQUITIES,
+        received,
+        processed_at=NOW + timedelta(milliseconds=2),
+    )
+
+    assert returned == existing
+    assert journal.read_event(2) is None
+    journal.close()

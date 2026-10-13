@@ -54,6 +54,8 @@ class StreamIdentity:
 class ReceivedFrame:
     raw: str | bytes
     first_seen_at: datetime
+    feed: FeedKind | None = None
+    journal_sequence: int | None = None
 
 
 class AlpacaJsonStream:
@@ -245,9 +247,10 @@ class AlpacaJsonStream:
             )
             first_seen_at = datetime.now(UTC)
             _validate_data_frame(raw, self.identity.feed)
+            journal_sequence: int | None = None
             if self._journal is not None:
                 payload = raw.encode("utf-8") if isinstance(raw, str) else raw
-                self._journal.append_next(
+                raw_event = self._journal.append_next(
                     source_id="alpaca_market_data",
                     feed=(
                         "iex"
@@ -259,11 +262,17 @@ class AlpacaJsonStream:
                     system_first_seen_at=first_seen_at,
                     processed_at=datetime.now(UTC),
                 )
+                journal_sequence = raw_event.sequence
             self._last_data_at = first_seen_at
         except Exception:
             await self.close()
             raise
-        return ReceivedFrame(raw=raw, first_seen_at=first_seen_at)
+        return ReceivedFrame(
+            raw=raw,
+            first_seen_at=first_seen_at,
+            feed=self.identity.feed,
+            journal_sequence=journal_sequence,
+        )
 
     async def _heartbeat_loop(self, socket: Socket) -> None:
         try:

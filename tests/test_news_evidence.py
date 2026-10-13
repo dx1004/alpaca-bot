@@ -6,7 +6,12 @@ import pytest
 
 from alpaca_ross_bot.feed_health import FeedHealth, FeedKind
 from alpaca_ross_bot.journal import Journal
-from alpaca_ross_bot.news_evidence import NewsEvidenceError, capture_news_frame
+from alpaca_ross_bot.news_evidence import (
+    NewsEvidenceError,
+    capture_news_frame,
+    capture_received_news_frame,
+)
+from alpaca_ross_bot.stream_protocol import ReceivedFrame
 
 NOW = datetime(2026, 10, 13, 16, 0, tzinfo=UTC)
 
@@ -77,6 +82,70 @@ def test_news_capture_is_journaled_but_never_strategy_eligible(tmp_path: Path) -
     event = journal.read_event(1)
     assert event is not None and event[0].event_kind == "NEWS_ARTICLE_VERSION"
     assert event[0].feed == "alpaca_news"
+    journal.close()
+
+
+def test_received_news_links_to_its_durable_raw_frame(tmp_path: Path) -> None:
+    journal = Journal(tmp_path / "var" / "journal.sqlite3", tmp_path / "var")
+    raw = json.dumps([_article()])
+    raw_event = journal.append_next(
+        source_id="alpaca_market_data",
+        feed="alpaca_news",
+        event_kind="RAW_FRAME",
+        payload=raw.encode(),
+        system_first_seen_at=NOW,
+        processed_at=NOW + timedelta(milliseconds=1),
+    )
+    frame = ReceivedFrame(
+        raw,
+        NOW,
+        feed=FeedKind.NEWS,
+        journal_sequence=raw_event.sequence,
+    )
+
+    record = capture_received_news_frame(
+        journal,
+        frame,
+        processed_at=NOW + timedelta(milliseconds=2),
+        health=_health(),
+        health_now=NOW,
+        max_heartbeat_age_seconds=30,
+    )[0]
+
+    assert record["raw_frame_sequence"] == raw_event.sequence
+    article_event = journal.read_event(2)
+    assert article_event is not None
+    assert article_event[0].event_kind == "NEWS_ARTICLE_VERSION"
+    assert json.loads(article_event[1])["raw_frame_sequence"] == raw_event.sequence
+    journal.close()
+
+
+def test_received_news_rejects_wrong_raw_frame_reference(tmp_path: Path) -> None:
+    journal = Journal(tmp_path / "var" / "journal.sqlite3", tmp_path / "var")
+    raw_event = journal.append_next(
+        source_id="alpaca_market_data",
+        feed="alpaca_news",
+        event_kind="RAW_FRAME",
+        payload=b"[]",
+        system_first_seen_at=NOW,
+        processed_at=NOW + timedelta(milliseconds=1),
+    )
+    frame = ReceivedFrame(
+        json.dumps([_article()]),
+        NOW,
+        feed=FeedKind.NEWS,
+        journal_sequence=raw_event.sequence,
+    )
+
+    with pytest.raises(NewsEvidenceError, match="does not match"):
+        capture_received_news_frame(
+            journal,
+            frame,
+            processed_at=NOW + timedelta(milliseconds=2),
+            health=_health(),
+            health_now=NOW,
+            max_heartbeat_age_seconds=30,
+        )
     journal.close()
 
 

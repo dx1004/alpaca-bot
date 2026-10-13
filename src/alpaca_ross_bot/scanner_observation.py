@@ -36,6 +36,7 @@ def capture_scanner_observations(
     journal: Journal,
     observations: tuple[SymbolObservation, ...],
     *,
+    first_seen_at: datetime,
     processed_at: datetime,
 ) -> dict[str, object]:
     """Journal transparent IEX measurements ranked only within observed input.
@@ -44,13 +45,16 @@ def capture_scanner_observations(
     does not discover the market universe, apply Ross screening criteria, or
     emit a trade-eligible candidate.
     """
+    _require_utc(first_seen_at, "first_seen_at")
     _require_utc(processed_at, "processed_at")
     if not observations:
         raise ScannerObservationError("at least one symbol observation is required")
     as_of = observations[0].as_of
     _require_utc(as_of, "as_of")
-    if processed_at < as_of:
-        raise ScannerObservationError("processing precedes the observation time")
+    if first_seen_at < as_of:
+        raise ScannerObservationError("local first-seen precedes source observation")
+    if processed_at < first_seen_at:
+        raise ScannerObservationError("processing precedes local first-seen")
     symbols: set[str] = set()
     measured: list[dict[str, object]] = []
     for observation in observations:
@@ -59,8 +63,10 @@ def capture_scanner_observations(
             raise ScannerObservationError(
                 "snapshot observations must share one as-of time"
             )
-        if processed_at < observation.as_of:
-            raise ScannerObservationError("processing precedes an observation")
+        if first_seen_at < observation.as_of:
+            raise ScannerObservationError(
+                "local first-seen precedes a source observation"
+            )
         if observation.symbol in symbols:
             raise ScannerObservationError("snapshot symbols must be unique")
         symbols.add(observation.symbol)
@@ -77,6 +83,7 @@ def capture_scanner_observations(
     payload: dict[str, object] = {
         "record_type": "IEX_SCANNER_OBSERVATION",
         "as_of": as_of.isoformat(),
+        "first_seen_at": first_seen_at.isoformat(),
         "processed_at": processed_at.isoformat(),
         "feed": "iex",
         "coverage_label": "NOT_SIP_EQUIVALENT",
@@ -97,7 +104,7 @@ def capture_scanner_observations(
             separators=(",", ":"),
             allow_nan=False,
         ).encode("utf-8"),
-        system_first_seen_at=as_of,
+        system_first_seen_at=first_seen_at,
         processed_at=processed_at,
     )
     return payload
