@@ -108,26 +108,26 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
   Accept: future news, revisions, mappings and derived features cannot appear early; unsupported historical data cannot pass fidelity.
   Verified 2026-10-05 in [Week 2 evidence](docs/week2-evidence.md). Historical source-time assumptions are confined to raw trades/quotes and remain research-only.
 
-- [ ] **W2-05 [P0] Implement sourced Ross scanner features**  
+- [!] **W2-05 [P0] Implement sourced Ross scanner features**
   Depends for the current path: an accepted Ross or separate hybrid strategy version, W1-06, W2-03 and W2-04. Webull W1-06a is deferred. Universe, price, change, RVOL and float rules only for that frozen version and verified Alpaca sources.  
-  Accept: deterministic candidate/rejection evidence; IEX output explicitly cannot claim full-market fidelity.
+  Accept: deterministic candidate/rejection evidence; IEX output explicitly cannot claim full-market fidelity. **Blocked 2026-10-13:** neither Ross nor hybrid has an accepted executable version; W1-06 marks full-market SIP `FAIL` and float, universe and IEX discovery `UNKNOWN`; G03/G04 remain open. See [Week 1 closeout](docs/week1-closeout-2026-10-06.md) and [Week 2 evidence](docs/week2-evidence.md). No scanner behavior or thresholds were implemented.
 
 - [ ] **W2-05a [P0] Run Webull scanner parity and eligibility test**  
   Depends: W2-05. Use Webull's server-side pre-market gainers/losers and Top Active discovery, then enrich candidates with permitted real-time data, point-in-time float and original news evidence. Compare against an approved full-market reference for candidate recall, ranking, pre-market change, RVOL semantics and first-seen latency; record the source and availability timestamp for every comparison.  
   Accept: Webull may be used for the documented Ross scanner path only if the required fields and comparison thresholds pass. Missing reference coverage, top-200 truncation ambiguity, stale data, non-equivalent volume semantics or absent raw news keeps that paper path blocked; no fallback may be silently called SIP-equivalent.
   **Deferred by user on 2026-10-06**; not a dependency of the current Alpaca-only path. Do not silently replace it with an unverified IEX full-market scanner.
 
-- [ ] **W2-06 [P0] Implement news evidence pipeline**  
+- [!] **W2-06 [P0] Implement news evidence pipeline**
   Depends: a selected Ross or separately labeled hybrid strategy version with accepted news semantics, W2-03, W2-04. Raw collection and provenance engineering may proceed separately; strategy-specific breaking/gap/continuation eligibility remains blocked until source-scoped rules pass. Deduplication, revisions, ticker mapping, source status and market-reaction timing remain in scope.  
-  Accept: reposts do not refresh catalysts; delayed/conflicting/unhealthy news fails closed.
+  Accept: reposts do not refresh catalysts; delayed/conflicting/unhealthy news fails closed. **Partial raw/provenance contract verified 2026-10-13; full child blocked:** exact repeats retain original local first-seen, revisions/conflicts are recorded, unhealthy feed/provider-clock conflicts remain ineligible, and age thresholds are explicitly unassessed. Alpaca docs do not establish revision/replay/coverage guarantees, and no selected strategy has accepted catalyst, dedupe, delay, ticker-mapping or market-reaction semantics. See [Week 2 evidence](docs/week2-evidence.md); do not use this collector to qualify news.
 
-- [ ] **W2-07 [P1] Add AI news shadow evaluator**  
+- [!] **W2-07 [P1] Add AI news shadow evaluator**
   Depends: W2-06. Compact evidence only; no credential/raw-bulk prompts; output cannot affect formal eligibility.  
-  Accept: timeout/error changes only shadow report; model cannot approve trades or override deterministic vetoes.
+  Accept: timeout/error changes only shadow report; model cannot approve trades or override deterministic vetoes. **Blocked 2026-10-13:** W2-06 source-scoped news semantics and eligible compact evidence contract are not accepted; no evaluator was added or invoked on account/news data.
 
-- [ ] **W2-08 [P1] Week 2 replay/fidelity review**  
+- [x] **W2-08 [P1] Week 2 replay/fidelity review**
   Depends for the current path: W2-01..W2-07; deferred W2-05a is reviewed only if Webull is reactivated. Test DST, half-days, halts, splits, missing float, old news, late/duplicate/out-of-order events.  
-  Accept: tests pass or affected paths are blocked with evidence.
+  Accept: tests pass or affected paths are blocked with evidence. **Gate review completed 2026-10-13:** replay/timing and news-provenance tests pass; DST/half-day, halt, split, float and strategy-specific news paths remain explicitly blocked with evidence because their required source/strategy contracts are unaccepted. See the Week 2 replay/fidelity matrix in [Week 2 evidence](docs/week2-evidence.md). This closes the review task only, not G03/G04, W2-05/06/07, or any paper path.
 
 ## Week 3 — Strategy, risk, execution, and reconciliation
 

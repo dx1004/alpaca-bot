@@ -1,5 +1,43 @@
 # Week 2 acceptance evidence
 
+## W2-05 through W2-08 gate review (2026-10-13)
+
+Week 1 dependency gate check: W1-05, W2-01, W2-02 and W2-04 are accepted, and W2-03's local transport/feed-health increment is checked in TODO. The Week 1 strategy and data gates are **not** accepted: both Ross and hybrid candidates remain research-only, G03/G04 remain open, and the current data matrix does not establish full-market SIP, point-in-time float, historical universe or IEX discovery eligibility. Therefore W2-05's current scanner path is blocked; no IEX-only full-market scanner or substitute thresholds were added. W2-05a remains deferred by the user.
+
+### W2-06 raw news provenance increment (not strategy acceptance)
+
+`src/alpaca_ross_bot/news_evidence.py` consumes a raw Alpaca news WebSocket frame only after the stream layer has journaled it as `RAW_FRAME`. It retains the provider fields and provider timestamps, captures local per-version availability, fingerprints exact canonical message content, preserves article-level first-seen time across exact repeats, and records changed versions as `REVISION_UNVERIFIED`. Created/updated ordering conflicts, provider timestamps later than local first-seen, malformed articles and unhealthy news transport state remain explicitly vetoed/blocked. Provider symbols are stored as reported, without ticker-symbol inference. Provider-created lag is diagnostic only: no source-approved age or catalytic threshold is chosen. Every record has `news_eligibility=BLOCKED_RESEARCH` and `market_reaction=NOT_EVALUATED`.
+
+Independent GPT-6.1 Sol Low public-source retrieval and coordinator validation checked Alpaca's [streaming news schema](https://docs.alpaca.markets/us/docs/streaming-real-time-news), [historical news endpoint](https://docs.alpaca.markets/us/reference/news-3), and [historical news data description](https://docs.alpaca.markets/us/docs/historical-news-data), accessed 2026-10-13. The documented stream includes article ID, headline, summary, author, created/updated times, content, URL, symbols and source; REST news is sorted by updated date and paginated. Those references do **not** establish stable-ID revision behavior, revision history, replay/ordering/exactly-once semantics, publication-to-delivery bound, immutable coverage snapshot or per-symbol completeness. No public first-party Ross source found in this pass specifies machine-executable deduplication, news-age thresholds, catalyst/revision treatment, ticker mapping or market-reaction timing. These gaps block use as a catalyst pipeline. They do not prevent journaling provider facts in a fail-closed engineering layer.
+
+Validation for the raw/provenance increment: `pytest tests/test_news_evidence.py -q` → 6 passed; full tests, deterministic replay, Ruff, strict mypy and formatting are recorded in the 2026-10-13 closeout below. The tests establish local engineering behavior only, not Alpaca source completeness, Ross fidelity, news eligibility or paper readiness.
+
+### W2-08 replay/fidelity matrix
+
+| Scenario | Evidence/test | W2 disposition |
+| --- | --- | --- |
+| DST and half-days | No accepted session-calendar source, session boundary semantics or candidate-version schedule. | `BLOCKED_RESEARCH`; cannot assert scanner/session behavior. |
+| Trading halts | Stream supports raw status messages, but no accepted Ross/hybrid halt response, recovery, or entry-veto semantics. | `BLOCKED_RESEARCH`; no trade eligibility from transport capture. |
+| Splits | No accepted point-in-time corporate-action source, adjustment policy or historical ticker/price transformation contract. | `BLOCKED_RESEARCH`; no adjusted series is presented as replay truth. |
+| Missing float | W1-06 records point-in-time float availability as unknown; scanner is gated on an accepted strategy version. | `BLOCKED_RESEARCH`; no shares-outstanding or current-float substitution. |
+| Old/late news | `test_news_capture_is_journaled_but_never_strategy_eligible` records provider-created lag but leaves delay threshold unassessed; all articles stay blocked. Replay tests keep events unavailable until local recorded availability. | Engineering timing passes; catalyst age/eligibility `BLOCKED_RESEARCH`. |
+| Duplicate/revised news | `test_duplicate_does_not_refresh_first_seen_and_revision_is_unverified`; fingerprints and article state are journaled. | Exact byte-equivalent repeat retains first-seen; provider revision semantics and catalyst refresh remain `BLOCKED_RESEARCH`. |
+| Conflicting/future news clocks | `test_timestamp_conflict_and_unhealthy_feed_are_vetoed` and `test_future_provider_timestamp_is_a_conflict`. | Conflict is recorded and remains ineligible. |
+| Late/out-of-order events | `tests/test_events.py::test_late_source_timestamp_does_not_change_ingestion_order`, `tests/test_replay.py::test_out_of_order_source_times_do_not_reorder_ingestion_sequence`; future news versions are tested in `tests/test_replay.py`. | Recorded ingestion/availability ordering passes; this is not provider completeness proof. |
+
+W2-08 acceptance is met as specified: implemented replay cases pass, and each unsupported strategy/data case is explicitly blocked with its missing evidence identified. This review does not unblock W2-05, W2-06 strategy eligibility, W2-07, G03/G04, any strategy-order path, or formal paper evaluation.
+
+2026-10-13 closeout checks (project-local offline cache):
+
+```text
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest -q  -> 84 passed, 1 upstream websockets deprecation warning
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest tests/test_replay.py -q  -> 4 passed
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline ruff check src tests  -> All checks passed
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline mypy --strict src tests  -> no issues in 28 source files
+rtk proxy env UV_CACHE_DIR=/mnt/alpaca-bot/var/uv-cache uv run --locked --offline ruff format --check src tests  -> 28 files already formatted
+rtk proxy git diff --check  -> passed
+```
+
 ## W2-01 — Event envelope and clocks (2026-10-05)
 
 The immutable `EventEnvelope` in `src/alpaca_ross_bot/events.py` records source/feed/kind, an immutable payload reference, persistent ingestion sequence, optional source and provider timestamps, and required system first-seen, processing and decision-availability times. All timestamps must be UTC. Local chronology is `system_first_seen_at <= processed_at <= available_at`; sequence must be a positive integer, and journal slices must be contiguous in recorded order. `visible_at(decision_at)` checks only whether the event version was available by a decision time. It is not a market-data, news, or strategy eligibility decision. Conflicting external timestamps are retained and flagged instead of silently normalized or discarded.
