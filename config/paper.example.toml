@@ -1,0 +1,5 @@
+mode = "paper"
+trading_base_url = "https://paper-api.alpaca.markets"
+market_data_base_url = "https://data.alpaca.markets"
+api_key_id_env = "ALPACA_PAPER_KEY_ID"
+api_secret_key_env = "ALPACA_PAPER_SECRET_KEY"

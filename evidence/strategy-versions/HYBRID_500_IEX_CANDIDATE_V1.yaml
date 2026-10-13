@@ -1,0 +1,10 @@
+schema_version: 1
+version_id: HYBRID_500_IEX_CANDIDATE_V1
+status: CANDIDATE
+account_stage: USD_500_1X_PAPER
+source_ids:
+  - HUMBLED_DIP_2026
+  - SMB_ADT_ENTRY_2020
+  - SMB_SIZING_2013
+  - AZIZ_MIXED_RECAP_2023
+  - AZIZ_TSLL_RECAP_2025

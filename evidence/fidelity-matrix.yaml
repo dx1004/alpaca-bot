@@ -1,0 +1,102 @@
+schema_version: 1
+version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
+rules:
+  - rule_id: ROSS_SCREENING_001
+    version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
+    domain: SCREENING
+    fidelity: BLOCKED_RESEARCH
+    statement: Broad toolkit filters and the narrower challenge worksheet are distinct candidate scopes.
+    source_ids: [ROSS_TOOLKIT_GENERAL_2025, ROSS_TOOLKIT_WORKSHEET_2025, ROSS_CASH_ACCOUNT_GUIDE_2026]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: The cash-account guide narrows price, float and first-pullback preferences but is framed around a 2000 dollar challenge; no first-party mapping establishes a complete 500 dollar Alpaca limited-margin paper profile or resolves version differences.
+  - rule_id: ROSS_RVOL_001
+    version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
+    domain: RELATIVE_VOLUME
+    fidelity: BLOCKED_RESEARCH
+    statement: The toolkit and watchlist describe different relative-volume windows and displays.
+    source_ids: [ROSS_TOOLKIT_RVOL_2025, ROSS_WATCHLIST, ROSS_CASH_ACCOUNT_GUIDE_2026]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: Denominator, intraday interval and scanner ranking semantics are not version-resolved; Webull 10-day RVOL is not presumed equivalent.
+  - rule_id: ROSS_NEWS_001
+    version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
+    domain: NEWS
+    fidelity: BLOCKED_RESEARCH
+    statement: The challenge worksheet calls for a positive catalyst after market screening.
+    source_ids: [ROSS_TOOLKIT_WORKSHEET_2025, ROSS_WATCHLIST, ROSS_CASH_ACCOUNT_GUIDE_2026, ROSS_NEWS_COMPARISON_RECAP, ROSS_NEWS_REVISION_RECAP, ROSS_OFFERING_COMPARISON_RECAP, MYND_20190523_RELEASE, OBLN_20190523_RELEASE, OBLN_2019_FINANCING_8K]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: Historical recaps demonstrate differing no-news and offering decisions, with one issuer-corroborated event date, but cannot override another version's positive-catalyst requirement. First-seen times, correction semantics, source-scoped catalyst quality and freshness remain incomplete; no universal news TTL or automated sentiment gate is established. See docs/ross-four-case-deep-research.md.
+  - rule_id: ROSS_ENTRY_001
+    version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
+    domain: ENTRY
+    fidelity: BLOCKED_RESEARCH
+    statement: Public sources establish prior-red-high intrabar entry for one bull-flag version, a distinct sub-minute micro trigger, and move-relative counting examples; the toolkit describes patterns across capital levels.
+    source_ids: [ROSS_TOOLKIT_GENERAL_2025, ROSS_TOOLKIT_WORKSHEET_2025, ROSS_PULLBACK_LESSON, ROSS_CASH_ACCOUNT_GUIDE_2026, ROSS_CLASS_SYLLABUS_2026, ROSS_BULL_FLAG_2023, ROSS_MICRO_EP1_V2, ROSS_SIM_EP9, ROSS_PULLBACK_COUNT_EXAMPLE, ROSS_DAY74_PULLBACK_COUNT_RECAP, ROSS_AYTU_THIRD_PULLBACK_EXCEPTION, ROSS_PULLBACK_JOURNEY, ROSS_ONE_MINUTE_SCALPING, ROSS_LEVEL2_BREAKOUT]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: Source-scoped trigger semantics are partly resolved in docs/ross-public-pullback-r0.md. SNGX and AYTU recaps contradict a mandatory opening-bell count reset and an absolute ban on third pullbacks, but do not define a universal wave reset or a $500/1x exception. Advance anchors, volume/depth judgments, anticipation and linkage between distinct setup versions remain incomplete. Capital-independent pattern research does not require every signal source to name 500 dollars; account-specific risk and execution acceptance remain separate blockers.
+  - rule_id: ROSS_ADDS_001
+    version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
+    domain: ADDS
+    fidelity: BLOCKED_RESEARCH
+    statement: An older book discourages below-entry adds while the micro PDF describes a cushion-dependent exception; neither establishes a complete automatic add policy.
+    source_ids: [ROSS_BOOK_RISK_EXCERPT, ROSS_MICRO_EP1_V2, ROSS_AGRX_RED_RECAP]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: Add triggers, sizes, exposure ceilings, cushion thresholds and stop changes require version-specific evidence; mistakes reported in a losing recap are not strategy rules.
+  - rule_id: ROSS_RISK_001
+    version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
+    domain: RISK
+    fidelity: BLOCKED_RESEARCH
+    statement: The toolkit presents fixed-dollar first-week risk and a different percentage worksheet profile.
+    source_ids: [ROSS_TOOLKIT_FIXED_2025, ROSS_TOOLKIT_WORKSHEET_2025, ROSS_CHALLENGE_PACKET_2025, ROSS_STRATEGY_DECISION_E2, ROSS_SAC2024_STRATEGY, ROSS_STARTING_AMOUNT_2026, WARRIOR_SMALL_ACCOUNT_RISK_GUIDE, ROSS_STOP_LOSS_GUIDE, ROSS_BOOK_RISK_EXCERPT, ROSS_NEWS_REVISION_RECAP, ROSS_UAVS_EXECUTION_RECAP, ALPACA_ORDER_DOCS, ALPACA_PAPER_DOCS]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: No reviewed source binds a profile to $500 at 1x buying power; the 2026 Ross guide gives $20-$30 only for a $2000 beginner context, while publisher-level general guidance gives a personal 2%-5% range. Neither resolves the conflicting toolkit profiles, worksheet risk/share-size label or sizing basis. Case-specific order constraints and fill deviations are not a sizing policy; Alpaca paper does not validate depth, queue or latency execution economics.
+  - rule_id: ROSS_STOPS_001
+    version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
+    domain: STOPS
+    fidelity: BLOCKED_RESEARCH
+    statement: Separate bull-flag and micro sources locate stops at or below pullback lows; public examples also contain discretionary stop choices.
+    source_ids: [ROSS_TOOLKIT_WORKSHEET_2025, ROSS_PULLBACK_LESSON, ROSS_BULL_FLAG_2023, ROSS_MICRO_EP1_V2, ROSS_STOP_LOSS_GUIDE, ROSS_UAVS_EXECUTION_RECAP, ALPACA_ORDER_DOCS]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: Structural anchoring is supported but exact low selection, buffer, psychological-stop exceptions and linkage to the chosen setup remain unresolved. Nominal stop loss is not guaranteed fill loss. Native Alpaca brackets do not support extended hours and activate exits after full entry fill; equivalent protection for the chosen session and partial entries is unverified.
+  - rule_id: ROSS_EXIT_001
+    version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
+    domain: EXIT
+    fidelity: BLOCKED_RESEARCH
+    statement: Separate sources supply partial-sale proportions and bearish MACD direction; the worksheet also lists declining volume and jackknife rejection.
+    source_ids: [ROSS_TOOLKIT_WORKSHEET_2025, ROSS_PULLBACK_LESSON, ROSS_BULL_FLAG_2023, ROSS_MACD_SCALPING_GUIDE, ROSS_MACD_DEFINITION_2025, ROSS_PULLBACK_JOURNEY, ROSS_MACD_STRATEGIES, ROSS_ONE_MINUTE_SCALPING, ROSS_AGRX_RED_RECAP, ROSS_UAVS_EXECUTION_RECAP, ALPACA_FRACTIONAL_DOCS]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: Source-specific parameters, signal-line direction and partial proportions are documented in R0 but their setup linkage, observation timing, volume/rejection detection, rounding, restart and exit precedence are not resolved. Half-sale bull flags and 75-percent micro management cannot be silently merged; contradictory fractional-order documentation does not establish a rounding solution.
+  - rule_id: ROSS_DAILY_LIMIT_001
+    version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
+    domain: DAILY_LIMIT
+    fidelity: BLOCKED_RESEARCH
+    statement: Fixed-dollar and percentage daily-loss presentations diverge at $500.
+    source_ids: [ROSS_TOOLKIT_FIXED_2025, ROSS_TOOLKIT_WORKSHEET_2025, ROSS_STRATEGY_DECISION_E2, ROSS_SAC2024_STRATEGY]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: Profile applicability, realized/unrealized treatment, fees, reset time and open-position handling are undefined.
+  - rule_id: ROSS_STOP_TRADING_001
+    version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
+    domain: STOP_TRADING
+    fidelity: BLOCKED_RESEARCH
+    statement: Fixed-dollar guidance includes three consecutive losses; the worksheet refers to momentum cooling.
+    source_ids: [ROSS_TOOLKIT_FIXED_2025, ROSS_TOOLKIT_WORKSHEET_2025, ROSS_STRATEGY_DECISION_E2, ROSS_SAC2024_STRATEGY, ROSS_MACD_STRATEGIES, ROSS_COLD_STREAK_RECAP]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: No source establishes whether these belong to one profile or quantifies automated momentum cooling; retrospective cold-regime descriptions cannot define decision-time classification. The separate bearish MACD stopping instruction still needs symbol/session scope and restart semantics.
+  - rule_id: ROSS_ACCOUNT_STAGE_001
+    version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
+    domain: ACCOUNT_STAGE
+    fidelity: BLOCKED_RESEARCH
+    statement: Historical small-account examples include a 583 dollar start with 6x buying power, 1000 dollar US cash, and a separate 2000 dollar CMEG challenge that began with 6x available and later reset without leverage.
+    source_ids: [ROSS_CHALLENGE_CHRONOLOGY, ROSS_2019_REVIEW, ROSS_2017_DAY5_STAGE, ROSS_SAC2024_STRATEGY, ROSS_500_CASH_ARTICLE, ROSS_CASH_ACCOUNT_GUIDE_2026]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: User-confirmed stages allow no borrowed leverage below 2000 dollars and research of a Ross leveraged version at or above 2000 dollars. Historical CMEG 6x sizing and Webull cash-account turnover cannot be imported into Alpaca 500 dollar 1x paper or a future Alpaca 2x/4x account without version-specific rules, broker capability evidence and separate paper validation.

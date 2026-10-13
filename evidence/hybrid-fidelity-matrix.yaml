@@ -1,0 +1,102 @@
+schema_version: 1
+version_id: HYBRID_500_IEX_CANDIDATE_V1
+rules:
+  - rule_id: HYBRID_SCREENING_001
+    version_id: HYBRID_500_IEX_CANDIDATE_V1
+    domain: SCREENING
+    fidelity: BLOCKED_RESEARCH
+    statement: Public examples use different daily-support and opening-drive stock-selection contexts.
+    source_ids: [HUMBLED_DIP_2026, SMB_ADT_ENTRY_2020, AZIZ_MIXED_RECAP_2023]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: No single source defines a compatible automatic $500 IEX-only candidate universe; full-market discovery cannot be inferred from a 30-symbol IEX stream.
+  - rule_id: HYBRID_RVOL_001
+    version_id: HYBRID_500_IEX_CANDIDATE_V1
+    domain: RELATIVE_VOLUME
+    fidelity: BLOCKED_RESEARCH
+    statement: The SMB ADT case discusses elevated relative volume.
+    source_ids: [SMB_ADT_ENTRY_2020]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: A compatible indicator numerator, baseline, time window and IEX-only interpretation are not specified for this hybrid candidate.
+  - rule_id: HYBRID_NEWS_001
+    version_id: HYBRID_500_IEX_CANDIDATE_V1
+    domain: NEWS
+    fidelity: BLOCKED_RESEARCH
+    statement: The reviewed traders discuss catalysts in different setup contexts.
+    source_ids: [HUMBLED_DIP_2026, SMB_ADT_ENTRY_2020, AZIZ_MIXED_RECAP_2023]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: No unified, point-in-time catalyst-quality, freshness, revision and source-health rule is supported for automatic selection.
+  - rule_id: HYBRID_ENTRY_001
+    version_id: HYBRID_500_IEX_CANDIDATE_V1
+    domain: ENTRY
+    fidelity: BLOCKED_RESEARCH
+    statement: Humbled Trader describes daily-support dip entries; SMB and Aziz examples concern opening-drive or opening-range entries.
+    source_ids: [HUMBLED_DIP_2026, SMB_ADT_ENTRY_2020, AZIZ_TSLL_RECAP_2025]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: These are distinct setups and cannot be merged into one automated trigger; support tolerance, intrabar timing and required depth observations remain undefined.
+  - rule_id: HYBRID_ADDS_001
+    version_id: HYBRID_500_IEX_CANDIDATE_V1
+    domain: ADDS
+    fidelity: BLOCKED_RESEARCH
+    statement: The cited cases mention additions or staged buying in different contexts.
+    source_ids: [HUMBLED_DIP_2026, SMB_ADT_ENTRY_2020, AZIZ_TSLL_RECAP_2025]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: No compatible automatic add trigger, exposure ceiling or stop update exists for a $500 long-only 1x account; TSLL is a leveraged ETF example.
+  - rule_id: HYBRID_RISK_001
+    version_id: HYBRID_500_IEX_CANDIDATE_V1
+    domain: RISK
+    fidelity: BLOCKED_RESEARCH
+    statement: SMB's numeric suggestion uses a preexisting intraday loss allowance, not account equity.
+    source_ids: [SMB_SIZING_2013, HUMBLED_DIP_2026]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: Neither a $500 daily allowance nor a complete per-trade risk and buying-power rule is sourced for this candidate; do not convert 30 percent of an undefined allowance to 30 percent of equity.
+  - rule_id: HYBRID_STOPS_001
+    version_id: HYBRID_500_IEX_CANDIDATE_V1
+    domain: STOPS
+    fidelity: BLOCKED_RESEARCH
+    statement: The daily-support article and opening-range recap use different structural stop concepts.
+    source_ids: [HUMBLED_DIP_2026, AZIZ_TSLL_RECAP_2025]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: Structural level selection, trigger timing, offset, order protection and partial-fill handling are not specified for one selected setup and Alpaca session.
+  - rule_id: HYBRID_EXIT_001
+    version_id: HYBRID_500_IEX_CANDIDATE_V1
+    domain: EXIT
+    fidelity: BLOCKED_RESEARCH
+    statement: The SMB and Aziz recaps discuss case-specific partials and re-entry.
+    source_ids: [SMB_ADT_ENTRY_2020, AZIZ_TSLL_RECAP_2025]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: No complete partial, target, trailing, re-entry and end-of-session precedence policy is sourced for $500 or fractional shares.
+  - rule_id: HYBRID_DAILY_LIMIT_001
+    version_id: HYBRID_500_IEX_CANDIDATE_V1
+    domain: DAILY_LIMIT
+    fidelity: BLOCKED_RESEARCH
+    statement: SMB references an intraday loss allowance without defining this candidate's allowance.
+    source_ids: [SMB_SIZING_2013]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: Dollar/percentage threshold, realized/unrealized accounting, reset time and open-position handling are unspecified.
+  - rule_id: HYBRID_STOP_TRADING_001
+    version_id: HYBRID_500_IEX_CANDIDATE_V1
+    domain: STOP_TRADING
+    fidelity: BLOCKED_RESEARCH
+    statement: The reviewed sources favor abstention or controlling losses but do not define one automatic session-stop policy.
+    source_ids: [HUMBLED_DIP_2026, AZIZ_TSLL_RECAP_2025]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: No complete consecutive-loss, daily-loss, news-regime or restart semantics are sourced for the selected candidate.
+  - rule_id: HYBRID_ACCOUNT_STAGE_001
+    version_id: HYBRID_500_IEX_CANDIDATE_V1
+    domain: ACCOUNT_STAGE
+    fidelity: BLOCKED_RESEARCH
+    statement: The cases do not establish one compatible $500 unleveraged account and broker stage.
+    source_ids: [HUMBLED_DIP_2026, SMB_SIZING_2013, AZIZ_TSLL_RECAP_2025]
+    equivalence_evidence: null
+    engineering_basis: null
+    blocking_reason: Prop-desk and leveraged-ETF examples cannot define Alpaca $500 1x share sizing or later capital-stage transitions.

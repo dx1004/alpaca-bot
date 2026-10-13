@@ -1,0 +1,211 @@
+# Alpaca Ross Bot — Development Todo
+
+Schedule: 2026-09-28 through 2026-10-23, weekdays. Development must finish and freeze before the four-week paper window begins. Canonical plan: [`docs/development-plan-8-weeks.md`](docs/development-plan-8-weeks.md).
+
+Codex App scheduling model: one persistent scheduled chat per major weekly project; all child Todo items for that project stay in the same chat. Registration plan: [`docs/codex-app-task-plan.md`](docs/codex-app-task-plan.md). Local OS/CLI scheduling is not used.
+
+Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified complete, `[!]` blocked. A task may be checked only after its acceptance evidence exists. The scheduler selects the first highest-priority pending task whose dependencies are complete.
+
+## Global gates
+
+- [x] **G01 — Ross-first fidelity:** every strategy behavior has a `rule_id` and classification (`ROSS_DIRECT`, `BROKER_EQUIVALENT`, `ENGINEERING_CONTROL`, or `BLOCKED_RESEARCH`). W1 closeout audit 2026-10-06: all 11 currently inventoried strategy domains have version-scoped `rule_id`s and explicit `BLOCKED_RESEARCH` classifications with reasons. This closes inventory traceability only; it does not accept an executable rule or order path. See [Week 1 closeout blockers](docs/week1-closeout-2026-10-06.md).
+- [x] **G01H — Hybrid provenance inventory:** a separate candidate version and `OTHER_TRADER_FIRST_PARTY` source class identify other authors; tests reject cross-version attribution and other-trader evidence labeled `ROSS_DIRECT` or Ross broker-equivalent. Verified 2026-10-06 in [Week 1 evidence](docs/week1-evidence.md). This accepts attribution only; all hybrid rules remain `BLOCKED_RESEARCH` and no hybrid order path is enabled.
+- [x] **G02 — Paper-only authority:** configuration rejects live endpoints and cannot submit live orders. W1 closeout audit 2026-10-06: config tests reject live mode/hosts, current package exposes no order-submission path, and the capability probe asserts it never visits `/orders`. Re-audit if an order path is introduced. See [Week 1 closeout blockers](docs/week1-closeout-2026-10-06.md).
+- [ ] **G03 — No silent defaults:** every behavior-changing parameter has evidence for the selected Ross or separately labeled hybrid strategy version, or an explicit non-strategy engineering basis. Hybrid attribution alone does not accept a trading parameter.
+- [ ] **G04 — Data eligibility:** feed, freshness, coverage and point-in-time availability are verified before strategy use.
+- [ ] **G05 — Release gate:** P0/P1 engineering findings closed, enabled paths pass fidelity/account-dependency checks, and the $500 paper starting state is reconciled.
+- [ ] **G06 — Limited-coverage paper mode:** the current user-selected path uses Alpaca Basic/IEX for live equity data, Alpaca paper execution and separately validated Alpaca news. Webull and paid live SIP are deferred; the prior $1,500 review trigger is not an automatic subscription or strategy switch. A source-scoped Ross or explicitly labeled hybrid strategy may submit paper orders only after its own source, risk, data, execution and health gates pass. Every decision, order and report must carry `NOT_SIP_EQUIVALENT`; IEX observations cannot establish full-market Ross fidelity. Missing, stale or ambiguous evidence still blocks new exposure.
+
+## Week 1 — Foundation, evidence, and capabilities
+
+- [x] **W1-01 [P0] Scaffold Python project**  
+  Depends: none. Create project-local environment metadata, `pyproject.toml`, package/test structure, pinned compatible Python choice, Ruff, strict mypy and pytest.  
+  Accept: clean install instructions and baseline checks pass.
+
+- [x] **W1-02 [P0] Implement paper-only configuration**  
+  Depends: W1-01. Typed configuration, secret references, endpoint validation and log redaction.  
+  Accept: missing/unknown values and every known live hostname fail closed; tests do not print credentials.
+
+- [x] **W1-03 [P0] Create evidence and fidelity schemas**  
+  Depends: W1-01. Add source registry, fidelity matrix, strategy version and `rule_id` schemas.  
+  Accept: invalid/mixed-version records fail validation.
+
+- [x] **W1-04 [P0] Close Ross candidate rule inventory (non-executable)**  
+  Depends: W1-03. Inventory screening, news, entries, adds, risk, stops, exits, daily limits and stop-trading rules from first-party sources.  
+  Accept: every operational item is sourced and version/account-stage scoped or explicitly `BLOCKED_RESEARCH`; no silent cross-version fill-ins. Public-evidence reconstruction of the historical member lesson may include labeled hypotheses, but exact course recovery is not an acceptance criterion. The user's $500/1×, low-cost multi-source supplement is tracked separately in [`docs/no-leverage-pullback-research.md`](docs/no-leverage-pullback-research.md); an inference or hybrid finding does not become `ROSS_DIRECT` or unblock an order path by itself.
+  Verified 2026-10-06 as an inventory only: all 11 domains are explicitly `BLOCKED_RESEARCH` and the Ross version remains `CANDIDATE`, not frozen for execution. The user accepts a separately labeled **hybrid candidate for later paper** when Ross's public rules are incomplete, subject to independent acceptance. The [alternative-author audit](docs/w1-alternative-trader-and-prospective-plan-2026-10-06.md) does not fill this Ross-only manifest. G03/G04 and all order paths remain open/disabled.
+
+- [x] **W1-04a [P0] Audit public pullback rules and teaching examples**  
+  Depends: W1-03. Deliver the [R0 research package](docs/ross-public-pullback-r0.md) with source/version locators, concrete partial closures, positive/negative cases and $500 affordability arithmetic.  
+  Accept: independent Astra Ultra/source review and evidence-schema tests, lint and type checks pass; documentary labels are distinguished from replay and executable acceptance. Verified 2026-09-30 in [Week 1 evidence](docs/week1-evidence.md). This child does not freeze W1-04 or close trading gates.
+
+- [x] **W1-04b [P0] Resolve source-scoped pullback labels and risk applicability**  
+  Depends: W1-04a. Work through R0 Q1–Q4: trace account-stage risk provenance and define separate bull-flag/micro label rubrics, including move/count anchors, indicator timing, stops, partials and abstentions. Reconstruct likely historical Chapter 8 content from public Ross sources, then use separately attributed similar cases to examine gaps. Record bounded inference and alternatives rather than inventing a Ross threshold. Follow the global research routing.  
+  Accept: a coverage table distinguishes direct Ross evidence, Ross-based inference, other-trader analogy and unknowns; each candidate is version-scoped, cites its evidence chain and has example/counterexample review. The research deliverable may finish without member access or claiming exact recovery. Keep executable paths blocked until required definitions and account-stage rules have independent acceptance evidence; inferred content alone does not authorize orders.
+  Verified 2026-10-03 in [Week 1 evidence](docs/week1-evidence.md): the [Q1–Q4 reconstruction](docs/ross-chapter8-inference-q1-q4.md) has source-family rubrics, four-class coverage, version/account-stage provenance and exposed example/contrary-case review. Independent Astra Ultra/source audit and relevant tests, lint and type checks passed. This closes the bounded **research document** only; $500/1× risk, unresolved strategy semantics and W1-04/G01/G03/G04 remain blocked for orders. W1-04c owns offline comparison and holdout.
+
+- [x] **W1-04b1 [P0] Research four requested counterexample categories**  
+  Depends: W1-04a. Deliver [four-category deep research](docs/ross-four-case-deep-research.md): reported pullback losses, abstentions followed by rises, $500 execution constraints, and news/regime contrasts.  
+  Accept: each category has primary-source evidence and explicit remaining gaps, independent Astra Ultra source review, reproducible arithmetic, and passing evidence-schema/lint/type checks. Verified 2026-09-30 in [Week 1 evidence](docs/week1-evidence.md). This document milestone does not close W1-04b, freeze parameters or authorize paper evaluation.
+
+- [x] **W1-04b2 [P0] Rerun four-category research under the new model routing**  
+  Depends: W1-04b1. Use independent Astra Low retrieval and verified Ollama Cloud `gemma4:31b` analysis; compare with the preserved earlier report in [routing comparison](docs/ross-research-routing-comparison.md).  
+  Accept: actual model/endpoint execution evidence, public-only prompts, coordinator source review and correction of model mistakes, unchanged strategy gates, and relevant document/evidence checks. Verified 2026-09-30 in [Week 1 evidence](docs/week1-evidence.md). Model agreement does not establish profitability or general model equivalence.
+
+- [!] **W1-04c [P0] Prepare offline validation inputs and review holdout**  
+  Depends: W1-04b. Apply R0 Q5–Q6; establish exact sessions, lawful data access, point-in-time fields and a separate unseen set for each sufficiently defined candidate.  
+  Accept: a reproducible source-label comparison reports disagreement and missing inputs without lookahead; document capital/data limitations. Teaching narratives alone do not pass replay acceptance, and this child does not start formal paper evaluation.
+  Partial evidence; `BLOCKED_RESEARCH` for replay inputs, updated 2026-10-06: [offline input and holdout inventory](docs/w1-04c-offline-inputs.md). The user confirmed this is a normal Alpaca brokerage account using paper trading, not a Paper Only account. Basic documents free historical SIP outside the newest 15 minutes; only a narrow AHPI window has been fully paginated. A dated 2017-11-02 Ross transcript adds a PYDS pullback example and IZEA/SECO abstentions to the exposed development set. Astra Ultra primary-source review found no verified free public source closing point-in-time float, full premarket universe/scanner history, original/revised news first-seen times, historical full-depth tape, or synchronized decision-time account/order/fill records. Both sessions are exposed and cannot serve as holdout. Warrior's terms prohibit automated access/harvesting; no crawler or bulk downloader is authorized. No replay acceptance or paper evaluation is claimed.
+  The user accepts recording these as historical gaps and testing future observations in a predeclared prospective shadow/paper protocol **after** release gates. Prospective evidence cannot validate the old sessions or satisfy this historical-replay acceptance retroactively; see [the plan](docs/w1-alternative-trader-and-prospective-plan-2026-10-06.md).
+
+- [x] **W1-04d [P0] Inventory a separately attributed $500/1× hybrid candidate**  
+  Depends: W1-03 and the bounded W1-04b public-source inventory. Extend the source/version schema for non-Ross direct rules without modifying the Ross candidate; compare named authors' applicable setups and losing/abstention cases with [the 2026-10-06 research audit](docs/w1-alternative-trader-and-prospective-plan-2026-10-06.md).  
+  Accept: each candidate screening, news, entry, adds, sizing, stop, exit, daily limit and stop-trading behavior has its own exact source/version/account-stage evidence or explicit block; any use of other authors is labeled hybrid; $500/1× and Alpaca/IEX feasibility are evaluated separately; G01H provenance tests pass. Verified 2026-10-06 as a research inventory: 11/11 hybrid domains explicitly blocked, distinct `CANDIDATE` version and provenance tests pass. No hybrid paper order follows from this inventory; public cases do not establish an executable candidate.
+
+- [x] **W1-05 [P0] Build Alpaca read-only capability probe**  
+  Depends: W1-02. Probe paper endpoint identity, account fields, buying power, asset eligibility, clock/calendar, market feeds, news REST/WebSocket access and subscription limits without logging secret values. Evaluate the [official SDK reuse candidate](docs/alpaca-existing-tools-review.md) without replacing the tested probe until timeout, redaction and paper-only parity pass.  
+  Accept: deterministic redacted capability report; absence of credentials reports `BLOCKED`, not guessed results.
+  Verified 2026-10-05: [Week 1 evidence](docs/week1-evidence.md), [redacted capability report](evidence/alpaca-capabilities-2026-10-06.json), and tests confirm deterministic redacted REST/stream status output, required-field presence only, and missing credentials fail closed. The user confirmed a normal brokerage account using the paper endpoint. IEX/news endpoints are reachable; latest SIP is `FORBIDDEN`; SIP stream returns `INSUFFICIENT_SUBSCRIPTION`. Basic's published caps are 30 equity WebSocket symbols and 200 historical calls/minute; actual boundary enforcement is deliberately left untested and the report keeps `subscription_limits_verified=false`. The SDK review keeps the tested probe until bounded-timeout, redaction and paper-endpoint parity pass. This completes the **read-only capability-probe milestone only**; it does not certify SIP-equivalent access or authorize orders.
+
+- [x] **W1-06 [P0] Build dataset capability matrix**  
+  Depends: W1-04 research inventory, W1-05. Cover real-time/historical trades and quotes, point-in-time float, historical universe/delistings, corporate actions, raw news/revisions, fields, coverage, latency, version availability and retention/replay rights. Record each result for `LIMITED_COVERAGE_PAPER` versus a future SIP review; free sources cannot inherit SIP eligibility.  
+  Accept: SIP/news/float/universe each receive an independent evidence-backed `PASS`/`FAIL`/`UNKNOWN` disposition; no bundled assumption. The limited path is explicitly `NOT_SIP_EQUIVALENT`; any later enabled decision must name its actual sources.
+  Verified 2026-10-06 as a capability inventory in [the field-by-field matrix](docs/w1-06-data-capability-matrix.md). Current live SIP/full-market coverage is `FAIL`, while news, float, universe and IEX-only automatic discovery remain `UNKNOWN` for strategy eligibility. No strategy decision source is enabled; G04 remains open.
+  Current-path decision: assess only Alpaca Basic/IEX live equities and Alpaca news for eligibility; delayed historical SIP remains a retrospective research input. Full-market SIP equivalence is an explicit failed coverage check, not a prerequisite to claim limited coverage. A usable fully automatic IEX-only candidate-discovery method remains unverified.
+
+- [ ] **W1-06a [P0] Validate Webull OpenAPI if the user reopens that data source**  
+  Depends: W1-06. Record the exact OpenAPI non-display entitlement, current price, account/contract status, allowed use, data fields and field semantics for pre-market gainers, `relative_volume_10d`, snapshots, streaming, float and raw news. Determine with evidence whether its coverage is CTA/UTP SIP-equivalent; Nasdaq Basic/TotalView coverage, a retail-app subscription, or a server-side top-200 ranking must not be treated as proof.  
+  Accept: redacted capability report distinguishes confirmed, unavailable and unknown fields; any unresolved SIP-equivalence, news, float, capacity or licensing requirement blocks the corresponding Ross real-time paper path.
+  Public first-party candidate review drafted 2026-10-06 in [the Webull OpenAPI review](docs/w1-06a-webull-openapi-review.md). Account-specific entitlement, numeric price, agreement, raw news, float and SIP equivalence remain unknown; no Webull API/account probe or purchase occurred. The dependency and acceptance remain open.
+  **Deferred by user on 2026-10-06; out of the current Alpaca-only path.** The user has a Webull account but has not funded it with $500; account funding is not required for this research decision. Do not request Webull keys, deposit, contract review or a subscription while deferred. Preserve the review for any future explicit source expansion.
+
+- [x] **W1-07 [P1] Week 1 gate review**  
+  Depends for the current path: W1-01..W1-06 including W1-04d; review blocked W1-04/W1-04c explicitly. W1-06a is deferred and does not gate an Alpaca-only research closeout.  
+  Accept: Astra Ultra/source review completed; blockers and safe parallel work recorded.
+  Verified 2026-10-06 in [Week 1 closeout and W2 handoff](docs/week1-closeout-2026-10-06.md): independent Astra Ultra/source review, matrix and hybrid-source boundary reviewed. W1 research closeout passes under the scheduler's blocked-with-evidence route; W1-04c remains blocked, W1-06a deferred, G03/G04 open, and no executable strategy or paper order is authorized.
+
+## Week 2 — Event data, replay, scanner, and news
+
+- [x] **W2-01 [P0] Define canonical event schemas and clocks**  
+  Depends: W1-03. Include source event, provider receive, system first-seen, processing/availability timestamps and persistent sequence.  
+  Accept: ordering and availability invariants tested.
+  Verified 2026-10-05 in [Week 2 evidence](docs/week2-evidence.md). This event visibility contract does not certify feed coverage or strategy eligibility.
+
+- [x] **W2-02 [P0] Implement append-only evidence store and transactional state**  
+  Depends: W2-01. Add recoverable schema migration and crash-consistent SQLite state; keep runtime data under ignored `var/`.  
+  Accept: restart and interrupted-write tests pass.
+  Verified 2026-10-05 in [Week 2 evidence](docs/week2-evidence.md). SQLite is the canonical local event/state owner; compressed replay exports remain a later derived artifact.
+
+- [x] **W2-03 [P0] Implement feed clients and health state**  
+  Depends: W1-05, W2-01. Prefer a pinned, validated official Alpaca SDK where its observable transport behavior meets the evidence contract; keep project-owned heartbeat, reconnect verification, bounded backfill, gap and freshness tracking.  
+  Accept: stale/gapped/wrong feed blocks eligibility and cannot be hidden by cache.
+  In progress 2026-10-08: W1-05 and W2-01 are accepted. Official `alpaca-py==0.44.0` is pinned; IEX/news SDK construction and a synthetic fail-closed health contract pass local checks. Tagged source review found that SDK callbacks hide subscription acknowledgments and reconnects, and SDK REST calls have no timeout. To preserve observable continuity, the implementation direction is a small project-owned client over Alpaca's documented JSON WebSocket protocol, with a bounded REST transport; keep the SDK pinned only for components whose behavior is bounded and observable. Protocol implementation, reconnect/backfill evidence, journal integration and SDK probe parity remain open. No strategy eligibility follows from these component checks; see [Week 2 evidence](docs/week2-evidence.md).
+  In progress 2026-10-09: added project-owned IEX and separate news JSON stream construction, bounded connected/authenticated/subscription-ack waits, exact requested-versus-acknowledged subscription validation, raw batched frame receipt with local UTC first-seen time, and explicit WebSocket ping/pong monitoring. Connection and subscription epochs advance separately; a disconnect/reconnect or missed pong leaves an in-memory continuity gap unresolved. `FeedHealth` snapshots separately expose local transport-pong and market-data receipt times; a pong cannot establish fresh market data. Raw WebSocket frames can be appended atomically to the journal with durable sequence and availability times. A separate read-only REST collector enforces explicit UTC bounds, IEX equity feed, request deadline, response-byte/page limits, and visible page tokens; it reports API pagination exhaustion separately and hard-codes `continuity_proven=false`. Synthetic tests cover these contracts. Durable gap state, journaled REST page metadata, and SDK probe parity remain open; see [Week 2 evidence](docs/week2-evidence.md).
+  Accepted 2026-10-13: stream construction now requires the project journal, writes raw frames automatically, persists a subscription-attempt marker before network subscription, and records a durable unresolved gap on disconnect or next startup after an unclosed process. Reconnect never clears that latch. Bounded REST recovery journals every received page's exact query/token metadata, retrieval times and raw body (including malformed JSON) while retaining `continuity_proven=false`. SDK-probe parity is not used as continuity evidence; the pinned SDK's hidden control-frame/reconnect behavior remains unsuitable for this contract. Full suite, deterministic replay, lint, strict types and format checks passed; see [Week 2 evidence](docs/week2-evidence.md). This component acceptance does not establish feed eligibility, complete historical recovery, SIP equivalence, scanner/news strategy acceptance, or permission to trade.
+
+- [x] **W2-04 [P0] Implement two replay modes**  
+  Depends: W2-02. Separate prospective journal replay from downloaded historical research with explicit availability assumptions.  
+  Accept: future news, revisions, mappings and derived features cannot appear early; unsupported historical data cannot pass fidelity.
+  Verified 2026-10-05 in [Week 2 evidence](docs/week2-evidence.md). Historical source-time assumptions are confined to raw trades/quotes and remain research-only.
+
+- [ ] **W2-05 [P0] Implement sourced Ross scanner features**  
+  Depends for the current path: an accepted Ross or separate hybrid strategy version, W1-06, W2-03 and W2-04. Webull W1-06a is deferred. Universe, price, change, RVOL and float rules only for that frozen version and verified Alpaca sources.  
+  Accept: deterministic candidate/rejection evidence; IEX output explicitly cannot claim full-market fidelity.
+
+- [ ] **W2-05a [P0] Run Webull scanner parity and eligibility test**  
+  Depends: W2-05. Use Webull's server-side pre-market gainers/losers and Top Active discovery, then enrich candidates with permitted real-time data, point-in-time float and original news evidence. Compare against an approved full-market reference for candidate recall, ranking, pre-market change, RVOL semantics and first-seen latency; record the source and availability timestamp for every comparison.  
+  Accept: Webull may be used for the documented Ross scanner path only if the required fields and comparison thresholds pass. Missing reference coverage, top-200 truncation ambiguity, stale data, non-equivalent volume semantics or absent raw news keeps that paper path blocked; no fallback may be silently called SIP-equivalent.
+  **Deferred by user on 2026-10-06**; not a dependency of the current Alpaca-only path. Do not silently replace it with an unverified IEX full-market scanner.
+
+- [ ] **W2-06 [P0] Implement news evidence pipeline**  
+  Depends: a selected Ross or separately labeled hybrid strategy version with accepted news semantics, W2-03, W2-04. Raw collection and provenance engineering may proceed separately; strategy-specific breaking/gap/continuation eligibility remains blocked until source-scoped rules pass. Deduplication, revisions, ticker mapping, source status and market-reaction timing remain in scope.  
+  Accept: reposts do not refresh catalysts; delayed/conflicting/unhealthy news fails closed.
+
+- [ ] **W2-07 [P1] Add AI news shadow evaluator**  
+  Depends: W2-06. Compact evidence only; no credential/raw-bulk prompts; output cannot affect formal eligibility.  
+  Accept: timeout/error changes only shadow report; model cannot approve trades or override deterministic vetoes.
+
+- [ ] **W2-08 [P1] Week 2 replay/fidelity review**  
+  Depends for the current path: W2-01..W2-07; deferred W2-05a is reviewed only if Webull is reactivated. Test DST, half-days, halts, splits, missing float, old news, late/duplicate/out-of-order events.  
+  Accept: tests pass or affected paths are blocked with evidence.
+
+## Week 3 — Strategy, risk, execution, and reconciliation
+
+- [ ] **W3-01 [P0] Implement sourced entry state machines**  
+  Depends: an accepted executable Ross or separately labeled hybrid version, W2-05, W2-06. Separate each documented entry pattern/version.  
+  Accept: every transition cites `rule_id`; undefined discretionary terms block the transition.
+
+- [ ] **W3-02 [P0] Implement Ross sizing and risk rules**  
+  Depends: W3-01. Position sizing, stops, targets, scaling, daily loss and stop-trading rules for the selected version.  
+  Accept: no unsourced liquidity/slippage/spread adjustment enters formal orders; broker constraints are reported separately.
+
+- [ ] **W3-03 [P0] Implement capital-stage state**  
+  Depends: W3-02. Separate capital, strategy, risk profile and broker capability versions. The user confirms no borrowed leverage below $2,000 and accepts researching a sourced Ross leveraged version at/above $2,000.  
+  Accept: equity growth cannot silently switch strategy/leverage; the $2,000 eligibility gate checks actual Alpaca multiplier/buying power and separate paper evidence; CMEG 6x is never inferred for Alpaca; downgrade and blocked-next-stage behavior are durable.
+
+- [-] **W3-04 [P0] Implement durable order intent and paper adapter**  
+  Depends: W1-02, W2-02. Prefer a pinned, validated official Alpaca SDK for API transport behind exact paper-endpoint validation. Keep unique client IDs, persist-before-submit, account/endpoint identity and request/result evidence in project-owned state.  
+  Accept: ambiguous submission queries/reconciles before retry; local duplicate submission is impossible in tests.
+  In progress 2026-10-13: the canonical SQLite journal reserves an immutable `client_order_id` and durably records at most one send attempt before any transport handoff. Reopen, duplicate, rollback and v1/v2 migration tests pass. Alpaca's documented timeout warning and pinned SDK retry/timeout behavior have been reviewed; no paper adapter or order API call exists yet. See [Week 3 evidence](docs/week3-evidence.md).
+
+- [ ] **W3-05 [P0] Implement lifecycle and reconciliation**  
+  Depends: W3-04. Use SDK trade updates and order lookups after adapter validation; project-owned states cover accepted/rejected/partial/filled/cancel-pending/canceled/expired/unknown, WebSocket plus REST reconciliation and restart recovery.  
+  Accept: account position, open orders and local intent differences are always explicit.
+
+- [ ] **W3-06 [P0] Implement protection and incident state machine**  
+  Depends: W3-02, W3-05. Preserve valid protection, stop new exposure, detect double exits/reverse positions and use only pre-authorized disposition states.  
+  Accept: fault tests cover lost response, disconnect, disk failure, cancel/fill race, partial fill crash and both exit legs filling.
+
+- [ ] **W3-07 [P1] Run isolated Alpaca paper API engineering tests**  
+  Depends: W3-04..W3-06, credentials available. Minimal non-strategy orders in isolated state only.  
+  Accept: complete order lifecycle/reconciliation evidence; test activity cannot enter the formal paper sample. If credentials are unavailable, mark blocked without fabricating acceptance.
+
+- [ ] **W3-08 [P0] Pre-register four-week paper protocol**  
+  Depends: an accepted executable Ross or separately labeled hybrid version, W2-08, W3-02. Freeze window, minimum natural events/candidates, engineering scenarios, fidelity holdout and restart rules.  
+  Accept: no threshold can be changed from observed paper P&L.
+
+## Week 4 — Integration, audit, and release freeze
+
+- [ ] **W4-01 [P0] End-to-end deterministic replay**  
+  Depends: all Week 2/3 P0 tasks.  
+  Accept: same evidence and versions reproduce candidates, orders and rejections.
+
+- [ ] **W4-02 [P0] Real-time shadow run**  
+  Depends: W4-01. Generate decisions and virtual intents without strategy orders.  
+  Accept: decisions are replayable from captured contemporaneous evidence.
+
+- [ ] **W4-03 [P0] Complete fault matrix**  
+  Depends: W4-01. Test market/news outage, limits, clock drift, halt, half-day, restart, DB lock, disk full and wrong endpoint.  
+  Accept: no silent exposure; recovery does not rewrite history.
+
+- [ ] **W4-04 [P0] Verify account-level dependency closure**  
+  Depends: W4-01, W4-02.  
+  Accept: disabled paths do not change starting equity, positions, open orders, loss streak, daily stop or capital stage for any enabled slice.
+
+- [ ] **W4-05 [P0] Reconcile clean $500 paper starting state**  
+  Depends: W3-07, W4-03. Separate engineering-test namespace/account state, clear and reconcile test artifacts, capture verified start snapshot.  
+  Accept: no test fill contaminates formal paper state.
+
+- [ ] **W4-06 [P0] Independent fidelity and safety audit**  
+  Depends: W4-01..W4-05. Astra Ultra/source audit plus code/test review.  
+  Accept: actionable P0/P1 findings fixed and affected gates rerun.
+
+- [ ] **W4-07 [P0] Freeze paper release candidate**  
+  Depends: G01..G04, W4-06, and G01H if the release candidate is hybrid. Freeze strategy/risk/data/dependency/schema versions and build a source-fidelity report for the actual selected version.  
+  Accept: G05 checked for a full-fidelity paper candidate. Before SIP review, freeze a `LIMITED_COVERAGE_PAPER` release with every enabled source and residual coverage difference recorded; strategy orders may use only that declared path and every report carries `NOT_SIP_EQUIVALENT`.
+
+## Paper-month handoff — W4-07 required; SIP review remains separate
+
+- [ ] **P-01** Start the four-week frozen `LIMITED_COVERAGE_PAPER` run with $500 reconciled state and the declared free sources. Submit paper orders only when the enabled-source health checks pass; tag every result `NOT_SIP_EQUIVALENT`. Reconsider $99 SIP only after the recorded $1,500 capital threshold.
+- [ ] **P-02** Preserve every normal, failure and downtime record; never delete abnormal days.
+- [ ] **P-03** Run daily health/reconciliation without tuning strategy.
+- [ ] **P-04** If a behavior-changing defect appears, stop exposure, mark the window aborted, create a new release and restart a complete four-week window.
+- [ ] **P-05** Produce final fidelity, data, news, execution, cost and paper reports; do not auto-enable live.
+
+## Codex App task run log
+
+Each persistent scheduled chat updates this section only with compact evidence links.
+
+| Run | Task | Result | Evidence |
+| --- | --- | --- | --- |
+| 2026-10-05 06:00 PDT | W2 | W2-01, W2-02, W2-04 accepted; dependent feed/scanner/news paths remain blocked | [Week 2 evidence](docs/week2-evidence.md) |

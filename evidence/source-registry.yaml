@@ -1,0 +1,373 @@
+schema_version: 1
+sources:
+  - source_id: HUMBLED_DIP_2026
+    kind: OTHER_TRADER_FIRST_PARTY
+    title: Shay Humbled Trader small-account daily-support dip article
+    url: https://www.humbledtrader.com/blog/how-to-buy-the-dip-small-account-long-strategy/
+    published_on: '2026-03-09'
+    accessed_on: '2026-10-06'
+    version_ids: [HYBRID_500_IEX_CANDIDATE_V1]
+  - source_id: SMB_ADT_ENTRY_2020
+    kind: OTHER_TRADER_FIRST_PARTY
+    title: Mike Bellafiore SMB ADT opening-drive entry review
+    url: https://www.smbtraining.com/blog/how-to-improve-your-trading-entries
+    published_on: '2020-08-10'
+    accessed_on: '2026-10-06'
+    version_ids: [HYBRID_500_IEX_CANDIDATE_V1]
+  - source_id: SMB_SIZING_2013
+    kind: OTHER_TRADER_FIRST_PARTY
+    title: Mike Bellafiore SMB intraday-loss-allowance sizing discussion
+    url: https://www.smbtraining.com/blog/tips-to-trade-bigger
+    published_on: '2013-01-11'
+    accessed_on: '2026-10-06'
+    version_ids: [HYBRID_500_IEX_CANDIDATE_V1]
+  - source_id: AZIZ_MIXED_RECAP_2023
+    kind: OTHER_TRADER_FIRST_PARTY
+    title: Andrew Aziz mixed-outcome newsletter and Paras RIVN pullback mention
+    url: https://members.bearbulltraders.com/navigating-volatility-success-stories-and-exclusive-webinar-with-paras/
+    published_on: '2023-09-27'
+    accessed_on: '2026-10-06'
+    version_ids: [HYBRID_500_IEX_CANDIDATE_V1]
+  - source_id: AZIZ_TSLL_RECAP_2025
+    kind: OTHER_TRADER_FIRST_PARTY
+    title: Andrew Aziz TSLL opening-range loss and re-entry newsletter
+    url: https://members.bearbulltraders.com/19k-profits-on-tsll-tesla-opening-range-breakout/
+    published_on: '2025-12-10'
+    accessed_on: '2026-10-06'
+    version_ids: [HYBRID_500_IEX_CANDIDATE_V1]
+  - source_id: ROSS_STARTING_AMOUNT_2026
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron starting-capital guide, updated 2026-08-03, 2000 dollar beginner risk and 500 dollar cash discussion
+    url: https://www.warriortrading.com/how-much-money-do-you-need-to-day-trade/
+    published_on: null
+    accessed_on: '2026-10-03'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: WARRIOR_SMALL_ACCOUNT_RISK_GUIDE
+    kind: ROSS_FIRST_PARTY
+    title: Warrior Trading small-account risk guide, general percentage discussion with unverified individual author
+    url: https://www.warriortrading.com/how-to-manage-risk-in-a-small-account/
+    published_on: null
+    accessed_on: '2026-10-03'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_AYTU_THIRD_PULLBACK_EXCEPTION
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron AYTU recap, premarket first/second and third-at-open exception
+    url: https://www.warriortrading.com/green-while-wearing-red-1200-ross-trade-recap/
+    published_on: null
+    accessed_on: '2026-10-02'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_DAY74_PULLBACK_COUNT_RECAP
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron Day 74 recap, IMNP and SNGX premarket/open pullbacks, CBLI and false breakouts
+    url: https://www.warriortrading.com/day-73-583-15-challenge-2-9k/
+    published_on: null
+    accessed_on: '2026-10-01'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_NEWS_COMPARISON_RECAP
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron OBLN headline versus AWX no-news micro and SLS micro loss
+    url: https://www.warriortrading.com/trade-the-best-leave-the-rest-ross-recap/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_NEWS_REVISION_RECAP
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron BXG abstention and CTRV corrected-news interpretation and position cap
+    url: https://www.warriortrading.com/another-5k-day-ross-trade-recap/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_OFFERING_COMPARISON_RECAP
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron MYND and OBLN offering comparison, session corroborated to 2019-05-23
+    url: https://www.warriortrading.com/one-trade-522-ross-trade-recap/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_COLD_STREAK_RECAP
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron FRSX HOD-break failure and cold-regime interpretation
+    url: https://www.warriortrading.com/stuck-in-a-cold-streak-1861-ross-trade-recap/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_UAVS_EXECUTION_RECAP
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron UAVS partial fills, prepared add and adverse residual exit
+    url: https://www.warriortrading.com/big-green-day-today-6378-64/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: MYND_20190523_RELEASE
+    kind: OTHER
+    title: MYnd issuer release, 2019-05-23 07:30 ET registered direct offering agreement
+    url: https://www.globenewswire.com/news-release/2019/05/23/1841454/21222/en/MYnd-Analytics-Announces-2-8-Million-Registered-Direct-Offering.html
+    published_on: '2019-05-23'
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: OBLN_20190523_RELEASE
+    kind: OTHER
+    title: Obalon issuer release dated 2019-05-23, SEC Exhibit 99.1, intraday publication time unverified
+    url: https://www.sec.gov/Archives/edgar/data/1427570/000142757019000043/obln-pricingprfinal52319.htm
+    published_on: '2019-05-23'
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: OBLN_2019_FINANCING_8K
+    kind: OTHER
+    title: Obalon 8-K, May 23 agreement and May 28 closing and signature; publication timestamp unverified
+    url: https://www.sec.gov/Archives/edgar/data/1427570/000142757019000043/obalon-8xkregistereddirect.htm
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ALPACA_ORDER_DOCS
+    kind: BROKER_OFFICIAL
+    title: Alpaca order documentation, buying-power reservations, extended hours and brackets
+    url: https://docs.alpaca.markets/us/docs/orders-at-alpaca
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ALPACA_FRACTIONAL_DOCS
+    kind: BROKER_OFFICIAL
+    title: Alpaca fractional-trading documentation, supported-types versus final-boilerplate conflict
+    url: https://docs.alpaca.markets/us/docs/fractional-trading
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ALPACA_PAPER_DOCS
+    kind: BROKER_OFFICIAL
+    title: Alpaca paper-trading documentation, omitted execution effects and simulated fills
+    url: https://docs.alpaca.markets/us/docs/paper-trading
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_2017_DAY5_STAGE
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron 2017 small-account Day 5 recap, 583 dollar start and 6x buying power
+    url: https://www.warriortrading.com/day-5-small-account-challenge-130-ep-5/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_STRATEGY_DECISION_E2
+    kind: ROSS_FIRST_PARTY
+    title: Warrior Trading Strategy Decision Episode 2, p. 2, broker TBD and fixed-dollar risk
+    url: https://media.warriortrading.com/2019/11/SAC-Strategy-Decision.pdf#page=2
+    published_on: null
+    accessed_on: '2026-09-29'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_SAC2024_STRATEGY
+    kind: ROSS_FIRST_PARTY
+    title: Warrior Trading My Small Account Strategy, US cash and international broker examples, pp. 2-3
+    url: https://cdn.warriortrading.com/warriortrading.com/assets/SAC2024-Strategy-PDF.pdf#page=2
+    published_on: null
+    accessed_on: '2026-09-29'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_500_CASH_ARTICLE
+    kind: ROSS_FIRST_PARTY
+    title: Warrior Trading How To Start Day Trading With 500, cash-account discussion
+    url: https://www.warriortrading.com/how-to-day-trade-with-500/
+    published_on: null
+    accessed_on: '2026-09-29'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_TOOLKIT_GENERAL_2025
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron 2025 Small Account Tool Kit, general screening and entries, pp. 1-2
+    url: https://cdn.warriortrading.com/warriortrading.com/assets/2025-Small-Account-Tool-Kit-1013.pdf#page=1
+    published_on: null
+    accessed_on: '2026-09-28'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_TOOLKIT_FIXED_2025
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron 2025 Small Account Tool Kit, fixed-dollar first-week risk, p. 3
+    url: https://cdn.warriortrading.com/warriortrading.com/assets/2025-Small-Account-Tool-Kit-1013.pdf#page=3
+    published_on: null
+    accessed_on: '2026-09-28'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_TOOLKIT_WORKSHEET_2025
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron 2025 Small Account Tool Kit, challenge worksheet, p. 4
+    url: https://cdn.warriortrading.com/warriortrading.com/assets/2025-Small-Account-Tool-Kit-1013.pdf#page=4
+    published_on: null
+    accessed_on: '2026-09-28'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_TOOLKIT_RVOL_2025
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron 2025 Small Account Tool Kit, relative-volume discussion, p. 8
+    url: https://cdn.warriortrading.com/warriortrading.com/assets/2025-Small-Account-Tool-Kit-1013.pdf#page=8
+    published_on: null
+    accessed_on: '2026-09-28'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_CHALLENGE_PACKET_2025
+    kind: ROSS_FIRST_PARTY
+    title: Warrior Trading 2025 Small Account Challenge Packet, pp. 4-5
+    url: https://cdn.warriortrading.com/warriortrading.com/assets/2025-Small-Account-Challenge-Packet.pdf#page=4
+    published_on: null
+    accessed_on: '2026-09-28'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_CHALLENGE_CHRONOLOGY
+    kind: ROSS_FIRST_PARTY
+    title: Warrior Trading small-account challenge chronology, modified 2025-10-09
+    url: https://support.warriortrading.com/support/solutions/articles/19000168902-small-account-challenges-at-warrior-trading
+    published_on: null
+    accessed_on: '2026-09-28'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_WATCHLIST
+    kind: ROSS_FIRST_PARTY
+    title: Warrior Trading watchlist and scanner explanation
+    url: https://www.warriortrading.com/day-trading-watch-list-top-stocks-to-watch/
+    published_on: null
+    accessed_on: '2026-09-28'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_PULLBACK_LESSON
+    kind: ROSS_FIRST_PARTY
+    title: Warrior Trading micro-pullback lesson, separate from challenge worksheet
+    url: https://www.warriortrading.com/pull-back-trading-strategy/
+    published_on: null
+    accessed_on: '2026-09-28'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_2019_REVIEW
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron 2019 year-in-review, historical challenge context
+    url: https://www.warriortrading.com/2019-year-in-review/
+    published_on: null
+    accessed_on: '2026-09-28'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_CASH_ACCOUNT_GUIDE_2026
+    kind: ROSS_FIRST_PARTY
+    title: Warrior Trading cash-account first-pullback guide, 2026 context and 2000 dollar challenge
+    url: https://www.warriortrading.com/can-you-trade-in-a-cash-account/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_CLASS_SYLLABUS_2026
+    kind: ROSS_FIRST_PARTY
+    title: Warrior Trading current class syllabus, first and second pullbacks in Chapter 7
+    url: https://support.warriortrading.com/support/solutions/articles/19000071156
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_BULL_FLAG_2023
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron bull-flag anatomy, entry checklist and exits, updated 2023-10-22
+    url: https://www.warriortrading.com/bull-flag-trading/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_MICRO_EP1_V2
+    kind: ROSS_FIRST_PARTY
+    title: Warrior Trading Micro Pullback Episode 1 v2, criteria and AHPI example, pp. 1-3
+    url: https://media.warriortrading.com/2021/07/13171942/SAC-Micro-Pullback-Strategy-v2.pdf
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_PULLBACK_COUNT_EXAMPLE
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron simplest day-trading strategy, PIK fresh-breakout pullback-count example
+    url: https://www.warriortrading.com/simplest-day-trading-strategy/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_MACD_SCALPING_GUIDE
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron MACD scalping guide, Setting Up indicator parameters
+    url: https://www.warriortrading.com/in-depth-guide-to-my-macd-scalping-strategy-for-beginner-traders/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_PULLBACK_JOURNEY
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron breakout-to-pullback journey, Step 3 MACD confirmation
+    url: https://www.warriortrading.com/my-journey-from-breakout-to-pullback-trading/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_MACD_STRATEGIES
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron MACD strategies, Avoid Overtrading bearish signal-line cross
+    url: https://www.warriortrading.com/macd-indicator-trading-strategies/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_MACD_DEFINITION_2025
+    kind: ROSS_FIRST_PARTY
+    title: Warrior Trading MACD calculation and interpretation, updated 2025-01-09
+    url: https://www.warriortrading.com/how-traders-use-the-macd/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_ONE_MINUTE_SCALPING
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron 1-minute scalping, pivot reclaim and tape exhaustion
+    url: https://www.warriortrading.com/1-minute-scalping-strategy/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_STOP_LOSS_GUIDE
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron stop-loss guide, structural stop and 4.50 dollar entry example
+    url: https://www.warriortrading.com/what-is-stop-loss/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_BOOK_RISK_EXCERPT
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron public book excerpt, structural risk and adds, PDF pp. 16 and 21
+    url: https://media.warriortrading.com/2018/11/5CH_How_To_Day_Trade_Ross_Cameron_Warrior_Trading.pdf
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_SIM_EP9
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron Behind the Trades Ep9, second audience question and SRSC failed breakout
+    url: https://www.warriortrading.com/behind-trades-ep-9-importance-sim-trading/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_AGRX_RED_RECAP
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron Another Red Day Recap, AGRX deferred exit and slippage
+    url: https://www.warriortrading.com/another-red-day-recap/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_LEVEL2_BREAKOUT
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron Spotting Breakouts with Level 2, INPX seller depletion and anticipatory entry
+    url: https://www.warriortrading.com/spotting-breakouts-with-level-2/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_FALSE_BREAKOUT_RECAP
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron Too Many False Breakouts, ASUR one-minute micro-pullback loss
+    url: https://www.warriortrading.com/too-many-false-breakouts-2500-ross-trade-recap/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_NO_TRADE_AUG1
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron Aug 1 No Trades, SKLN missing pullback and rejected watchlist candidates
+    url: https://www.warriortrading.com/no-trades-today/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_DAY60_PULLBACK_DECISIONS
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron Day 60 of the 583 Challenge, PRAN skipped pullbacks and depth-based exit
+    url: https://www.warriortrading.com/day-60-583-challenge-411-79/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_MAX_LOSS_RECAP
+    kind: ROSS_FIRST_PARTY
+    title: Ross Cameron Max Loss Max Frustration, NAKD and broker new-trade restriction
+    url: https://www.warriortrading.com/trade-recap-max-loss/
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
+  - source_id: ROSS_ENTRY_WORKFLOW_SUPPORT
+    kind: ROSS_FIRST_PARTY
+    title: Warrior support order-entry workflow, chart then Level 2, modified 2026-07-22
+    url: https://support.warriortrading.com/support/solutions/articles/19000045007-routing-hot-keys-and-buying-selling-process
+    published_on: null
+    accessed_on: '2026-09-30'
+    version_ids: [ROSS_SMALL_ACCOUNT_CANDIDATE_V1]
