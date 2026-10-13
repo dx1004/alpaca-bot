@@ -169,6 +169,37 @@ def capture_news_frame(
                 "symbols": "RELATED_OR_MENTIONED_NOT_PROVEN_ISSUER_ATTRIBUTION",
                 "source": "PROVIDER_REPORTED_ORIGIN_NOT_INDEPENDENTLY_VERIFIED",
             },
+            "source_scoped_news_rule_measurements": [
+                {
+                    "profile_id": "ROSS_TOOLKIT_GENERAL_2025_NEWS",
+                    "source_ids": ["ROSS_TOOLKIT_GENERAL_2025"],
+                    "reported_treatment": (
+                        "NEWS_PREFERRED_NO_NEWS_CAN_OCCUR_WITH_HIGHER_RISK"
+                    ),
+                    "criterion_status": "UNASSESSED_HUMAN_REVIEW_NOT_A_HARD_FILTER",
+                    "strategy_eligibility": "BLOCKED_RESEARCH",
+                },
+                {
+                    "profile_id": "ROSS_TOOLKIT_STOCK_SELECTION_2025_NEWS",
+                    "source_ids": ["ROSS_TOOLKIT_RVOL_2025"],
+                    "reported_treatment": (
+                        "CATALYST_PREFERRED_HEADLINE_SHOULD_EXPLAIN_MOVE"
+                    ),
+                    "criterion_status": (
+                        "UNASSESSED_CAUSAL_HEADLINE_REVIEW_NOT_AUTOMATED"
+                    ),
+                    "strategy_eligibility": "BLOCKED_RESEARCH",
+                },
+                {
+                    "profile_id": "ROSS_TOOLKIT_WORKSHEET_2025_NEWS",
+                    "source_ids": ["ROSS_TOOLKIT_WORKSHEET_2025"],
+                    "reported_treatment": "POSITIVE_CATALYST_REQUIRED",
+                    "criterion_status": (
+                        "UNASSESSED_POSITIVE_CATALYST_SEMANTICS_UNRESOLVED"
+                    ),
+                    "strategy_eligibility": "BLOCKED_RESEARCH",
+                },
+            ],
             "raw_frame_sequence": raw_frame_sequence,
         }
         serialized = json.dumps(

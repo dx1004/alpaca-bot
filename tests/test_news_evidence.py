@@ -95,6 +95,26 @@ def test_news_capture_is_journaled_but_never_strategy_eligible(tmp_path: Path) -
         "symbols": "RELATED_OR_MENTIONED_NOT_PROVEN_ISSUER_ATTRIBUTION",
         "source": "PROVIDER_REPORTED_ORIGIN_NOT_INDEPENDENTLY_VERIFIED",
     }
+    news_profiles = record["source_scoped_news_rule_measurements"]
+    assert isinstance(news_profiles, list) and len(news_profiles) == 3
+    assert [profile["profile_id"] for profile in news_profiles] == [
+        "ROSS_TOOLKIT_GENERAL_2025_NEWS",
+        "ROSS_TOOLKIT_STOCK_SELECTION_2025_NEWS",
+        "ROSS_TOOLKIT_WORKSHEET_2025_NEWS",
+    ]
+    assert news_profiles[0]["criterion_status"] == (
+        "UNASSESSED_HUMAN_REVIEW_NOT_A_HARD_FILTER"
+    )
+    assert news_profiles[1]["criterion_status"] == (
+        "UNASSESSED_CAUSAL_HEADLINE_REVIEW_NOT_AUTOMATED"
+    )
+    assert news_profiles[2]["criterion_status"] == (
+        "UNASSESSED_POSITIVE_CATALYST_SEMANTICS_UNRESOLVED"
+    )
+    assert all(
+        profile["strategy_eligibility"] == "BLOCKED_RESEARCH"
+        for profile in news_profiles
+    )
     event = journal.read_event(2)
     assert event is not None and event[0].event_kind == "NEWS_ARTICLE_VERSION"
     assert event[0].feed == "alpaca_news"
