@@ -161,6 +161,14 @@ def capture_news_frame(
             "news_eligibility": "BLOCKED_RESEARCH",
             "market_reaction": "NOT_EVALUATED",
             "ticker_mapping": "PROVIDER_SYMBOLS_ONLY",
+            "provider_field_semantics": {
+                "created_at": (
+                    "ARTICLE_CREATED_TIME_NOT_PROVEN_PUBLICATION_OR_FIRST_AVAILABLE"
+                ),
+                "updated_at": "ARTICLE_UPDATED_TIME_NOT_A_PROVEN_REVISION_ARCHIVE",
+                "symbols": "RELATED_OR_MENTIONED_NOT_PROVEN_ISSUER_ATTRIBUTION",
+                "source": "PROVIDER_REPORTED_ORIGIN_NOT_INDEPENDENTLY_VERIFIED",
+            },
             "raw_frame_sequence": raw_frame_sequence,
         }
         serialized = json.dumps(

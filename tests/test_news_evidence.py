@@ -89,6 +89,12 @@ def test_news_capture_is_journaled_but_never_strategy_eligible(tmp_path: Path) -
     assert record["news_eligibility"] == "BLOCKED_RESEARCH"
     assert record["market_reaction"] == "NOT_EVALUATED"
     assert record["ticker_mapping"] == "PROVIDER_SYMBOLS_ONLY"
+    assert record["provider_field_semantics"] == {
+        "created_at": "ARTICLE_CREATED_TIME_NOT_PROVEN_PUBLICATION_OR_FIRST_AVAILABLE",
+        "updated_at": "ARTICLE_UPDATED_TIME_NOT_A_PROVEN_REVISION_ARCHIVE",
+        "symbols": "RELATED_OR_MENTIONED_NOT_PROVEN_ISSUER_ATTRIBUTION",
+        "source": "PROVIDER_REPORTED_ORIGIN_NOT_INDEPENDENTLY_VERIFIED",
+    }
     event = journal.read_event(2)
     assert event is not None and event[0].event_kind == "NEWS_ARTICLE_VERSION"
     assert event[0].feed == "alpaca_news"
