@@ -66,6 +66,10 @@ def test_news_capture_is_journaled_but_never_strategy_eligible(tmp_path: Path) -
 
     assert record["article_first_seen_at"] == NOW.isoformat()
     assert record["provider_created_lag_seconds"] == 60
+    assert record["provider_created_age_band"] == "UNDER_2H"
+    assert (
+        record["age_band_boundary_convention"] == "exact_source_boundaries_unresolved"
+    )
     assert record["delay_assessment"] == "UNASSESSED_NO_APPROVED_PATH_THRESHOLD"
     assert record["news_eligibility"] == "BLOCKED_RESEARCH"
     assert record["market_reaction"] == "NOT_EVALUATED"
@@ -129,6 +133,62 @@ def test_future_provider_timestamp_is_a_conflict(tmp_path: Path) -> None:
     assert record["timestamp_conflict"] is True
     assert record["status"] == "CONFLICTING"
     assert record["news_eligibility"] == "BLOCKED_RESEARCH"
+    journal.close()
+
+
+def test_old_news_age_bands_are_display_metadata_not_eligibility(
+    tmp_path: Path,
+) -> None:
+    journal = Journal(tmp_path / "var" / "journal.sqlite3", tmp_path / "var")
+    two_hours = _capture(
+        journal,
+        _article(
+            id=43,
+            created_at="2026-10-13T14:00:00Z",
+            updated_at="2026-10-13T14:00:00Z",
+        ),
+    )[0]
+    old = _capture(
+        journal,
+        _article(
+            id=44,
+            created_at="2026-10-12T15:00:00Z",
+            updated_at="2026-10-12T15:00:00Z",
+        ),
+    )[0]
+
+    assert two_hours["provider_created_age_band"] == "BOUNDARY_UNRESOLVED"
+    assert old["provider_created_age_band"] == "OVER_24H"
+    assert two_hours["news_eligibility"] == "BLOCKED_RESEARCH"
+    assert old["news_eligibility"] == "BLOCKED_RESEARCH"
+    age_basis = two_hours["age_band_basis"]
+    assert isinstance(age_basis, str)
+    assert age_basis.endswith("display_approximation")
+    journal.close()
+
+
+def test_news_age_band_avoids_inventing_exact_boundary_semantics(
+    tmp_path: Path,
+) -> None:
+    journal = Journal(tmp_path / "var" / "journal.sqlite3", tmp_path / "var")
+    for article_id, created_at in (
+        (45, "2026-10-13T14:00:00Z"),
+        (46, "2026-10-13T04:00:00Z"),
+        (47, "2026-10-12T16:00:00Z"),
+    ):
+        record = _capture(
+            journal,
+            _article(
+                id=article_id,
+                created_at=created_at,
+                updated_at=created_at,
+            ),
+        )[0]
+        assert record["provider_created_age_band"] == "BOUNDARY_UNRESOLVED"
+        assert (
+            record["age_band_boundary_convention"]
+            == "exact_source_boundaries_unresolved"
+        )
     journal.close()
 
 

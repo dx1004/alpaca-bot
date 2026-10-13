@@ -112,6 +112,8 @@ def capture_news_frame(
             or created_at > first_seen_at
             or updated_at > first_seen_at
         )
+        created_age_seconds = (first_seen_at - created_at).total_seconds()
+        age_band = _headline_age_band(created_age_seconds)
         record["timestamp_conflict"] = timestamp_conflict
         if health_reasons:
             status = "FEED_UNHEALTHY"
@@ -135,6 +137,9 @@ def capture_news_frame(
             "provider_created_lag_seconds": (
                 first_seen_at - created_at
             ).total_seconds(),
+            "provider_created_age_band": age_band,
+            "age_band_basis": "alpaca_created_at_first_seen_display_approximation",
+            "age_band_boundary_convention": "exact_source_boundaries_unresolved",
             "delay_assessment": "UNASSESSED_NO_APPROVED_PATH_THRESHOLD",
             "news_eligibility": "BLOCKED_RESEARCH",
             "market_reaction": "NOT_EVALUATED",
@@ -248,6 +253,20 @@ def _string_field(record: Mapping[str, object], field: str) -> str:
     if not isinstance(value, str):
         raise NewsEvidenceError(f"article field {field} is missing or invalid")
     return value
+
+
+def _headline_age_band(age_seconds: float) -> str:
+    if age_seconds < 0:
+        return "FUTURE_TIMESTAMP_CONFLICT"
+    if age_seconds in (2 * 60 * 60, 12 * 60 * 60, 24 * 60 * 60):
+        return "BOUNDARY_UNRESOLVED"
+    if age_seconds < 2 * 60 * 60:
+        return "UNDER_2H"
+    if age_seconds < 12 * 60 * 60:
+        return "2_TO_12H"
+    if age_seconds < 24 * 60 * 60:
+        return "12_TO_24H"
+    return "OVER_24H"
 
 
 def _require_utc(value: datetime, field: str) -> None:

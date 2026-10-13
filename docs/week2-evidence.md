@@ -19,13 +19,13 @@ Validation for the raw/provenance increment: `pytest tests/test_news_evidence.py
 | DST and half-days | No accepted session-calendar source, session boundary semantics or candidate-version schedule. | `BLOCKED_RESEARCH`; cannot assert scanner/session behavior. |
 | Trading halts | Stream supports raw status messages, but no accepted Ross/hybrid halt response, recovery, or entry-veto semantics. | `BLOCKED_RESEARCH`; no trade eligibility from transport capture. |
 | Splits | No accepted point-in-time corporate-action source, adjustment policy or historical ticker/price transformation contract. | `BLOCKED_RESEARCH`; no adjusted series is presented as replay truth. |
-| Missing float | W1-06 records point-in-time float availability as unknown; scanner is gated on an accepted strategy version. | `BLOCKED_RESEARCH`; no shares-outstanding or current-float substitution. |
-| Old/late news | `test_news_capture_is_journaled_but_never_strategy_eligible` records provider-created lag but leaves delay threshold unassessed; all articles stay blocked. Replay tests keep events unavailable until local recorded availability. | Engineering timing passes; catalyst age/eligibility `BLOCKED_RESEARCH`. |
+| Missing float | W1-06 records point-in-time float availability as unknown; `test_float_provenance_and_short_rvol_history_stay_unverified` records missing/unverified provenance. Scanner is gated on an accepted strategy version. | `BLOCKED_RESEARCH`; no shares-outstanding or current-float substitution. |
+| Old/late news | `test_news_capture_is_journaled_but_never_strategy_eligible` records provider-created lag; `test_old_news_age_bands_are_display_metadata_not_eligibility` exercises display bins and confirms they do not unblock articles. Replay tests keep events unavailable until local recorded availability. | Engineering timing passes; catalyst age/eligibility `BLOCKED_RESEARCH`. |
 | Duplicate/revised news | `test_duplicate_does_not_refresh_first_seen_and_revision_is_unverified`; fingerprints and article state are journaled. | Exact byte-equivalent repeat retains first-seen; provider revision semantics and catalyst refresh remain `BLOCKED_RESEARCH`. |
 | Conflicting/future news clocks | `test_timestamp_conflict_and_unhealthy_feed_are_vetoed` and `test_future_provider_timestamp_is_a_conflict`. | Conflict is recorded and remains ineligible. |
 | Late/out-of-order events | `tests/test_events.py::test_late_source_timestamp_does_not_change_ingestion_order`, `tests/test_replay.py::test_out_of_order_source_times_do_not_reorder_ingestion_sequence`; future news versions are tested in `tests/test_replay.py`. | Recorded ingestion/availability ordering passes; this is not provider completeness proof. |
 
-W2-08 acceptance is met as specified: implemented replay cases pass, and each unsupported strategy/data case is explicitly blocked with its missing evidence identified. This review does not unblock W2-05, W2-06 strategy eligibility, W2-07, G03/G04, any strategy-order path, or formal paper evaluation.
+W2-08 acceptance is met as specified: implemented replay cases pass, and each unsupported strategy/data case is explicitly blocked with its missing evidence identified. This review does not unblock W2-05, W2-06 strategy eligibility, G03/G04, any strategy-order path, or formal paper evaluation. W2-07's later accepted component contract provides shadow-only code, not production inference connectivity or news approval.
 
 2026-10-13 closeout checks (project-local offline cache):
 
@@ -37,6 +37,37 @@ rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offl
 rtk proxy env UV_CACHE_DIR=/mnt/alpaca-bot/var/uv-cache uv run --locked --offline ruff format --check src tests  -> 28 files already formatted
 rtk proxy git diff --check  -> passed
 ```
+
+### W2 follow-up component acceptance (2026-10-13)
+
+The Week 1 dependency check remains unchanged: W1-05, W1-06 and W1-07 are accepted as capability-probe, inventory and blocked-gate-review tasks. Their evidence does not pass G03 or G04. The source-scoped Ross and hybrid versions are still not executable; Alpaca's official [movers](https://docs.alpaca.markets/us/reference/movers-1) and [most-actives](https://docs.alpaca.markets/us/reference/mostactives-1) endpoints use SIP, and the accepted W1-06 matrix still records IEX discovery and point-in-time float as unknown for this strategy. `NOT_SIP_EQUIVALENT` is mandatory.
+
+#### W2-05 scanner measurement increment (not scanner eligibility)
+
+`src/alpaca_ross_bot/scanner_observation.py` now journals measurements for an explicitly supplied, same-time IEX symbol set. It records price/prior-close source and timestamps, percent change, IEX feed identity, history availability/adjustment, float provenance status, and rank only within that supplied set. Thirty- and fifty-session volume ratios are exposed only as descriptive `session_volume_over_full_day_mean_not_time_normalized` measures; they are not Ross RVOL qualification. Every report says `NOT_SIP_EQUIVALENT`, `EXPLICIT_OBSERVED_SYMBOLS_ONLY`, `full_market_coverage=false` and `strategy_eligibility=BLOCKED_RESEARCH`. Future timestamps, feed mixing and duplicate symbols are rejected; missing float provenance is recorded as incomplete and remains blocked. The function does not discover symbols, apply candidate thresholds, validate float, or provide a trade path.
+
+The public Ross materials reviewed for this project have differing price and float examples and do not resolve a single applicable $500/1x profile, a point-in-time universe, the exact RVOL formula/session normalization, or the scanner's full-market discovery contract. See the source-scoped gaps in [Ross public pullback research](ross-public-pullback-r0.md). Therefore the measurement projector is accepted as an engineering component only; W2-05 remains blocked. Tests: `tests/test_scanner_observation.py` covers rank scope, measurement basis, missing/unverified float, feed mismatch and future data.
+
+#### W2-06 news metadata and W2-07 shadow evaluator
+
+`news_evidence.py` now records Warrior's published headline-age display bands (0–2h, 2–12h, 12–24h, and over 24h) using the explicitly labeled approximation `Alpaca created_at` to local first-seen. Since the published ranges overlap at 2h, 12h and 24h and no boundary convention is documented, exact boundary timestamps produce `BOUNDARY_UNRESOLVED`; no cutoff is inferred. This is display metadata only; it does not represent an entry cutoff, catalyst determination or eligibility. The supporting first-party [Warrior scanner indicator documentation](https://support.warriortrading.com/support/solutions/articles/19000117763) and [news-layer evidence specification](news-layer-spec.md) explain this distinction. W2-06 remains blocked on source-scoped deduplication/revision, catalyst, delay, mapping and market-reaction semantics and verified source coverage.
+
+W2-07's isolated component contract is accepted. `news_shadow.py` reads only one already-journaled Alpaca article whose formal eligibility is still blocked, sends a bounded compact payload through an injected model callback, validates exact evidence substrings and restricts symbols to provider symbols, and appends a separate idempotent `NEWS_AI_SHADOW` event. Timeout, errors and invalid output cannot change article eligibility; malformed or authority-shaped model output is rejected. There is no provider transport, account data, raw article content/URL, scanner, strategy, risk or execution interface in this module. This establishes a tested shadow component, not Ross news fidelity, production inference connectivity or approval of a future paper path.
+
+The W2-08 review remains accepted under its stated rule: implemented synthetic replay and component cases pass, and unsupported DST/session, halt, split, float, strategy-news and full-market paths remain explicitly blocked in the matrix above. This is not a release or paper-evaluation gate pass.
+
+Follow-up validation, locked and offline, in `/mnt/t/alpaca-bot`:
+
+```text
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest -q  -> 93 passed, 1 upstream websockets deprecation warning
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest tests/test_replay.py -q  -> 4 passed
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline ruff check src tests  -> All checks passed
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline mypy --strict  -> no issues in 32 source files
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline ruff format --check src tests  -> 32 files already formatted
+rtk git diff --check  -> passed
+```
+
+No Alpaca connection, account credential, order, paid data, live endpoint or formal paper evaluation was used.
 
 ## W2-01 — Event envelope and clocks (2026-10-05)
 
