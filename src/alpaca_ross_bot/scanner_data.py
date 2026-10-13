@@ -7,11 +7,15 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from math import isfinite
+from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
 from alpaca_ross_bot.config import PaperCredentials
 from alpaca_ross_bot.http_transport import bounded_alpaca_get
 from alpaca_ross_bot.journal import Journal
+
+if TYPE_CHECKING:
+    from alpaca_ross_bot.scanner_snapshot import SnapshotObservationResult
 
 _ASSET_URL = "https://paper-api.alpaca.markets/v2/assets"
 _SNAPSHOT_URL = "https://data.alpaca.markets/v2/stocks/snapshots"
@@ -39,6 +43,20 @@ class IexSnapshotBatch:
     missing_symbols: tuple[str, ...]
     coverage_label: str = "NOT_SIP_EQUIVALENT"
     full_market_coverage: bool = False
+
+
+@dataclass(frozen=True)
+class IexAssetSnapshotRun:
+    """Snapshots requested for every symbol in one current Alpaca asset list."""
+
+    asset_directory: AssetDirectorySnapshot
+    max_symbols_per_batch: int
+    batches: tuple[IexSnapshotBatch, ...]
+    observations: tuple["SnapshotObservationResult", ...]
+    manifest_sequence: int
+    coverage_label: str = "NOT_SIP_EQUIVALENT"
+    full_market_coverage: bool = False
+    strategy_eligibility: str = "BLOCKED_RESEARCH"
 
 
 type ScannerFetcher = Callable[[str, Mapping[str, str], float, int], bytes]
@@ -207,6 +225,73 @@ class AlpacaScannerData:
             symbols,
             snapshots,
             missing,
+        )
+
+    def collect_current_asset_iex_snapshots(
+        self, *, max_symbols_per_batch: int
+    ) -> IexAssetSnapshotRun:
+        """Snapshot every current active Alpaca equity asset through IEX.
+
+        The caller must supply the request batch size because Alpaca's public
+        stock-snapshot reference does not publish a numeric symbol cap. This
+        collects the broker's current asset catalog, not a full exchange or
+        historical Ross scanner universe.
+        """
+        if type(max_symbols_per_batch) is not int or max_symbols_per_batch < 1:
+            raise ScannerDataError("snapshot batch size must be a positive integer")
+        asset_directory = self.collect_active_equity_assets()
+        batches: list[IexSnapshotBatch] = []
+        observations: list[SnapshotObservationResult] = []
+        from alpaca_ross_bot.scanner_snapshot import journal_iex_snapshot_observations
+
+        for offset in range(0, len(asset_directory.symbols), max_symbols_per_batch):
+            symbols = asset_directory.symbols[offset : offset + max_symbols_per_batch]
+            batch = self.collect_iex_snapshot_batch(symbols)
+            batches.append(batch)
+            observations.extend(
+                journal_iex_snapshot_observations(
+                    self._journal,
+                    batch,
+                    processed_at=self._now_after(batch.retrieved_at),
+                )
+            )
+
+        manifest_payload = _canonical_json(
+            {
+                "asset_directory_sequence": asset_directory.sequence,
+                "asset_directory_received_at": asset_directory.retrieved_at.isoformat(),
+                "asset_directory_scope": asset_directory.catalog_scope,
+                "requested_symbol_count": len(asset_directory.symbols),
+                "max_symbols_per_batch": max_symbols_per_batch,
+                "snapshot_batch_sequences": [batch.sequence for batch in batches],
+                "missing_observation_symbols": [
+                    symbol for batch in batches for symbol in batch.missing_symbols
+                ],
+                "coverage_label": "NOT_SIP_EQUIVALENT",
+                "full_market_coverage": False,
+                "strategy_eligibility": "BLOCKED_RESEARCH",
+            }
+        )
+        manifest_at = self._now_after(
+            max(
+                (batch.retrieved_at for batch in batches),
+                default=asset_directory.retrieved_at,
+            )
+        )
+        manifest = self._journal.append_next(
+            source_id="alpaca_scanner_data",
+            feed="iex",
+            event_kind="IEX_ASSET_SNAPSHOT_SCAN_MANIFEST",
+            payload=manifest_payload,
+            system_first_seen_at=manifest_at,
+            processed_at=manifest_at,
+        )
+        return IexAssetSnapshotRun(
+            asset_directory=asset_directory,
+            max_symbols_per_batch=max_symbols_per_batch,
+            batches=tuple(batches),
+            observations=tuple(observations),
+            manifest_sequence=manifest.sequence,
         )
 
     def _request_and_journal(

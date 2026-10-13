@@ -54,14 +54,24 @@ def _capture(
     first_seen: datetime = NOW,
     health: FeedHealth | None = None,
 ) -> tuple[dict[str, object], ...]:
+    raw = json.dumps([article])
+    raw_event = journal.append_next(
+        source_id="alpaca_news",
+        feed="alpaca_news",
+        event_kind="RAW_FRAME",
+        payload=raw.encode(),
+        system_first_seen_at=first_seen,
+        processed_at=first_seen,
+    )
     return capture_news_frame(
         journal,
-        json.dumps([article]),
+        raw,
         first_seen_at=first_seen,
         processed_at=first_seen,
         health=health or _health(),
         health_now=first_seen,
         max_heartbeat_age_seconds=30,
+        raw_frame_sequence=raw_event.sequence,
     )
 
 
@@ -79,7 +89,7 @@ def test_news_capture_is_journaled_but_never_strategy_eligible(tmp_path: Path) -
     assert record["news_eligibility"] == "BLOCKED_RESEARCH"
     assert record["market_reaction"] == "NOT_EVALUATED"
     assert record["ticker_mapping"] == "PROVIDER_SYMBOLS_ONLY"
-    event = journal.read_event(1)
+    event = journal.read_event(2)
     assert event is not None and event[0].event_kind == "NEWS_ARTICLE_VERSION"
     assert event[0].feed == "alpaca_news"
     journal.close()
@@ -269,7 +279,7 @@ def test_malformed_article_is_journaled_as_rejected(tmp_path: Path) -> None:
     result = _capture(journal, _article(id="42"))
 
     assert result == ({"status": "MALFORMED", "eligibility": "BLOCKED"},)
-    event = journal.read_event(1)
+    event = journal.read_event(2)
     assert event is not None and event[0].event_kind == "NEWS_REJECTED"
     assert json.loads(event[1])["status"] == "MALFORMED"
     journal.close()
@@ -286,5 +296,25 @@ def test_local_timestamps_must_be_utc(tmp_path: Path) -> None:
             health=_health(),
             health_now=NOW,
             max_heartbeat_age_seconds=30,
+            raw_frame_sequence=1,
         )
+    journal.close()
+
+
+def test_news_capture_rejects_missing_raw_frame_reference(tmp_path: Path) -> None:
+    journal = Journal(tmp_path / "var" / "journal.sqlite3", tmp_path / "var")
+
+    with pytest.raises(NewsEvidenceError, match="raw frame sequence"):
+        capture_news_frame(
+            journal,
+            json.dumps([_article()]),
+            first_seen_at=NOW,
+            processed_at=NOW,
+            health=_health(),
+            health_now=NOW,
+            max_heartbeat_age_seconds=30,
+            raw_frame_sequence=None,  # type: ignore[arg-type]
+        )
+
+    assert journal.read_event(1) is None
     journal.close()

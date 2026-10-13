@@ -54,14 +54,24 @@ def _capture_article(
         "symbols": symbols if symbols is not None else ["ABC"],
         "source": "Provider",
     }
+    raw = json.dumps([article])
+    raw_event = journal.append_next(
+        source_id="alpaca_news",
+        feed="alpaca_news",
+        event_kind="RAW_FRAME",
+        payload=raw.encode(),
+        system_first_seen_at=first_seen_at,
+        processed_at=first_seen_at,
+    )
     capture_news_frame(
         journal,
-        json.dumps([article]),
+        raw,
         first_seen_at=first_seen_at,
         processed_at=processed_at if processed_at is not None else first_seen_at,
         health=health,
         health_now=first_seen_at,
         max_heartbeat_age_seconds=30,
+        raw_frame_sequence=raw_event.sequence,
     )
 
 
@@ -122,9 +132,9 @@ def test_news_market_context_joins_exact_symbols_and_is_idempotent(
 
     report = capture_news_market_context(
         journal,
-        article_sequence=2,
+        article_sequence=3,
         before_sequence=1,
-        after_sequence=3,
+        after_sequence=4,
         processed_at=NOW + timedelta(minutes=2),
     )
     rows = report["rows"]
@@ -135,19 +145,19 @@ def test_news_market_context_joins_exact_symbols_and_is_idempotent(
     assert report["coverage_label"] == "NOT_SIP_EQUIVALENT"
     assert report["causality"] == "NOT_ASSESSED_TEMPORAL_ASSOCIATION_ONLY"
     assert report["strategy_eligibility"] == "BLOCKED_RESEARCH"
-    event = journal.read_event(4)
+    event = journal.read_event(5)
     assert event is not None
     assert event[0].event_kind == "NEWS_MARKET_CONTEXT_OBSERVATION"
 
     repeated = capture_news_market_context(
         journal,
-        article_sequence=2,
+        article_sequence=3,
         before_sequence=1,
-        after_sequence=3,
+        after_sequence=4,
         processed_at=NOW + timedelta(minutes=2),
     )
     assert repeated["status"] == "DUPLICATE"
-    assert journal.read_event(5) is None
+    assert journal.read_event(6) is None
     journal.close()
 
 
@@ -175,9 +185,9 @@ def test_context_rejects_pre_news_data_not_yet_available(tmp_path: Path) -> None
     with pytest.raises(NewsMarketContextError, match="not locally available"):
         capture_news_market_context(
             journal,
-            article_sequence=2,
+            article_sequence=3,
             before_sequence=1,
-            after_sequence=3,
+            after_sequence=4,
             processed_at=NOW + timedelta(minutes=2),
         )
     journal.close()
@@ -207,9 +217,9 @@ def test_context_does_not_map_symbols_or_claim_reaction_when_unmatched(
 
     report = capture_news_market_context(
         journal,
-        article_sequence=2,
+        article_sequence=3,
         before_sequence=1,
-        after_sequence=3,
+        after_sequence=4,
         processed_at=NOW + timedelta(minutes=2),
     )
     assert report["status"] == "NO_COMMON_PROVIDER_SYMBOL"
@@ -241,8 +251,8 @@ def test_context_rejects_reordered_sequences(tmp_path: Path) -> None:
     with pytest.raises(NewsMarketContextError, match="order around"):
         capture_news_market_context(
             journal,
-            article_sequence=2,
-            before_sequence=3,
+            article_sequence=3,
+            before_sequence=4,
             after_sequence=1,
             processed_at=NOW + timedelta(minutes=2),
         )

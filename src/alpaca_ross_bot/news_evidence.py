@@ -29,7 +29,7 @@ def capture_news_frame(
     health: FeedHealth,
     health_now: datetime,
     max_heartbeat_age_seconds: float,
-    raw_frame_sequence: int | None = None,
+    raw_frame_sequence: int,
 ) -> tuple[dict[str, object], ...]:
     """Journal article versions without inferring catalyst or freshness rules.
 
@@ -50,20 +50,19 @@ def capture_news_frame(
     if health.kind is not FeedKind.NEWS:
         raise NewsEvidenceError("news evidence requires the news feed health state")
     raw_payload = raw.encode("utf-8") if isinstance(raw, str) else raw
-    if raw_frame_sequence is not None:
-        if type(raw_frame_sequence) is not int or raw_frame_sequence < 1:
-            raise NewsEvidenceError("raw frame sequence must be positive")
-        raw_event = journal.read_event(raw_frame_sequence)
-        if raw_event is None:
-            raise NewsEvidenceError("raw news frame is missing from the journal")
-        raw_envelope, recorded_payload = raw_event
-        if (
-            raw_envelope.event_kind != "RAW_FRAME"
-            or raw_envelope.feed != "alpaca_news"
-            or raw_envelope.system_first_seen_at != first_seen_at
-            or recorded_payload != raw_payload
-        ):
-            raise NewsEvidenceError("raw news frame provenance does not match")
+    if type(raw_frame_sequence) is not int or raw_frame_sequence < 1:
+        raise NewsEvidenceError("raw frame sequence must be positive")
+    raw_event = journal.read_event(raw_frame_sequence)
+    if raw_event is None:
+        raise NewsEvidenceError("raw news frame is missing from the journal")
+    raw_envelope, recorded_payload = raw_event
+    if (
+        raw_envelope.event_kind != "RAW_FRAME"
+        or raw_envelope.feed != "alpaca_news"
+        or raw_envelope.system_first_seen_at != first_seen_at
+        or recorded_payload != raw_payload
+    ):
+        raise NewsEvidenceError("raw news frame provenance does not match")
     health_reasons = health.reasons(
         now=health_now,
         max_heartbeat_age=_seconds(max_heartbeat_age_seconds),

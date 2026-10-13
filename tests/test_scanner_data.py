@@ -1,6 +1,6 @@
 import base64
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -27,13 +27,39 @@ class FakeFetcher:
         return self.response
 
 
+class AssetSnapshotFetcher:
+    def __init__(self, symbols: tuple[str, ...]) -> None:
+        self.symbols = symbols
+        self.requests: list[str] = []
+
+    def __call__(
+        self, url: str, headers: Mapping[str, str], timeout: float, max_bytes: int
+    ) -> bytes:
+        self.requests.append(url)
+        if "/v2/assets?" in url:
+            return json.dumps(
+                [
+                    {"symbol": symbol, "class": "us_equity", "status": "active"}
+                    for symbol in self.symbols
+                ]
+            ).encode()
+        requested = parse_qs(urlsplit(url).query)["symbols"][0].split(",")
+        return json.dumps(
+            {
+                symbol: {"latestTrade": {"t": "2026-10-13T15:59:00Z"}}
+                for symbol in requested
+                if symbol != "MISSING"
+            }
+        ).encode()
+
+
 def _credentials() -> PaperCredentials:
     return PaperCredentials(SecretValue("paper-key"), SecretValue("paper-secret"))
 
 
 def _client(
     tmp_path: Path,
-    fetch: FakeFetcher,
+    fetch: Callable[[str, Mapping[str, str], float, int], bytes],
     *,
     max_bytes: int = 1024 * 1024,
 ) -> tuple[AlpacaScannerData, Journal]:
@@ -143,6 +169,62 @@ def test_snapshot_batch_uses_explicit_iex_symbols_and_reports_missing_data(
     assert parsed_event is not None
     assert json.loads(parsed_event[1])["missing_symbols"] == ["MISSING"]
     assert json.loads(parsed_event[1])["strategy_eligibility"] == "BLOCKED_RESEARCH"
+    journal.close()
+
+
+def test_current_asset_scan_batches_every_symbol_and_keeps_iex_scope(
+    tmp_path: Path,
+) -> None:
+    symbols = ("AAA", "BBB", "CCC", "DDD", "MISSING")
+    fetch = AssetSnapshotFetcher(symbols)
+    client, journal = _client(tmp_path, fetch)
+
+    result = client.collect_current_asset_iex_snapshots(max_symbols_per_batch=2)
+
+    assert [batch.requested_symbols for batch in result.batches] == [
+        ("AAA", "BBB"),
+        ("CCC", "DDD"),
+        ("MISSING",),
+    ]
+    assert (
+        tuple(symbol for batch in result.batches for symbol in batch.requested_symbols)
+        == symbols
+    )
+    assert result.batches[-1].missing_symbols == ("MISSING",)
+    assert [item.symbol for item in result.observations] == list(symbols)
+    assert [item.status for item in result.observations] == [
+        "RECORDED",
+        "RECORDED",
+        "RECORDED",
+        "RECORDED",
+        "MISSING",
+    ]
+    assert result.coverage_label == "NOT_SIP_EQUIVALENT"
+    assert result.full_market_coverage is False
+    assert result.strategy_eligibility == "BLOCKED_RESEARCH"
+    manifest = journal.read_event(result.manifest_sequence)
+    assert manifest is not None
+    assert manifest[0].event_kind == "IEX_ASSET_SNAPSHOT_SCAN_MANIFEST"
+    evidence = json.loads(manifest[1])
+    assert evidence["requested_symbol_count"] == len(symbols)
+    assert evidence["max_symbols_per_batch"] == 2
+    assert evidence["missing_observation_symbols"] == ["MISSING"]
+    assert evidence["full_market_coverage"] is False
+    assert evidence["strategy_eligibility"] == "BLOCKED_RESEARCH"
+    journal.close()
+
+
+def test_current_asset_scan_requires_explicit_positive_batch_size(
+    tmp_path: Path,
+) -> None:
+    fetch = FakeFetcher(b"[]")
+    client, journal = _client(tmp_path, fetch)
+
+    with pytest.raises(ScannerDataError, match="positive integer"):
+        client.collect_current_asset_iex_snapshots(max_symbols_per_batch=0)
+
+    assert fetch.requests == []
+    assert journal.read_event(1) is None
     journal.close()
 
 

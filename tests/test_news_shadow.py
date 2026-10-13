@@ -39,14 +39,24 @@ def _journal(tmp_path: Path) -> Journal:
         last_heartbeat_at=NOW - timedelta(seconds=1),
         last_data_at=None,
     )
+    raw = json.dumps([_article()])
+    raw_event = journal.append_next(
+        source_id="alpaca_news",
+        feed="alpaca_news",
+        event_kind="RAW_FRAME",
+        payload=raw.encode(),
+        system_first_seen_at=NOW,
+        processed_at=NOW,
+    )
     capture_news_frame(
         journal,
-        json.dumps([_article()]),
+        raw,
         first_seen_at=NOW,
         processed_at=NOW,
         health=health,
         health_now=NOW,
         max_heartbeat_age_seconds=30,
+        raw_frame_sequence=raw_event.sequence,
     )
     return journal
 
@@ -67,7 +77,7 @@ def _evaluate(journal: Journal, model_call: ModelCall) -> dict[str, object]:
     return asyncio.run(
         evaluate_news_shadow(
             journal,
-            evidence_sequence=1,
+            evidence_sequence=2,
             evaluated_at=NOW + timedelta(seconds=1),
             model_id="test-model",
             prompt_version="test-prompt-v1",
@@ -93,7 +103,7 @@ def test_shadow_event_is_separate_and_uses_compact_input(tmp_path: Path) -> None
     assert "content" not in captured[0]
     assert "Long provider content" not in captured[0]
     assert "ABC reports new contract" in captured[0]
-    shadow = journal.read_event(2)
+    shadow = journal.read_event(3)
     assert shadow is not None
     assert shadow[0].event_kind == "NEWS_AI_SHADOW"
     assert shadow[0].feed == "alpaca_news"
@@ -114,7 +124,7 @@ def test_timeout_and_invalid_output_write_only_shadow_errors(tmp_path: Path) -> 
     timeout_report = asyncio.run(
         evaluate_news_shadow(
             timeout_journal,
-            evidence_sequence=1,
+            evidence_sequence=2,
             evaluated_at=NOW + timedelta(seconds=1),
             model_id="test-model",
             prompt_version="test-prompt-v1",
@@ -124,7 +134,7 @@ def test_timeout_and_invalid_output_write_only_shadow_errors(tmp_path: Path) -> 
     )
     assert timeout_report["status"] == "TIMEOUT"
     assert timeout_report["error_type"] == "TimeoutError"
-    timeout_event = timeout_journal.read_event(2)
+    timeout_event = timeout_journal.read_event(3)
     assert timeout_event is not None
     assert timeout_event[0].event_kind == "NEWS_AI_SHADOW"
     timeout_journal.close()
@@ -137,7 +147,7 @@ def test_timeout_and_invalid_output_write_only_shadow_errors(tmp_path: Path) -> 
     invalid_report = _evaluate(invalid_journal, invalid_call)
     assert invalid_report["status"] == "INVALID_OUTPUT"
     assert "analysis" not in invalid_report
-    invalid_event = invalid_journal.read_event(2)
+    invalid_event = invalid_journal.read_event(3)
     assert invalid_event is not None
     assert invalid_event[0].event_kind == "NEWS_AI_SHADOW"
     invalid_journal.close()
@@ -158,8 +168,8 @@ def test_shadow_result_is_idempotent_and_cannot_add_authority(tmp_path: Path) ->
     assert first["status"] == "INVALID_OUTPUT"
     assert second["status"] == "DUPLICATE"
     assert calls == 1
-    shadow_event = journal.read_event(2)
+    shadow_event = journal.read_event(3)
     assert shadow_event is not None
     assert shadow_event[0].event_kind == "NEWS_AI_SHADOW"
-    assert journal.read_event(3) is None
+    assert journal.read_event(4) is None
     journal.close()
