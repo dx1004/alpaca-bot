@@ -127,7 +127,7 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
 - [x] **W2-08 [P1] Week 2 replay/fidelity review**
   Depends for the current path: W2-01..W2-07; deferred W2-05a is reviewed only if Webull is reactivated. Test DST, half-days, halts, splits, missing float, old news, late/duplicate/out-of-order events.  
-  Accept: tests pass or affected paths are blocked with evidence. **Gate review completed 2026-10-13:** replay/timing and news-provenance tests pass; DST/half-day, halt, split, float and strategy-specific news paths remain explicitly blocked with evidence because their required source/strategy contracts are unaccepted. Follow-up collector/provenance/context/snapshot tests pass (current full suite 118 tests; replay 4 tests; strict mypy, Ruff and formatting pass). See the Week 2 replay/fidelity matrix and 2026-10-13 follow-up in [Week 2 evidence](docs/week2-evidence.md). This closes the review task only, not G03/G04, W2-05/06, or any paper path.
+  Accept: tests pass or affected paths are blocked with evidence. **Gate review completed 2026-10-13:** replay/timing and news-provenance tests pass; DST/half-day, halt, split, float and strategy-specific news paths remain explicitly blocked with evidence because their required source/strategy contracts are unaccepted. Follow-up collector/provenance/context/snapshot and source-profile measurements pass (current full suite 119 tests; replay 4 tests; strict mypy, Ruff and formatting pass). See the Week 2 replay/fidelity matrix and 2026-10-13 follow-up in [Week 2 evidence](docs/week2-evidence.md). This closes the review task only, not G03/G04, W2-05/06, or any paper path.
 
 ## Week 3 — Strategy, risk, execution, and reconciliation
 
