@@ -1,5 +1,17 @@
 # Week 2 acceptance evidence
 
+## CRCL visual evidence follow-up (2026-10-15 UTC)
+
+New user-supplied frames confirm the previously ambiguous Circle case as CRCL
+and show daily/one-hour chart context. The
+[case inventory](no-leverage-pullback-research.md#case-and-counterexample-inventory)
+records the supplied player range and separates chart observations from unseen
+narration, exact anchor coordinates and the meaning of the 1.87% annotation.
+This resolves one ticker ambiguity; QS entry timing, audio alignment, strategy
+and data gates remain unresolved. No executable rule, runtime code or acceptance
+checkbox changed. This documentation-only correction requires local-link and
+diff checks, not a new runtime/replay test claim.
+
 ## Martin gap-closure and indicator semantics (2026-10-15 UTC)
 
 The [follow-up closure table](no-leverage-pullback-research.md#closure-status-and-concrete-remaining-choices)

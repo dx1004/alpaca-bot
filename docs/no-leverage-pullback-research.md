@@ -196,6 +196,8 @@ prices, anchor coordinates and statements such as "here" need visual alignment.
   is stronger than an inference, but not independently authenticated speech.
 - `MARTIN_SLIDE`: text readable in the user's screenshots; visual proof extends
   only to the displayed statement, not its application on every trade.
+- `MARTIN_FRAME`: chart content readable in a supplied frame; it confirms the
+  depicted instrument/view, not unseen narration or source-time trade knowledge.
 - `TEACHER_FRAMEWORK`: a teacher's own public teaching, never proof of adoption.
 - `MARTIN_INFERRED`: a specific reconstruction with a source chain, contrary
   evidence and a falsification condition. Confidence describes the inference,
@@ -291,7 +293,20 @@ proof of the depicted historical coordinates.
 | BE, 1:34:01–1:37:20 | Attractive daily configuration with unsuitable intraday timing. Need recovery timing and stated decision, not only the final daily candle. |
 | Hourly reanchor, 1:37:20–1:41:59 | ASR suggests OPEN, but symbol is visually unconfirmed. Need original/adjusted anchor coordinates and already observed reactions. |
 | Interrupted historical example, 1:41:59–1:47:47 | ASR symbol and year/date are confused. Exclude from coordinate/entry validation until clarified; no guessed ticker. |
-| UPST / QS / Circle / SOFI, 1:48:29–2:03:25 | Losing and retrospective criticism cases; test whether a proposed rule was knowable at entry. Circle ticker and dates require visual confirmation. |
+| UPST / QS / Circle (CRCL) / SOFI, 1:48:29–2:03:25 | Losing and retrospective criticism cases; test whether a proposed rule was knowable at entry. Supplied frames confirm Circle as CRCL; actual trade dates and exact speech/frame alignment remain unverified. |
+
+Visual follow-up (`MARTIN_FRAME`, user message with appshots captured
+2026-10-15 06:34:04–06:34:49 UTC): the supplied frames visibly identify
+**CRCL / Circle Internet Group**, with daily and one-hour views. The accompanying
+player metadata spans 2:01:54–2:04:29; this is a navigation range, not a claim
+that each frame was aligned to a specific transcript sentence. Some daily frames
+show a pale anchored curve and the chart includes a 1.87% annotation. Neither
+the curve's settings nor the annotation's trading meaning is established solely
+by these images. Do not infer a universal stop, actual entry timestamp, anchor
+selection algorithm or prospective knowledge from the completed chart. These
+frames resolve the ticker ambiguity and supply visual context for the Circle
+counterexample; they are not the requested QS entry-time explanation and contain
+no audio. No fixed transcript/YouTube offset or new order rule is accepted.
 
 #### Predeclared validation and required inputs
 
