@@ -19,6 +19,46 @@
       "SCREEN_MATCH": 31
     }
   },
+  "current_increment": {
+    "account_or_order_requests": 0,
+    "alpaca_rest_requests": 0,
+    "classification": "PROGRESS_NOT_FULL_COMPLETION",
+    "eodhd_requests": 0,
+    "full_strategy_proposal": {
+      "path": "docs/no-leverage-pullback-research.md",
+      "review_path": "evidence/w2-05-hybrid-proposal-review-2026-10-15.json",
+      "review_sha256": "f135fbb9e09c38150ed82eff2afe853d26a6727abfb41868d811e74851782173",
+      "sha256": "defcac655d252e4d9f512a13648b807fe9da53de3e2c343869d3341ca4db70fc",
+      "status": "PROPOSAL_NOT_ACCEPTED"
+    },
+    "no_policy_acceptance_inferred_from_continuation": true,
+    "read_only_iex_connections": 3,
+    "remaining_requirements": [
+      "Accept or amend the concrete full strategy policy; proposal is not a frozen executable version",
+      "Qualify the selected strategy required clocks, cumulative-volume freshness, trade/quote conditions and bar/correction handling",
+      "Verify required account/charges and execution prerequisites independently; no orders or formal paper evaluation authorized"
+    ],
+    "stream_observation_evidence": {
+      "path": "evidence/w2-05-live-input-observation-2026-10-15.json",
+      "sha256": "b6933a69eb0ff24ffca1ced14f8ff7ce134d6c3a1b032f9e38b50ac17bebd1e6"
+    },
+    "stream_patch_sha256": {
+      "src/alpaca_ross_bot/stream_protocol.py": "8dd85ea69691f3611f64f0185bcf94ccf81e471e89713be536426f07f32289a2",
+      "tests/test_stream_protocol.py": "dd2b24243c4e93d9ce7fa80ff8e4b5c2abfada1cecfba844e599505c66b56666"
+    },
+    "successful_90_second_observations": 1,
+    "validation": {
+      "current_workspace_stream_journal_tests_passed": 44,
+      "independent_observation_review": "APPROVE_INTEGRITY_AND_EXACT_CLOCK_MATH_ONLY",
+      "independent_proposal_review": "APPROVE_CONSISTENCY_ONLY",
+      "independent_stream_review": "APPROVE_SCOPED_REPAIR",
+      "isolated_full_tests_passed": 450,
+      "scoped_format": "PASS",
+      "scoped_ruff": "PASS",
+      "scoped_strict_mypy": "PASS",
+      "targeted_stream_tests_passed": 27
+    }
+  },
   "date": "2026-10-15",
   "formal_paper_evaluation": false,
   "full_goal_status": "NOT_ACHIEVED",
@@ -88,7 +128,7 @@
   },
   "requirements": [
     {
-      "evidence": "Both authoritative full-strategy manifests remain CANDIDATE; blocked operational rules are not executable acceptance.",
+      "evidence": "Both full manifests remain CANDIDATE. A concrete reviewed independent intraday proposal now declares material choices but is PROPOSAL_NOT_ACCEPTED; consistency/arithmetic review is not policy acceptance.",
       "id": "W205-FROZEN-STRATEGY",
       "requirement": "Accepted frozen Ross or separately attributed full hybrid strategy version",
       "state": "INCOMPLETE"
@@ -106,7 +146,7 @@
       "state": "PASS_SCANNER_ONLY"
     },
     {
-      "evidence": "Recorded raw offline discovery/price-volume/calendar evidence passes; no execution freshness acceptance or selected full-version required-data contract.",
+      "evidence": "Actual four-symbol IEX trade/quote capture and exact raw integrity/clock audit pass after source-backed subscription repair. Short midday observation does not accept opening behavior, clock synchronization, freshness, cumulative-volume update clock, condition eligibility or a selected full-version data contract.",
       "id": "W205-QUALIFIED-REQUIRED-INPUTS",
       "requirement": "Verified Alpaca sources and decision-time data actually required by the selected full version",
       "state": "PARTIAL_OFFLINE_ONLY"

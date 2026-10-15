@@ -1,0 +1,311 @@
+{
+  "archive": "var/research/w205-live-input-observation/2026-10-15/5e011894a2334e648b23ec54f1506ab2",
+  "archive_manifest_sha256": "2efd941e2b28b5d48bab0bfe28520d01b2f572a769d276ab5205cfcfd7aa73f0",
+  "by_symbol": {
+    "A": {
+      "q": {
+        "max_local_interarrival_ns": 20025728000,
+        "source_order_regressions": 0,
+        "source_to_available_age": {
+          "count": 62,
+          "max_ns": 130525630,
+          "min_ns": 97246078,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 101203717,
+          "p95_nearest_rank_ns": 127947324,
+          "p99_nearest_rank_ns": 130525630
+        },
+        "source_to_first_seen_age": {
+          "count": 62,
+          "max_ns": 130514630,
+          "min_ns": 97228078,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 101104717,
+          "p95_nearest_rank_ns": 127934324,
+          "p99_nearest_rank_ns": 130514630
+        },
+        "timestamped_messages": 62,
+        "unparseable_source_timestamps": 0
+      },
+      "t": {
+        "max_local_interarrival_ns": 14483866000,
+        "source_order_regressions": 0,
+        "source_to_available_age": {
+          "count": 22,
+          "max_ns": 106409622,
+          "min_ns": 98359679,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 100353806,
+          "p95_nearest_rank_ns": 103982953,
+          "p99_nearest_rank_ns": 106409622
+        },
+        "source_to_first_seen_age": {
+          "count": 22,
+          "max_ns": 106318622,
+          "min_ns": 98323679,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 100326806,
+          "p95_nearest_rank_ns": 103969953,
+          "p99_nearest_rank_ns": 106318622
+        },
+        "timestamped_messages": 22,
+        "unparseable_source_timestamps": 0
+      }
+    },
+    "AADX": {
+      "q": {
+        "max_local_interarrival_ns": 9702109000,
+        "source_order_regressions": 0,
+        "source_to_available_age": {
+          "count": 52,
+          "max_ns": 109953399,
+          "min_ns": 97774883,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 102499000,
+          "p95_nearest_rank_ns": 108590110,
+          "p99_nearest_rank_ns": 109953399
+        },
+        "source_to_first_seen_age": {
+          "count": 52,
+          "max_ns": 109942399,
+          "min_ns": 97759883,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 102487000,
+          "p95_nearest_rank_ns": 108564110,
+          "p99_nearest_rank_ns": 109942399
+        },
+        "timestamped_messages": 52,
+        "unparseable_source_timestamps": 0
+      },
+      "t": {
+        "max_local_interarrival_ns": 39660006000,
+        "source_order_regressions": 0,
+        "source_to_available_age": {
+          "count": 6,
+          "max_ns": 108069989,
+          "min_ns": 100186747,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 101261301,
+          "p95_nearest_rank_ns": 108069989,
+          "p99_nearest_rank_ns": 108069989
+        },
+        "source_to_first_seen_age": {
+          "count": 6,
+          "max_ns": 108056989,
+          "min_ns": 100158747,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 101232301,
+          "p95_nearest_rank_ns": 108056989,
+          "p99_nearest_rank_ns": 108056989
+        },
+        "timestamped_messages": 6,
+        "unparseable_source_timestamps": 0
+      }
+    },
+    "AAPL": {
+      "q": {
+        "max_local_interarrival_ns": 3082650000,
+        "source_order_regressions": 0,
+        "source_to_available_age": {
+          "count": 1870,
+          "max_ns": 200218672,
+          "min_ns": 97154597,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 105729060,
+          "p95_nearest_rank_ns": 142087202,
+          "p99_nearest_rank_ns": 170576757
+        },
+        "source_to_first_seen_age": {
+          "count": 1870,
+          "max_ns": 200199672,
+          "min_ns": 97144597,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 105675225,
+          "p95_nearest_rank_ns": 142067202,
+          "p99_nearest_rank_ns": 170505757
+        },
+        "timestamped_messages": 1870,
+        "unparseable_source_timestamps": 0
+      },
+      "t": {
+        "max_local_interarrival_ns": 17458044000,
+        "source_order_regressions": 0,
+        "source_to_available_age": {
+          "count": 20,
+          "max_ns": 170669010,
+          "min_ns": 100248425,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 103100983,
+          "p95_nearest_rank_ns": 130183183,
+          "p99_nearest_rank_ns": 170669010
+        },
+        "source_to_first_seen_age": {
+          "count": 20,
+          "max_ns": 170598010,
+          "min_ns": 100225425,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 103056983,
+          "p95_nearest_rank_ns": 130163183,
+          "p99_nearest_rank_ns": 170598010
+        },
+        "timestamped_messages": 20,
+        "unparseable_source_timestamps": 0
+      }
+    },
+    "WETO": {
+      "q": {
+        "max_local_interarrival_ns": 9438096000,
+        "source_order_regressions": 0,
+        "source_to_available_age": {
+          "count": 30,
+          "max_ns": 108253331,
+          "min_ns": 97189536,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 100233047,
+          "p95_nearest_rank_ns": 107789559,
+          "p99_nearest_rank_ns": 108253331
+        },
+        "source_to_first_seen_age": {
+          "count": 30,
+          "max_ns": 108235331,
+          "min_ns": 97172536,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 100218047,
+          "p95_nearest_rank_ns": 107771559,
+          "p99_nearest_rank_ns": 108235331
+        },
+        "timestamped_messages": 30,
+        "unparseable_source_timestamps": 0
+      },
+      "t": {
+        "max_local_interarrival_ns": 15029464000,
+        "source_order_regressions": 0,
+        "source_to_available_age": {
+          "count": 5,
+          "max_ns": 101947272,
+          "min_ns": 100059176,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 101839513,
+          "p95_nearest_rank_ns": 101947272,
+          "p99_nearest_rank_ns": 101947272
+        },
+        "source_to_first_seen_age": {
+          "count": 5,
+          "max_ns": 101905272,
+          "min_ns": 100043176,
+          "negative_count": 0,
+          "over_proposed_1000ms_count": 0,
+          "p50_nearest_rank_ns": 101797513,
+          "p95_nearest_rank_ns": 101905272,
+          "p99_nearest_rank_ns": 101905272
+        },
+        "timestamped_messages": 5,
+        "unparseable_source_timestamps": 0
+      }
+    }
+  },
+  "client_source_sha256": {
+    "src/alpaca_ross_bot/feed_health.py": "9909c87d8f75d98679d3215e98a96cd925d93aee86d48792ebb0e580e5bfbb3a",
+    "src/alpaca_ross_bot/stream_protocol.py": "8dd85ea69691f3611f64f0185bcf94ccf81e471e89713be536426f07f32289a2"
+  },
+  "cloud_review": {
+    "adopted": "Automatic channels follow requested trades; transport control is not a freshness SLA",
+    "model": "gemma4:31b",
+    "rejected": "Handler registration does not establish mandatory acknowledgment-key presence",
+    "remote_inference_verified_at": "2026-10-15T18:51:16.137Z",
+    "scope": "Public Alpaca docs and pinned SDK URLs only; no local code/capture/account export"
+  },
+  "coverage_label": "NOT_SIP_EQUIVALENT",
+  "date": "2026-10-15",
+  "duration_seconds_requested": 90,
+  "ended_at": "2026-10-15T18:53:05.718599+00:00",
+  "eodhd_requests": 0,
+  "event_kinds": {
+    "FEED_GAP": 1,
+    "FEED_SESSION_ATTEMPTED": 1,
+    "RAW_FRAME": 694
+  },
+  "formal_paper_evaluation": false,
+  "full_market_coverage": false,
+  "independent_validation": "APPROVE_LIMITED_INTEGRITY_AND_EXACT_CLOCK_MATH; saved report reproduced without writes; manifest hashes and all event references checked",
+  "integrity_status": "PASS",
+  "limitations": [
+    "Short nonrepresentative midday sample, not fresh scanner decisions or formal paper evaluation.",
+    "Source-to-local first-seen age combines independent clocks and transport; it is not verified network latency.",
+    "Clock synchronization, numeric source SLA, cumulative-volume freshness and trading-condition eligibility are unverified.",
+    "Zero received events do not establish zero trading volume, feed failure or completeness.",
+    "1000ms counts describe an unaccepted proposal, not a passed freshness gate.",
+    "No actual correction/cancel frame is claimed unless present in message_types."
+  ],
+  "measurement": "Exact integer nanoseconds, nearest-rank percentiles; source event to local first-seen/availability age, not verified network latency",
+  "message_types": {
+    "q": 2014,
+    "t": 53
+  },
+  "order_authority": false,
+  "order_tables_empty": true,
+  "post_close_state": {
+    "feed_gap:equities": {
+      "connection_epoch": 1,
+      "reason": "stream_closed_after_subscription",
+      "unresolved": true
+    },
+    "feed_session_active:equities": false
+  },
+  "raw_bindings": {
+    "audit_observation.py": "dd6fe01db965e2c7f2f046786ef04dd9bac33ae01cf178dc6d03571fd7f9bca7",
+    "clock-integrity-audit.json": "e9d4f58e2b919c289c9b3b29d4e333426acef5e6a1a7141d3e1e361f55b3e0b4",
+    "journal.sqlite3": "0ba75d33120f9498cf2485dccdae9db4351921caf280faab17e13afc4d56a747",
+    "observation.json": "d432d197512ae77ff748c2e20afffce196128fc2687c6590dc965390fbf9d8c9",
+    "observe_stream.py": "4ff26c30d3219649e57ff05416dc59ea510d471572245bc7141563922b950c50"
+  },
+  "sample_basis": "Two prior scanner examples, one price rejection and a liquid control; not a fresh candidate set or representative universe",
+  "source_freshness_threshold_accepted": false,
+  "sqlite_user_version": 3,
+  "started_at": "2026-10-15T18:51:35.121593+00:00",
+  "status": "ACTUAL_OBSERVATION_INTEGRITY_PASS_NOT_FRESHNESS_ACCEPTANCE",
+  "subscription_repair": {
+    "checked_on": "2026-10-15",
+    "disposition": "Allow optional auxiliary lists only when unique, string-valued and exactly equal to requested trade symbols. Requested and unknown nonempty channels remain strict.",
+    "live_validation": "Original bounded subscribe/receive operation succeeded after scoped repair; 694 raw frames retained.",
+    "multi_symbol_equality": "Conservative inference from automatic-subscription statement and examples, not separate formal arbitrary-set specification",
+    "preserved_failure_archives": [
+      "var/research/w205-live-input-observation/2026-10-15/56790f96e78a4a17a1bed826472be5a1",
+      "var/research/w205-live-input-observation/2026-10-15/9afc455f3c5f4a3797ae56e2756431e4"
+    ],
+    "problem": "Server automatically acknowledges corrections/cancelErrors for requested trades; old client rejected these documented auxiliary channels.",
+    "sdk_source": "https://github.com/alpacahq/alpaca-py/blob/v0.44.0/alpaca/data/live/stock.py",
+    "source": "https://docs.alpaca.markets/us/docs/real-time-stock-pricing-data",
+    "unproven": "No actual c/x messages occurred; their raw journaling and restart protection were checked synthetically."
+  },
+  "symbols": [
+    "WETO",
+    "AADX",
+    "A",
+    "AAPL"
+  ],
+  "validation": {
+    "current_workspace_stream_journal_tests_passed": 44,
+    "format_two_files": "PASS",
+    "isolated_full_suite_passed": 450,
+    "known_warning": "Existing websockets.legacy deprecation",
+    "ruff_two_files": "PASS",
+    "stream_tests_passed": 27,
+    "strict_mypy_two_files": "PASS"
+  }
+}

@@ -1,0 +1,434 @@
+{
+  "arithmetic_method": "exact fractions; exhaustive whole-share feasibility under explicitly synthetic charges/funds",
+  "cases": [
+    {
+      "all_in_planned_loss": {
+        "denominator": 20,
+        "numerator": 49
+      },
+      "capacity": {
+        "denominator": 1,
+        "numerator": 5
+      },
+      "charges": {
+        "entry_fixed": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "entry_per_share": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "exit_fixed": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "exit_per_share": {
+          "denominator": 1,
+          "numerator": 0
+        }
+      },
+      "entry_cash": {
+        "denominator": 100,
+        "numerator": 49049
+      },
+      "funds": {
+        "denominator": 1,
+        "numerator": 500
+      },
+      "id": "buying_power_cap",
+      "limit": {
+        "denominator": 100,
+        "numerator": 1001
+      },
+      "per_trade_allowance": {
+        "denominator": 2,
+        "numerator": 5
+      },
+      "quantity": 49,
+      "status": "ARITHMETIC_FEASIBLE",
+      "stop": {
+        "denominator": 25,
+        "numerator": 249
+      },
+      "synthetic_only": true
+    },
+    {
+      "all_in_planned_loss": {
+        "denominator": 2,
+        "numerator": 5
+      },
+      "capacity": {
+        "denominator": 1,
+        "numerator": 5
+      },
+      "charges": {
+        "entry_fixed": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "entry_per_share": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "exit_fixed": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "exit_per_share": {
+          "denominator": 1,
+          "numerator": 0
+        }
+      },
+      "entry_cash": {
+        "denominator": 4,
+        "numerator": 501
+      },
+      "funds": {
+        "denominator": 1,
+        "numerator": 500
+      },
+      "id": "risk_cap",
+      "limit": {
+        "denominator": 100,
+        "numerator": 501
+      },
+      "per_trade_allowance": {
+        "denominator": 2,
+        "numerator": 5
+      },
+      "quantity": 25,
+      "status": "ARITHMETIC_FEASIBLE",
+      "stop": {
+        "denominator": 100,
+        "numerator": 491
+      },
+      "synthetic_only": true
+    },
+    {
+      "all_in_planned_loss": {
+        "denominator": 4,
+        "numerator": 1
+      },
+      "capacity": {
+        "denominator": 1,
+        "numerator": 5
+      },
+      "charges": {
+        "entry_fixed": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "entry_per_share": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "exit_fixed": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "exit_per_share": {
+          "denominator": 1,
+          "numerator": 0
+        }
+      },
+      "entry_cash": {
+        "denominator": 4,
+        "numerator": 1999
+      },
+      "funds": {
+        "denominator": 1,
+        "numerator": 500
+      },
+      "id": "high_price_cap",
+      "limit": {
+        "denominator": 100,
+        "numerator": 1999
+      },
+      "per_trade_allowance": {
+        "denominator": 2,
+        "numerator": 5
+      },
+      "quantity": 25,
+      "status": "ARITHMETIC_FEASIBLE",
+      "stop": {
+        "denominator": 50,
+        "numerator": 999
+      },
+      "synthetic_only": true
+    },
+    {
+      "all_in_planned_loss": {
+        "denominator": 1000,
+        "numerator": 2497
+      },
+      "capacity": {
+        "denominator": 1,
+        "numerator": 5
+      },
+      "charges": {
+        "entry_fixed": {
+          "denominator": 20,
+          "numerator": 1
+        },
+        "entry_per_share": {
+          "denominator": 2000,
+          "numerator": 1
+        },
+        "exit_fixed": {
+          "denominator": 20,
+          "numerator": 1
+        },
+        "exit_per_share": {
+          "denominator": 2000,
+          "numerator": 1
+        }
+      },
+      "entry_cash": {
+        "denominator": 2000,
+        "numerator": 941087
+      },
+      "funds": {
+        "denominator": 1,
+        "numerator": 500
+      },
+      "id": "quantity_dependent_charges",
+      "limit": {
+        "denominator": 100,
+        "numerator": 1001
+      },
+      "per_trade_allowance": {
+        "denominator": 2,
+        "numerator": 5
+      },
+      "quantity": 47,
+      "status": "ARITHMETIC_FEASIBLE",
+      "stop": {
+        "denominator": 25,
+        "numerator": 249
+      },
+      "synthetic_only": true
+    },
+    {
+      "capacity": {
+        "denominator": 1,
+        "numerator": 5
+      },
+      "charges": {
+        "entry_fixed": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "entry_per_share": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "exit_fixed": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "exit_per_share": {
+          "denominator": 1,
+          "numerator": 0
+        }
+      },
+      "funds": {
+        "denominator": 1,
+        "numerator": 500
+      },
+      "id": "zero_quantity_risk",
+      "limit": {
+        "denominator": 100,
+        "numerator": 1001
+      },
+      "per_trade_allowance": {
+        "denominator": 2,
+        "numerator": 5
+      },
+      "quantity": 0,
+      "status": "NO_FEASIBLE_QUANTITY",
+      "stop": {
+        "denominator": 1,
+        "numerator": 7
+      },
+      "synthetic_only": true
+    },
+    {
+      "capacity": {
+        "denominator": 1,
+        "numerator": 5
+      },
+      "charges": {
+        "entry_fixed": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "entry_per_share": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "exit_fixed": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "exit_per_share": {
+          "denominator": 1,
+          "numerator": 0
+        }
+      },
+      "funds": {
+        "denominator": 1,
+        "numerator": 500
+      },
+      "id": "invalid_stop",
+      "limit": {
+        "denominator": 100,
+        "numerator": 1001
+      },
+      "per_trade_allowance": {
+        "denominator": 2,
+        "numerator": 5
+      },
+      "quantity": 0,
+      "status": "NO_FEASIBLE_QUANTITY",
+      "stop": {
+        "denominator": 100,
+        "numerator": 1001
+      },
+      "synthetic_only": true
+    },
+    {
+      "all_in_planned_loss": {
+        "denominator": 5,
+        "numerator": 2
+      },
+      "capacity": {
+        "denominator": 5,
+        "numerator": 2
+      },
+      "charges": {
+        "entry_fixed": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "entry_per_share": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "exit_fixed": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "exit_per_share": {
+          "denominator": 1,
+          "numerator": 0
+        }
+      },
+      "entry_cash": {
+        "denominator": 25,
+        "numerator": 501
+      },
+      "funds": {
+        "denominator": 1,
+        "numerator": 500
+      },
+      "id": "daily_capacity_cap",
+      "limit": {
+        "denominator": 100,
+        "numerator": 501
+      },
+      "per_trade_allowance": {
+        "denominator": 2,
+        "numerator": 5
+      },
+      "quantity": 4,
+      "status": "ARITHMETIC_FEASIBLE",
+      "stop": {
+        "denominator": 100,
+        "numerator": 491
+      },
+      "synthetic_only": true
+    }
+  ],
+  "cloud_review": {
+    "adopted": "Check fee/risk accounting, daily baseline, lifecycle, partial fills, condition eligibility and monitoring capacity; no numeric policy selected by model",
+    "input_scope": "Public educational URLs and generic missing-definition checklist only; no local proposal, accounts or captures exported",
+    "model": "gemma4:31b",
+    "remote_inference_verified_at": "2026-10-15T19:03:02.019Z"
+  },
+  "document": "docs/no-leverage-pullback-research.md",
+  "document_sha256": "defcac655d252e4d9f512a13648b807fe9da53de3e2c343869d3341ca4db70fc",
+  "formal_paper_evaluation": false,
+  "gap_counterexample": {
+    "actual_exit": "9.70",
+    "actual_loss": {
+      "denominator": 100,
+      "numerator": 1519
+    },
+    "charges_assumed": "0 in synthetic example only",
+    "entry": "10.01",
+    "planned_stop_distance_loss": {
+      "denominator": 20,
+      "numerator": 49
+    },
+    "quantity": 49
+  },
+  "independent_review": {
+    "execution_acceptance": false,
+    "findings_resolved": [
+      "30-symbol protective reservation and handoff",
+      "quantity-dependent all-in fee/risk cap",
+      "entry invalidation/window/data-veto cancellation and racing fills",
+      "late admission opening/setup/LOD history",
+      "RTH-only five-minute aggregation and first completed bar",
+      "E0 daily-loss baseline and round-trip streak unit"
+    ],
+    "method": "Read-only revised policy review; closed-form whole-share bounds independently compared with exhaustive exact arithmetic",
+    "policy_acceptance": false,
+    "status": "APPROVE_PROPOSAL_CONSISTENCY_ONLY"
+  },
+  "limitations": [
+    "No actual broker fee, spendable funds, execution or fill semantics are certified.",
+    "Arithmetic feasibility is not a strategy signal, historical case, profitability evidence or holdout.",
+    "Risk/daily limits, targets and all new choices remain unaccepted; no runtime behavior changed."
+  ],
+  "missing_charge_or_funds_policy": "BLOCKED_INPUT_UNAVAILABLE; never substitute zero",
+  "order_authority": false,
+  "proposal_id": "HYBRID_500_IEX_INTRADAY_PROPOSAL_1",
+  "public_source_gate": {
+    "checked_on": "2026-10-15",
+    "finding": "Provider aggregation is field/tape/condition dependent, not a strategy trigger whitelist; IEX timestamp basis and trigger/quote eligibility remain unresolved. No inferred SLA or whitelist.",
+    "older_conflicting_source": "https://alpaca.markets/learn/stock-minute-bars",
+    "retrieval": "Independent GPT-6.1 Sol Low; coordinator checked primary pages",
+    "source": "https://docs.alpaca.markets/us/docs/market-data-faq"
+  },
+  "remaining_capacity_examples": [
+    {
+      "C": "5",
+      "open_reserve": "0",
+      "pending_reserve": "0",
+      "session_net_pnl": "0"
+    },
+    {
+      "C": "2.50",
+      "open_reserve": "0",
+      "pending_reserve": "0",
+      "session_net_pnl": "-2.50"
+    },
+    {
+      "C": "5",
+      "open_reserve": "0",
+      "pending_reserve": "0",
+      "session_net_pnl": "2"
+    },
+    {
+      "C": "3",
+      "open_reserve": "1",
+      "pending_reserve": "0",
+      "session_net_pnl": "-1"
+    }
+  ],
+  "script_archive": "var/research/w205-hybrid-proposal/2026-10-15/arithmetic.py",
+  "script_sha256": "1498792ea81b1804201e330c623377052139543a5047416660149eef3fddfd2a",
+  "status": "PROPOSAL_NOT_ACCEPTED"
+}

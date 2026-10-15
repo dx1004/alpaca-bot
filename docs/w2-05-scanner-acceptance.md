@@ -3,6 +3,24 @@
 Review session: 2026-10-14 Los Angeles; authenticated probe date: 2026-10-15 UTC.
 Status: **independent IEX adaptation selected; original Ross/full strategy gates remain BLOCKED_RESEARCH**.
 
+## Actual stream input check and remaining policy acceptance
+
+The [bounded live-input observation](../evidence/w2-05-live-input-observation-2026-10-15.json)
+verified an actual IEX subscription and raw trade/quote capture after repairing
+the client's rejection of documented automatic correction/cancel channels.
+Strict symbol/channel validation and durable disconnect gaps remain intact.
+This is local integrity/timing evidence, not accepted execution freshness or a
+full candidate-universe monitor. It makes no new demand for paid SIP or float.
+
+The remaining full-strategy choices are now concrete in the
+[independent intraday proposal](no-leverage-pullback-research.md#decision-package-independent-intraday-adaptation-2026-10-15).
+They remain unaccepted and are not inherited from the accepted screen. Original
+W2-05 cannot close until a complete strategy version and its required input
+contract pass; the three bounded scanner deliverables below remain accepted.
+The [proposal review and exact arithmetic](../evidence/w2-05-hybrid-proposal-review-2026-10-15.json)
+record six corrected ambiguities and independent consistency checks. Synthetic
+funds/charges establish arithmetic only, not actual broker costs or affordability.
+
 ## Full-task completion audit and enforced scanner freeze
 
 The continuation objective is the original W2-05, not only the accepted offline

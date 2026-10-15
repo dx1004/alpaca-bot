@@ -1,5 +1,39 @@
 # Week 2 acceptance evidence
 
+## W2-05 actual IEX input observation and full-policy proposal (2026-10-15)
+
+A bounded four-symbol, 90-second read-only IEX observation exposed a real
+subscription bug: Alpaca automatically acknowledges trade correction/cancel
+channels, which the client rejected. The scoped repair permits these documented
+optional channels only for the exact unique requested trade symbols. Unknown
+nonempty channels, wrong symbols and malformed lists still fail closed. See the
+[primary stream protocol](https://docs.alpaca.markets/us/docs/real-time-stock-pricing-data).
+Arbitrary multi-symbol equality is a conservative inference from that protocol;
+mandatory auxiliary-key presence is not assumed.
+
+After repair, the original operation captured 694 frames containing 2,014 quotes
+and 53 trades. Every payload digest, contiguous sequence and local clock order
+was checked, with nanosecond source-clock arithmetic independently reproduced.
+No actual correction/cancel event occurred; those retention/restart paths were
+tested synthetically. Normal close left a durable unresolved gap. The
+[observation evidence](../evidence/w2-05-live-input-observation-2026-10-15.json)
+binds the local raw archive and exact client bytes. This midday sample cannot
+accept clock synchronization, freshness thresholds, cumulative-volume updates,
+trade conditions, full-market coverage or opening-session behavior.
+
+The [independent intraday proposal](no-leverage-pullback-research.md#decision-package-independent-intraday-adaptation-2026-10-15)
+makes the remaining material strategy choices reviewable. It is explicitly
+`PROPOSAL_NOT_ACCEPTED`; it neither rewrites the accepted scanner nor freezes a
+Ross/hybrid execution version. Fixed risk, exits, monitored-set and age bounds
+are proposed adaptations requiring acceptance and independent data/execution
+checks. The original W2-05 dependency therefore remains open.
+
+Validation of this stream increment: 27 targeted tests, 450 tests in the isolated
+committed W2 baseline plus accepted scanner increments, scoped Ruff/strict mypy/
+format checks and independent review passed. The existing upstream deprecation
+warning remains. No account/order endpoint, EODHD request, purchase, formal paper
+evaluation or trading was performed by this increment.
+
 ## W2-05 full-scope continuation and result proof binding (2026-10-15)
 
 The independent completion audit retained the original W2-05 dependency on an

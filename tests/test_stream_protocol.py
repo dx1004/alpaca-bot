@@ -324,7 +324,10 @@ def test_missing_transport_pong_opens_gap_and_invalidates_subscription() -> None
     asyncio.run(run())
 
 
-def test_raw_frame_and_unresolved_gap_survive_journal_restart(tmp_path: Path) -> None:
+@pytest.mark.parametrize("frame_type", ["t", "c", "x"])
+def test_raw_frame_and_unresolved_gap_survive_journal_restart(
+    tmp_path: Path, frame_type: str
+) -> None:
     async def run() -> None:
         runtime = tmp_path / "var"
         path = runtime / "journal.sqlite3"
@@ -334,7 +337,7 @@ def test_raw_frame_and_unresolved_gap_survive_journal_restart(tmp_path: Path) ->
                 '[{"T":"success","msg":"connected"}]',
                 '[{"T":"success","msg":"authenticated"}]',
                 '[{"T":"subscription","trades":["AAPL"]}]',
-                '[{"T":"t","S":"AAPL","p":1}]',
+                json.dumps([{"T": frame_type, "S": "AAPL", "p": 1}]),
             ]
         )
         client = AlpacaJsonStream(
@@ -404,5 +407,75 @@ def test_raw_frame_and_unresolved_gap_survive_journal_restart(tmp_path: Path) ->
         )
         await resumed.close()
         reopened.close()
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("automatic", ["corrections", "cancelErrors"])
+@pytest.mark.parametrize(
+    "symbols", [["AAPL", "EXTRA"], [], ["AAPL", "AAPL"], [1], "AAPL", None]
+)
+def test_invalid_automatic_trade_ack_closes(automatic: str, symbols: object) -> None:
+    async def run() -> None:
+        ack = {"T": "subscription", "trades": ["AAPL"], automatic: symbols}
+        client, socket, _ = _client(
+            [
+                '[{"T":"success","msg":"connected"}]',
+                '[{"T":"success","msg":"authenticated"}]',
+                json.dumps([ack]),
+            ]
+        )
+        await client.open()
+        with pytest.raises(StreamProtocolError, match="automatic trade"):
+            await client.subscribe({"trades": ("AAPL",)})
+        assert socket.closed and client.subscribed_epoch is None
+
+    asyncio.run(run())
+
+
+def test_automatic_ack_follows_trades_not_quotes() -> None:
+    async def run() -> None:
+        ack = {
+            "T": "subscription",
+            "trades": ["MSFT", "AAPL"],
+            "quotes": ["QS"],
+            "corrections": ["AAPL", "MSFT"],
+            "cancelErrors": ["MSFT", "AAPL"],
+        }
+        client, socket, _ = _client(
+            [
+                '[{"T":"success","msg":"connected"}]',
+                '[{"T":"success","msg":"authenticated"}]',
+                json.dumps([ack]),
+            ]
+        )
+        await client.open()
+        await client.subscribe({"trades": ("AAPL", "MSFT"), "quotes": ("QS",)})
+        assert client.subscribed_epoch == client.connection_epoch
+        assert json.loads(socket.sent[0]) == {
+            "action": "subscribe",
+            "trades": ["AAPL", "MSFT"],
+            "quotes": ["QS"],
+        }
+        await client.close()
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("automatic", ["corrections", "cancelErrors"])
+def test_quotes_only_rejects_nonempty_automatic_channel(automatic: str) -> None:
+    async def run() -> None:
+        ack = {"T": "subscription", "quotes": ["AAPL"], automatic: ["AAPL"]}
+        client, socket, _ = _client(
+            [
+                '[{"T":"success","msg":"connected"}]',
+                '[{"T":"success","msg":"authenticated"}]',
+                json.dumps([ack]),
+            ]
+        )
+        await client.open()
+        with pytest.raises(StreamProtocolError):
+            await client.subscribe({"quotes": ("AAPL",)})
+        assert socket.closed
 
     asyncio.run(run())

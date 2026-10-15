@@ -580,6 +580,89 @@ Validation: the existing evidence-bundle tests passed (9 tests), including
 candidate status and other-trader/Ross attribution isolation. No runtime code,
 scanner thresholds, order path or acceptance checkbox was changed.
 
+## Decision package: independent intraday adaptation, 2026-10-15
+
+**Status: PROPOSAL_NOT_ACCEPTED.** Working identifier
+`HYBRID_500_IEX_INTRADAY_PROPOSAL_1`. This is a concrete proposed operational
+design for review, not a frozen strategy, implemented signal engine or permission
+to trade. Its new numerical and behavioral choices below need explicit acceptance
+and independent data/execution validation. It does not reproduce either trader.
+The existing Ross and hybrid comparison manifests remain unchanged.
+
+This package reuses the completed source inventory rather than claiming another
+research closure. The current [Ross bull-flag article](https://www.warriortrading.com/bull-flag-trading/)
+supports a preceding-red-high breakout, structural pullback-low stop and partial
+management, but leaves discretionary exits. The edited
+[Martin guest contribution](https://tradingresourcehub.substack.com/p/martin-luk-283-usic-2024-key-lessons)
+describes 0.5–1% account risk, not a fixed $500 intraday policy. M14/M15 above and
+the user's timing clarification motivate the opening-hour/LOD study. These are
+motivations only: the fixed risk, exact EMA setup, universal LOD, no adds,
+full-position target, intraday liquidation and data thresholds here are
+**proposed adaptations**, not `ROSS_DIRECT` or `HYBRID_DIRECT` claims.
+
+### Proposed rules to accept or amend together
+
+| Rule ID | Fully declared proposal | Provenance / remaining acceptance |
+| --- | --- | --- |
+| P01 — account stage | Long-only, whole shares, USD 500 initial reconciled equity, no borrowing, one open/reserved position at a time. Freeze equity `E0` from the verified pre-session account snapshot. No automatic strategy/leverage switch at a higher balance. | User account boundary plus proposed whole-share/concurrency policy. Broker buying power, funds, asset tradability and fee/hold inputs must be verified; no account values are assumed. |
+| P02 — selection | Reuse the unchanged accepted `GENERAL_IEX_DAILY30_SCREEN_V1` price/RVOL/ranking and non-veto float/news treatment. Scanner outcomes retain every catalog identity. | Already accepted scanner-only adaptation; does not accept this trading policy. |
+| P03 — monitored set | Reserve each open-position or uncertain/pending-entry symbol inside the 30-symbol pool, then fill its remaining slots from screen matches by exact accepted ranking and symbol tie-break. Other matches remain `DATA_NOT_MONITORED`, never failed price/RVOL rules. Rebuild only from a completed sweep; replacement requires an acknowledged handoff without exceeding 30 or dropping protective monitoring. If held/uncertain identities cannot fit, block admissions and escalate. Admission after the session starts requires verified, decision-time-available reconstruction of the first RTH trade, every setup transition and the RTH low since open; otherwise the symbol is unavailable for that session. | **New material choice motivated by Basic's documented 30-symbol stream capacity.** This changes observable opportunities and needs acceptance. It is not full-market monitoring or a hidden truncation of scanner output. Snapshot sweep period/maximum input age proposed at 300 seconds; exceeded/failed sweeps block new admissions. Handoff cannot clear a continuity gap. |
+| P04 — bar/EMA definition | Raw IEX provider minute OHLCV, as observed by decision time. Build RTH-only five-minute and hourly buckets anchored to that day's calendar open; truncate the last bucket at calendar close. A bucket is completed only after its boundary and receipt of every expected provider minute; a missing minute is unavailable, never invented as zero volume. Entry highs use completed RTH bars only, so no entry before the first complete applicable bar. Daily trend uses raw full-NY-day closes. For each EMA use exactly the latest 100 consecutive expected completed bars, seed with the first `N` closes' mean and recur with `2/(N+1)`; compare exact rational values. Missing/revised inputs keep their availability clocks; revisions never rewrite earlier decisions. | **New explicit feature specification.** It is not a claimed reconstruction of Martin's EMA initialization/session conventions. Requires verified historical/provider-minute inputs and calendar coverage. |
+| P05 — higher-timeframe setup | Prior completed daily close must exceed daily EMA21, which exceeds EMA50. Prior completed hourly EMA9 must exceed EMA21. Freeze that hourly pair for the opening-hour decision window. The first eligible regular-session IEX trade must exceed both prior full-day IEX close and hourly EMA9. Later, a trade moves from above EMA9 into the inclusive `[EMA21, EMA9]` zone to arm a pullback. | **New gap/pullback hypothesis**, motivated by the QS discussion; not a universal Martin filter. The IEX first trade and full-day close are not consolidated official opening/closing prices. |
+| P06 — invalidation and trigger | A later eligible trade below the frozen hourly EMA21 invalidates that symbol for the session. Otherwise enter only on a new trade crossing strictly above the previous completed entry-timeframe bar's high, after arming. At most one attempted entry per symbol/session; an attempt consumes that allowance when durable order intent is reserved, even if rejected or canceled. An untouched/missing prior bar gives no signal. Setup invalidation, entry-window expiry or a data/incident veto cancels any working entry intent; an unacknowledged cancel is not terminal, and any racing fill remains owned, reconciled and protected under the separately verified W3 contract. | Prior-high language is source-supported; this exact state machine, one-attempt rule and invalidation are proposed. No anticipation or retrospective final-bar values. |
+| P07 — entry clock | Use one-minute bars during `[open, open+15min)` and five-minute bars during `[open+15min, open+60min)`, clipped by session close. At the switch, discard the old timeframe's trigger; use the most recent completed five-minute bar. No new entries at or after the window end. | User clarified the general timing; exact interval endpoints and switch behavior are proposed adaptations. Overnight and swing holding are excluded by this new policy, not attributed to Martin. |
+| P08 — order price | Proposed entry limit `L` is the next whole cent strictly above the trigger high. A triggering trade or contemporaneous ask above `L` means skip, with no chase or market fallback. Price-grid compatibility remains a broker prerequisite. | **New price/slippage choice**, not an author rule or a promise of a fill. Trading/quote condition eligibility must follow a verified, versioned source policy; unknown conditions are unavailable. |
+| P09 — stop and risk | Choose the then-known IEX regular-session low before entry; round it down to whole cents as `S`. If `S >= L`, reject invalid topology. Freeze `S`; never widen it or average down. Maximum all-in planned loss is `r = 0.005*E0`, including verified quantity-dependent entry/stop-exit charges and subject to remaining daily/open risk capacity. | **New fixed 0.5% and universal LOD policy.** Martin describes variable choices; the proposal deliberately requires separate acceptance. A stop order does not guarantee the planned loss. |
+| P10 — size | Choose the largest positive integer `q` satisfying both `q*L + entry_charges(q) <= B` and `q*(L-S) + loss_charges(q) <= min(r,C)`. `B` is verified 1× spendable funds after other holds/reservations; `loss_charges(q)` includes both entry and assumed stop-exit charges, not only commission. No feasible quantity, unavailable charge bounds or unavailable funds means reject; fees are not assumed zero. No fractional rounding, leverage or additions. | Derived arithmetic once P01/P08/P09 are accepted. It does not choose a source-backed risk budget or create broker buying power. Slippage beyond the modeled stop remains an unbounded loss risk, not covered by the planning inequality. |
+| P11 — exits | Protect actual partial fills at `S`; cancel the unfilled entry remainder on the first fill and reconcile racing fills before deriving final filled quantity. After the entry is terminal and fills reconcile, fix the target at the whole-cent ceiling of `F + 2*(F-S)` for the entire position, with `F` its actual average entry. If `F <= S`, target/stop topology is invalid: invoke the verified incident/close path, never invent an inverted bracket. No partial-profit or discretionary trailing rule. At calendar close minus five minutes, cancel unfilled entries and use the separately verified close-position path. | **New full-position 2R/intraday-exit and cancel-remainder policy.** The 2R target refers to gross price distance, not guaranteed net reward after charges. Ross's partial/discretionary management and Martin's flexible swing exits do not establish it. Partial-fill protection, cancel races and close-order semantics remain W3 execution prerequisites. |
+| P12 — daily stop | Proposed loss allowance `D = 0.01*E0`. Net session P&L `P` is realized P&L plus open long inventory marked at a valid bid, including accrued verified charges, relative to frozen `E0`; this is not a high-water drawdown rule. Unknown external cash flows or marks block new exposure. With additional pending/open loss reserves `R_pending`/`R_open`, define `C = max(0, min(D,D+P) - R_pending - R_open)`. At `P <= -D` or three consecutive net losing round trips: latch no new exposure for that trading date, cancel unfilled entry intents, preserve protective exits. One round trip runs from flat through all related fills/exits back to reconciled flat, including charges. A completed net positive round trip resets the streak; zero does not. Reset on a new trading date requires reconciled flat state and no orphan orders. | **New 1% accounting/streak/stop disposition policy.** It is not Ross's $500 rule or a measured optimal limit. Gap/slippage can exceed the allowance; no loss guarantee. |
+| P13 — data/incident veto | Proposed source-event age and local receipt age for trigger trade and bid/ask: at most 1,000ms, never negative; valid positive bid/ask, bid no greater than ask, positive displayed sizes. Unknown conditions, missing required bars, disconnected/unacknowledged feed, unresolved gap, clock conflict or uncertain order ownership block new exposure. Existing verified protection remains under the incident owner. | The **1,000ms/300sec** bounds are review candidates, not vendor SLAs or accepted engineering limits. Exact source age, cumulative-volume freshness and bar/correction handling need independent evidence. |
+
+`C` must be computed by the accepted risk owner, not an unchecked caller override.
+`R_pending` is each unfilled reserved quantity's entry-to-stop loss plus its
+unaccrued charges. `R_open` is additional loss from the current bid mark down to
+`S`, floored at zero, plus unaccrued exit charges; accrued charges and existing
+mark-to-market losses already in `P` are not counted a second time. Pending and
+filled quantities cannot share a reservation. For one position, no second entry
+can use the same buying power or risk reservation.
+At a data veto the strategy does not replace valid protective orders or infer
+that an uncertain submission was rejected.
+
+Deterministic precedence is: preserve/reconcile existing orders and positions;
+apply incident/daily-stop/clock vetoes; process known stop/target/closing events;
+then consider a new entry. If a bar-only replay spans both stop and target and
+cannot establish sequence, label the outcome ambiguous rather than picking the
+profitable ordering. Live correction/cancel events update only the then-known
+view; they cannot create a retroactive entry or pretend missing trades are zero.
+
+### What this package does and does not decide
+
+The coupled choices requiring review are: **intraday EMA/gap setup**, **fixed
+0.5% risk with LOD**, **full-position 2R and session exit**, **1% daily/streak
+policy**, and **30-symbol monitor/age bounds**. The package supplies one concrete
+candidate for discussion without selecting it from P&L. Changing any of these
+requires a new accepted specification and revalidation, not silent tuning.
+
+It is not ready to freeze while the source-condition policy, live input
+qualification, fee/reserve/account facts, partial-fill protection and execution
+incident contract remain unverified. The observed REST `dailyBar.t` is a bucket
+clock, not proof of the volume's last update; a new response receipt does not
+silently close that freshness question. No historical holdout, profitability,
+paper evaluation or order authority follows from documentary or arithmetic
+checks. The original W2-05 requirements remain open until their actual evidence
+passes. This proposal may be rejected or amended without changing the accepted
+scanner, existing comparison candidates or any runtime behavior.
+
+The [current Alpaca aggregation FAQ](https://docs.alpaca.markets/us/docs/market-data-faq#how-are-bars-aggregated)
+specifies field-dependent tape/condition rules, not a strategy trigger whitelist.
+An odd-lot trade can affect volume without affecting OHLC or producing a bar.
+Its SIP-timestamp wording differs from the participant-clock description in the
+[2022 article](https://alpaca.markets/learn/stock-minute-bars). Neither establishes
+the exact IEX clock basis or accepts trigger/quote conditions for this proposal.
+Retain provider bars as observed; local reconstruction, late/corrected triggers
+and missing-minute treatment still require data-contract validation. No regular-
+sale-only shortcut or numeric latency guarantee is inferred from these sources.
+
 ## Validation sequence and acceptance evidence
 
 1. **Source audit:** for each candidate, save source URL/access date, author, version, exact supported proposition, unresolved interpretation, and whether it is Ross-public, other-trader, broker, or engineering evidence. A source's example is not a universal rule. Freeze definitions before outcome testing.
@@ -587,4 +670,4 @@ scanner thresholds, order path or acceptance checkbox was changed.
 3. **$500 / 1× feasibility:** replay a $500 account ledger with actual broker symbol eligibility, available buying power and settlement semantics. Calculate the affordable-share ceiling separately. Derive proposed share count deterministically only after the candidate's stop and risk rule are sourced, then cap it by verified 1× buying power; reject zero shares or an unsourced risk rule. Report opportunities lost to capital, spread, fees, partial fills and missing data. Never simulate 6× or silently resize a Ross example and call it equivalent.
 4. **Prospective shadow, then paper:** after source and data gates, capture live-time decisions without orders; reconcile feed latency, news first-seen time and account state. Paper orders belong only to a separately accepted release and the already planned paper window. Preserve `NOT_SIP_EQUIVALENT` when free feeds lack full-market coverage. A hybrid paper report must be labeled hybrid and cannot be used as evidence of Ross fidelity.
 
-Current acceptance state: the [R0 source inventory and case ledger](ross-public-pullback-r0.md) are delivered; independent source review and local validation are recorded in [Week 1 evidence](week1-evidence.md). The initial reconstruction map above is drafted; its full source/contrary-case review and W1-04b risk/label work remain unfinished. Alpaca paper credentials are unconfigured, account-level data entitlement is unverified, and neither candidate rules nor a formal paper run are frozen. `W1-04` and dependent order paths remain blocked. Continue W1-04b with the R0 closure queue and source-scoped label rubrics; H1/S1 remain separate unvalidated hypotheses. Member-course access is not a prerequisite for this research.
+Historical state recorded with the initial reconstruction map (not a current credential or task-status report): the [R0 source inventory and case ledger](ross-public-pullback-r0.md) were delivered; source/contrary-case review, W1-04b risk/label work and credential configuration were then unfinished. Current W2-05 acceptance is recorded in the [release audit](../evidence/w2-05-release-audit-2026-10-15.json) and [Week 2 evidence](week2-evidence.md), including the later authenticated IEX observation. Neither a proposal nor a successful observation freezes executable rules or a formal paper run. H1/S1 remain separately labeled research hypotheses; member-course access is not a prerequisite.

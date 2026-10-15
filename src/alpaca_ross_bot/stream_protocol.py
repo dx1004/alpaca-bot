@@ -488,6 +488,19 @@ def _normalize_ack(
     for channel, values in message.items():
         if channel in {"T"} or channel in expected:
             continue
+        if channel in {"corrections", "cancelErrors"}:
+            # Alpaca automatically attaches these channels to trade symbols.
+            # Presence is not required, but any supplied list must be exact.
+            if (
+                not isinstance(values, list)
+                or any(not isinstance(v, str) or not v.strip() for v in values)
+                or len(set(values)) != len(values)
+                or tuple(sorted(values)) != expected.get("trades", ())
+            ):
+                raise StreamProtocolError(
+                    "automatic trade acknowledgment differs from requested trades"
+                )
+            continue
         if not isinstance(values, list) or values:
             raise StreamProtocolError("server acknowledged an unexpected subscription")
     return acknowledged
