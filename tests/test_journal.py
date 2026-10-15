@@ -9,7 +9,7 @@ from threading import Barrier
 import pytest
 
 from alpaca_ross_bot.events import EventEnvelope
-from alpaca_ross_bot.journal import Journal, JournalError
+from alpaca_ross_bot.journal import Journal, JournalError, OrderHttpObservation
 
 NOW = datetime(2026, 10, 5, 13, 0, tzinfo=UTC)
 PAYLOAD = b'{"price":"2.50"}'
@@ -28,6 +28,13 @@ def envelope(sequence: int = 1) -> EventEnvelope:
         processed_at=NOW + timedelta(milliseconds=2),
         available_at=NOW + timedelta(milliseconds=3),
     )
+
+
+def private_journal(path: Path, root: Path) -> Journal:
+    journal = Journal(path, root)
+    root.chmod(0o700)
+    path.chmod(0o600)
+    return journal
 
 
 def test_append_state_and_reopen_are_atomic(tmp_path: Path) -> None:
@@ -162,7 +169,7 @@ def test_runtime_path_and_unknown_schema_are_rejected(tmp_path: Path) -> None:
 
 def test_order_intent_id_is_durable_unique_and_immutable(tmp_path: Path) -> None:
     path = tmp_path / "var" / "journal.sqlite3"
-    journal = Journal(path, tmp_path / "var")
+    journal = private_journal(path, tmp_path / "var")
     intent = {"paper_account_ref": "test-account", "decision_ref": "case-1"}
     journal.reserve_order_intent("client-1", intent)
     with pytest.raises(JournalError, match="already reserved"):
@@ -187,7 +194,7 @@ def test_order_intent_id_is_durable_unique_and_immutable(tmp_path: Path) -> None
 
 def test_failed_order_intent_does_not_reserve_id(tmp_path: Path) -> None:
     path = tmp_path / "var" / "journal.sqlite3"
-    journal = Journal(path, tmp_path / "var")
+    journal = private_journal(path, tmp_path / "var")
     with pytest.raises(TypeError):
         journal.reserve_order_intent("client-1", {"invalid": object()})
     with pytest.raises(JournalError, match="nonempty"):
@@ -199,10 +206,12 @@ def test_failed_order_intent_does_not_reserve_id(tmp_path: Path) -> None:
 
 def test_version_one_journal_migrates_without_losing_events(tmp_path: Path) -> None:
     path = tmp_path / "var" / "journal.sqlite3"
-    journal = Journal(path, tmp_path / "var")
+    journal = private_journal(path, tmp_path / "var")
     journal.append(envelope(), PAYLOAD)
     journal.close()
     with sqlite3.connect(path) as connection:
+        connection.execute("DROP TABLE paper_account_verifications")
+        connection.execute("DROP TABLE order_http_observations")
         connection.execute("DROP TABLE order_send_attempts")
         connection.execute("DROP TABLE order_intents")
         connection.execute("PRAGMA user_version=1")
@@ -216,7 +225,7 @@ def test_version_one_journal_migrates_without_losing_events(tmp_path: Path) -> N
 
 def test_send_attempt_is_committed_once_before_transport(tmp_path: Path) -> None:
     path = tmp_path / "var" / "journal.sqlite3"
-    journal = Journal(path, tmp_path / "var")
+    journal = private_journal(path, tmp_path / "var")
     with pytest.raises(JournalError, match="reserved"):
         journal.mark_order_send_attempt("client-1", NOW)
     journal.reserve_order_intent("client-1", {"test": True})
@@ -236,10 +245,12 @@ def test_send_attempt_is_committed_once_before_transport(tmp_path: Path) -> None
 
 def test_version_two_intents_survive_send_marker_migration(tmp_path: Path) -> None:
     path = tmp_path / "var" / "journal.sqlite3"
-    journal = Journal(path, tmp_path / "var")
+    journal = private_journal(path, tmp_path / "var")
     journal.reserve_order_intent("client-1", {"test": True})
     journal.close()
     with sqlite3.connect(path) as connection:
+        connection.execute("DROP TABLE paper_account_verifications")
+        connection.execute("DROP TABLE order_http_observations")
         connection.execute("DROP TABLE order_send_attempts")
         connection.execute("PRAGMA user_version=2")
 
@@ -247,4 +258,91 @@ def test_version_two_intents_survive_send_marker_migration(tmp_path: Path) -> No
     assert reopened.read_order_intent("client-1") == {"test": True}
     assert not reopened.has_order_send_attempt("client-1")
     reopened.mark_order_send_attempt("client-1", NOW)
+    reopened.close()
+
+
+def test_order_intent_rejects_broad_storage(tmp_path: Path) -> None:
+    path = tmp_path / "var" / "journal.sqlite3"
+    journal = Journal(path, tmp_path / "var")
+    path.parent.chmod(0o755)
+    path.chmod(0o644)
+    with pytest.raises(JournalError, match="not private"):
+        journal.reserve_order_intent("client-1", {"valid": True})
+    assert journal.read_order_intent("client-1") is None
+    journal.close()
+
+
+def test_http_observations_require_send_and_remain_immutable(tmp_path: Path) -> None:
+    path = tmp_path / "var" / "journal.sqlite3"
+    journal = private_journal(path, tmp_path / "var")
+    journal.reserve_order_intent("client-1", {"valid": True})
+    response = OrderHttpObservation("POST", "HTTP_RESPONSE", NOW, 504, b"timeout")
+    with pytest.raises(JournalError, match="send attempt"):
+        journal.record_order_http_observation("client-1", response)
+    journal.mark_order_send_attempt("client-1", NOW)
+    journal.record_order_http_observation("client-1", response)
+    journal.record_order_http_observation(
+        "client-1", OrderHttpObservation("GET", "TRANSPORT_UNKNOWN", NOW)
+    )
+    journal.close()
+
+    reopened = Journal(path, tmp_path / "var")
+    assert reopened.read_order_http_observations("client-1") == (
+        response,
+        OrderHttpObservation("GET", "TRANSPORT_UNKNOWN", NOW),
+    )
+    reopened.close()
+    with sqlite3.connect(path) as connection:
+        with pytest.raises(sqlite3.IntegrityError, match="immutable"):
+            connection.execute("DELETE FROM order_http_observations")
+
+
+def test_version_three_send_marker_survives_http_observation_migration(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "var" / "journal.sqlite3"
+    journal = private_journal(path, tmp_path / "var")
+    journal.reserve_order_intent("client-1", {"valid": True})
+    journal.mark_order_send_attempt("client-1", NOW)
+    journal.close()
+    with sqlite3.connect(path) as connection:
+        connection.execute("DROP TABLE paper_account_verifications")
+        connection.execute("DROP TABLE order_http_observations")
+        connection.execute("PRAGMA user_version=3")
+
+    reopened = Journal(path, tmp_path / "var")
+    assert reopened.has_order_send_attempt("client-1")
+    assert reopened.read_order_http_observations("client-1") == ()
+    reopened.close()
+
+
+def test_account_binding_is_durable_and_rejects_switch(tmp_path: Path) -> None:
+    path = tmp_path / "var" / "journal.sqlite3"
+    journal = private_journal(path, tmp_path / "var")
+    journal.record_paper_account_verification("account-1", b"first", NOW)
+    journal.close()
+    reopened = Journal(path, tmp_path / "var")
+    assert reopened.read_paper_account_ref() == "account-1"
+    with pytest.raises(JournalError, match="account changed"):
+        reopened.record_paper_account_verification("account-2", b"second", NOW)
+    assert reopened.read_paper_account_ref() == "account-1"
+    reopened.close()
+
+
+def test_schema_four_http_evidence_survives_account_binding_migration(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "var" / "journal.sqlite3"
+    journal = private_journal(path, tmp_path / "var")
+    journal.reserve_order_intent("client-1", {"valid": True})
+    journal.mark_order_send_attempt("client-1", NOW)
+    response = OrderHttpObservation("POST", "HTTP_RESPONSE", NOW, 504, b"timeout")
+    journal.record_order_http_observation("client-1", response)
+    journal.close()
+    with sqlite3.connect(path) as connection:
+        connection.execute("DROP TABLE paper_account_verifications")
+        connection.execute("PRAGMA user_version=4")
+    reopened = Journal(path, tmp_path / "var")
+    assert reopened.read_order_http_observations("client-1") == (response,)
+    assert reopened.read_paper_account_ref() is None
     reopened.close()

@@ -40,6 +40,19 @@ previously saved paper pair. The second command performs read-only account,
 data and WebSocket capability checks; it does not place orders. Keep the
 credential file on this machine and never paste its contents into chat.
 
+To bind the engineering journal to the authenticated paper account and capture
+read-only open-order/position snapshots, run:
+
+```bash
+rtk proxy .venv/bin/python scripts/audit_paper_order_state.py --credentials-file "$HOME/.local/share/alpaca-bot/paper.json" --runtime-root "$HOME/.local/state/alpaca-bot/paper-engineering" --connect
+```
+
+This audit uses GET requests only. It keeps account responses in the private WSL
+runtime directory (0700, database 0600) and prints only verification flags. The
+Windows-backed project drive cannot enforce those permissions. Empty snapshots
+do not resolve an uncertain submission or authorize trading. Without `--connect`,
+the script reports `NOT_RUN`.
+
 To check only access to Alpaca's SIP-based market-ranker endpoints, use
 `--sip-screeners-only --connect` with the same credential file. This sends
 only two read-only GET requests and skips account, quote/trade, news, and

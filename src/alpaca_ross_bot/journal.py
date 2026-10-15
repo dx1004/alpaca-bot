@@ -2,8 +2,11 @@
 
 import hashlib
 import json
+import os
 import sqlite3
+import stat
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -14,6 +17,15 @@ class JournalError(ValueError):
     """The journal cannot preserve the requested state transition."""
 
 
+@dataclass(frozen=True)
+class OrderHttpObservation:
+    request_kind: str
+    result_kind: str
+    observed_at: datetime
+    http_status: int | None = None
+    body: bytes | None = None
+
+
 class Journal:
     """Own event evidence and local state in one SQLite transaction."""
 
@@ -22,6 +34,8 @@ class Journal:
         resolved = path.resolve()
         if resolved == root or not resolved.is_relative_to(root):
             raise JournalError("journal path must be inside the runtime root")
+        self._runtime_root = root
+        self._path = resolved
         root.mkdir(parents=True, exist_ok=True)
         resolved.parent.mkdir(parents=True, exist_ok=True)
         self._db = sqlite3.connect(resolved, timeout=5)
@@ -37,10 +51,10 @@ class Journal:
         try:
             self._db.execute("BEGIN IMMEDIATE")
             version = self._db.execute("PRAGMA user_version").fetchone()[0]
-            if version == 3:
+            if version == 5:
                 self._db.commit()
                 return
-            if version not in (0, 1, 2):
+            if version not in (0, 1, 2, 3, 4):
                 raise JournalError("unsupported journal schema version")
             if version == 0:
                 self._db.execute(
@@ -81,25 +95,63 @@ class Journal:
                         f"BEFORE {action} ON order_intents BEGIN "
                         "SELECT RAISE(ABORT, 'order intents are immutable'); END"
                     )
+            if version in (0, 1, 2):
+                self._db.execute(
+                    """CREATE TABLE order_send_attempts (
+                        client_order_id TEXT PRIMARY KEY,
+                        started_at TEXT NOT NULL,
+                        FOREIGN KEY (client_order_id)
+                            REFERENCES order_intents(client_order_id)
+                    )"""
+                )
+                for action in ("UPDATE", "DELETE"):
+                    self._db.execute(
+                        f"CREATE TRIGGER order_send_attempts_no_{action.lower()} "
+                        f"BEFORE {action} ON order_send_attempts BEGIN "
+                        "SELECT RAISE(ABORT, 'send attempts are immutable'); END"
+                    )
+            if version < 4:
+                self._migrate_http_observations()
             self._db.execute(
-                """CREATE TABLE order_send_attempts (
-                    client_order_id TEXT PRIMARY KEY,
-                    started_at TEXT NOT NULL,
-                    FOREIGN KEY (client_order_id)
-                        REFERENCES order_intents(client_order_id)
+                """CREATE TABLE paper_account_verifications (
+                    sequence INTEGER PRIMARY KEY,
+                    account_ref TEXT NOT NULL,
+                    verified_at TEXT NOT NULL,
+                    body BLOB NOT NULL
                 )"""
             )
             for action in ("UPDATE", "DELETE"):
                 self._db.execute(
-                    f"CREATE TRIGGER order_send_attempts_no_{action.lower()} "
-                    f"BEFORE {action} ON order_send_attempts BEGIN "
-                    "SELECT RAISE(ABORT, 'send attempts are immutable'); END"
+                    f"CREATE TRIGGER paper_account_verifications_no_{action.lower()} "
+                    f"BEFORE {action} ON paper_account_verifications BEGIN "
+                    "SELECT RAISE(ABORT, 'account verifications are immutable'); END"
                 )
-            self._db.execute("PRAGMA user_version=3")
+            self._db.execute("PRAGMA user_version=5")
             self._db.commit()
         except Exception:
             self._db.rollback()
             raise
+
+    def _migrate_http_observations(self) -> None:
+        self._db.execute(
+            """CREATE TABLE order_http_observations (
+                    sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+                    client_order_id TEXT NOT NULL,
+                    request_kind TEXT NOT NULL,
+                    result_kind TEXT NOT NULL,
+                    observed_at TEXT NOT NULL,
+                    http_status INTEGER,
+                    body BLOB,
+                    FOREIGN KEY (client_order_id)
+                        REFERENCES order_send_attempts(client_order_id)
+            )"""
+        )
+        for action in ("UPDATE", "DELETE"):
+            self._db.execute(
+                f"CREATE TRIGGER order_http_observations_no_{action.lower()} "
+                f"BEFORE {action} ON order_http_observations BEGIN "
+                "SELECT RAISE(ABORT, 'HTTP observations are immutable'); END"
+            )
 
     def append(
         self,
@@ -289,11 +341,21 @@ class Journal:
         """
         if not client_order_id or not client_order_id.strip():
             raise JournalError("client order ID must be nonempty")
+        self.require_private_order_state()
         if not intent:
             raise JournalError("order intent must be nonempty")
         encoded = json.dumps(intent, sort_keys=True, allow_nan=False)
         try:
             self._db.execute("BEGIN IMMEDIATE")
+            bound = self._db.execute(
+                "SELECT account_ref FROM paper_account_verifications LIMIT 1"
+            ).fetchone()
+            if (
+                bound is not None
+                and "paper_account_ref" in intent
+                and intent["paper_account_ref"] != bound[0]
+            ):
+                raise JournalError("order intent differs from bound paper account")
             self._db.execute(
                 "INSERT INTO order_intents(client_order_id, intent_json) VALUES (?, ?)",
                 (client_order_id, encoded),
@@ -312,6 +374,73 @@ class Journal:
             (client_order_id,),
         ).fetchone()
         return None if row is None else json.loads(row[0])
+
+    def require_private_order_state(self) -> None:
+        """Reject account/order state stored outside an owner-only local path."""
+        root = self._runtime_root.stat()
+        database = self._path.stat()
+        if (
+            not stat.S_ISDIR(root.st_mode)
+            or not stat.S_ISREG(database.st_mode)
+            or root.st_uid != os.getuid()
+            or database.st_uid != os.getuid()
+            or root.st_mode & 0o077
+            or database.st_mode & 0o077
+        ):
+            raise JournalError("order journal storage is not private")
+
+    def record_paper_account_verification(
+        self, account_ref: str, body: bytes, verified_at: datetime
+    ) -> None:
+        """Bind one journal to one authenticated account; reject account changes."""
+        self.require_private_order_state()
+        if not account_ref.strip() or not body:
+            raise JournalError("account verification evidence is missing")
+        if verified_at.tzinfo is None or verified_at.utcoffset() != timedelta(0):
+            raise JournalError("account verification timestamp must be UTC")
+        try:
+            self._db.execute("BEGIN IMMEDIATE")
+            row = self._db.execute(
+                "SELECT account_ref FROM paper_account_verifications LIMIT 1"
+            ).fetchone()
+            if row is not None and row[0] != account_ref:
+                raise JournalError("paper account changed for this journal")
+            if row is None:
+                for (encoded,) in self._db.execute(
+                    "SELECT intent_json FROM order_intents"
+                ):
+                    intent = json.loads(encoded)
+                    if (
+                        isinstance(intent, dict)
+                        and "paper_account_ref" in intent
+                        and intent["paper_account_ref"] != account_ref
+                    ):
+                        raise JournalError("paper account differs from reserved intent")
+            self._db.execute(
+                "INSERT INTO paper_account_verifications"
+                "(account_ref, verified_at, body) VALUES (?, ?, ?)",
+                (account_ref, verified_at.isoformat(), body),
+            )
+            self._db.commit()
+        except Exception:
+            self._db.rollback()
+            raise
+
+    def read_paper_account_ref(self) -> str | None:
+        self.require_private_order_state()
+        row = self._db.execute(
+            "SELECT account_ref FROM paper_account_verifications LIMIT 1"
+        ).fetchone()
+        return None if row is None else str(row[0])
+
+    def read_order_intent_ids(self) -> tuple[str, ...]:
+        self.require_private_order_state()
+        return tuple(
+            row[0]
+            for row in self._db.execute(
+                "SELECT client_order_id FROM order_intents ORDER BY client_order_id"
+            )
+        )
 
     def mark_order_send_attempt(
         self, client_order_id: str, started_at: datetime
@@ -351,6 +480,76 @@ class Journal:
                 (client_order_id,),
             ).fetchone()
             is not None
+        )
+
+    def record_order_http_observation(
+        self, client_order_id: str, observation: OrderHttpObservation
+    ) -> None:
+        """Append transport evidence; never turn it into retry authority."""
+        self.require_private_order_state()
+        if observation.request_kind not in ("POST", "GET"):
+            raise JournalError("invalid order HTTP request kind")
+        if (
+            observation.observed_at.tzinfo is None
+            or observation.observed_at.utcoffset() != timedelta(0)
+        ):
+            raise JournalError("order HTTP observation timestamp must be UTC")
+        if observation.result_kind == "HTTP_RESPONSE":
+            if (
+                type(observation.http_status) is not int
+                or not 100 <= observation.http_status <= 599
+                or not isinstance(observation.body, bytes)
+            ):
+                raise JournalError("invalid order HTTP response evidence")
+        elif observation.result_kind == "TRANSPORT_UNKNOWN":
+            if observation.http_status is not None or observation.body is not None:
+                raise JournalError("unknown order outcome cannot have a response")
+        else:
+            raise JournalError("invalid order HTTP result kind")
+        try:
+            self._db.execute("BEGIN IMMEDIATE")
+            cursor = self._db.execute(
+                """INSERT INTO order_http_observations(
+                    client_order_id, request_kind, result_kind, observed_at,
+                    http_status, body
+                ) SELECT ?, ?, ?, ?, ?, ? WHERE EXISTS (
+                    SELECT 1 FROM order_send_attempts WHERE client_order_id=?
+                )""",
+                (
+                    client_order_id,
+                    observation.request_kind,
+                    observation.result_kind,
+                    observation.observed_at.isoformat(),
+                    observation.http_status,
+                    observation.body,
+                    client_order_id,
+                ),
+            )
+            if cursor.rowcount != 1:
+                raise JournalError("order send attempt must precede HTTP evidence")
+            self._db.commit()
+        except Exception:
+            self._db.rollback()
+            raise
+
+    def read_order_http_observations(
+        self, client_order_id: str
+    ) -> tuple[OrderHttpObservation, ...]:
+        self.require_private_order_state()
+        rows = self._db.execute(
+            """SELECT request_kind, result_kind, observed_at, http_status, body
+            FROM order_http_observations WHERE client_order_id=? ORDER BY sequence""",
+            (client_order_id,),
+        ).fetchall()
+        return tuple(
+            OrderHttpObservation(
+                request_kind=row[0],
+                result_kind=row[1],
+                observed_at=datetime.fromisoformat(row[2]),
+                http_status=row[3],
+                body=row[4],
+            )
+            for row in rows
         )
 
     def close(self) -> None:
