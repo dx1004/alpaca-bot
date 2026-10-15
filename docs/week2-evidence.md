@@ -1,5 +1,54 @@
 # Week 2 acceptance evidence
 
+## W2-05 independently accepted IEX daily-30 screen (2026-10-15)
+
+The user accepted a separately named `GENERAL_IEX_DAILY30_SCREEN_V1`: observed
+current-day cumulative IEX volume divided by the prior 30 complete trading-day
+IEX daily mean, raw adjustment and New York calendar-day boundaries, with a 5×
+threshold. This resolves the formula decision for this adaptation, not the exact
+Ross scanner. Its price range is $1 inclusive to $20 exclusive; news/float remain
+non-veto preferences. The original source profiles are unchanged.
+
+Implementation and acceptance are documented in
+[W2-05 scanner acceptance](w2-05-scanner-acceptance.md#accepted-independent-screen--2026-10-15)
+and the [versioned screen contract](../evidence/general-iex-daily30-screen-v1.json).
+The engine uses exact threshold/ranking arithmetic and retains missing inputs by
+symbol. A separate audit verifies raw catalog/snapshot provenance and exact
+request identity coverage. The offline replay loader verifies calendar bounds,
+raw response hashes and request clocks, exact historical query/pagination
+chains, complete price-prefilter lookup coverage, and result availability.
+Unsupported or sub-microsecond source clock forms are handled conservatively;
+later observations cannot become earlier inputs.
+
+Actual read-only Alpaca catalog, snapshot, calendar and historical-bar capture
+produced both filter matches and demonstrated rejections, with unavailable
+inputs retained separately. Each catalog identity receives one outcome. Request
+coverage passed; returned-object coverage did not, and missing snapshots are
+reported rather than filled. No EODHD calls were needed. The exact counts,
+local raw archive references, input-preserving export and final validation are
+recorded in the [dated adaptation acceptance evidence](../evidence/w2-05-adapted-screen-acceptance-2026-10-15.json).
+
+The capture's journal was created while unrelated W3 schema changes were in the
+working tree. To avoid making W2 acceptance depend on them, the source capture
+was preserved and its exact event/state rows exported into the original HEAD's
+schema for offline replay. Event and state row equality was checked. Tests and
+actual replay run against an isolated copy of the committed baseline plus only
+this increment. No W3 order code is part of the scanner change.
+
+Independent reviews found and verified repairs for price symbol identity,
+premature prior-close availability, malformed per-symbol input isolation,
+calendar query bounds and source timestamp precision. Full strategy/risk/data
+release gates remain open: these are offline screen outcomes with
+`NOT_SIP_EQUIVALENT`, no execution-freshness acceptance and no order authority.
+
+Final validation against committed baseline `3f415c5` plus this increment:
+412 tests passed, with the pre-existing upstream `websockets.legacy` warning;
+the 113 component cases include synthetic positive/adverse clock, provenance,
+pagination, boundary and missing-input cases. Scoped six-file Ruff, strict mypy
+and formatting checks passed. Actual raw-data replay reproduced the same result
+payload across reruns. The tests do not establish profitability, an unseen
+historical holdout or permission to begin formal paper evaluation.
+
 ## W2-05 selected scanner research contract and capacity checks (2026-10-15)
 
 The user selected `ROSS_TOOLKIT_GENERAL_2025_SCREEN` as the research focus:

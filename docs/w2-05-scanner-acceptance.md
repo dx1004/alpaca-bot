@@ -1,7 +1,82 @@
 # W2-05 scanner implementation and acceptance
 
 Review session: 2026-10-14 Los Angeles; authenticated probe date: 2026-10-15 UTC.
-Status: **engineering increment verified; full W2-05 remains BLOCKED_RESEARCH**.
+Status: **independent IEX adaptation selected; original Ross/full strategy gates remain BLOCKED_RESEARCH**.
+
+## Accepted independent screen — 2026-10-15
+
+The user explicitly accepted `GENERAL_IEX_DAILY30_SCREEN_V1` for scanner and
+replay acceptance. Its [machine-readable contract](../evidence/general-iex-daily30-screen-v1.json)
+is `USER_ACCEPTED_ADAPTATION_NOT_ROSS_REPLICA`. The original Ross comparison
+profiles and their unresolved reconstruction claims remain separate. This
+supersedes the formula-choice blocker **for this independent screen only**;
+the dated research reviews below describe the earlier state.
+
+The filter uses $1 inclusive to $20 exclusive and at least 5× RVOL. RVOL is the
+observed cumulative IEX daily volume for the current New York calendar day
+divided by the mean raw IEX daily volume for exactly the preceding 30
+calendar-confirmed trading sessions. The threshold uses integer multiplication,
+without rounded-ratio decisions. Historical buckets must have reached the next
+New York midnight and been received before evaluation; this is elapsed-bucket
+and observed-version acceptance, not an assertion of immutable provider data.
+Missing bars are unavailable, never zero-filled. The current cumulative volume
+is intentionally partial-day; this is not same-time-of-day RVOL.
+
+Matches rank by exact percentage change from the previous session's IEX daily
+close, then symbol for ties. No 10% gain minimum, top-N cutoff or extra price
+profile is introduced. News and float remain optional preferences. Neither
+their absence nor EODHD's 20-call allowance vetoes this price/RVOL screen.
+
+Discovery acceptance uses the exact active `us_equity` asset catalog returned by
+Alpaca, including its literal identities, then requests every catalog symbol.
+The independent discovery audit checks raw hashes, query/source identity,
+clocks, exact partitions and explicit missing symbols. A completed request sweep
+does not establish returned-data completeness. Returned snapshot objects do not
+establish fresh fields, full-US coverage, historical membership, tradability or
+SIP equivalence. All output retains `NOT_SIP_EQUIVALENT`.
+
+The screen distinguishes `SCREEN_MATCH`, proven `RULE_NOT_MET`, and
+`INPUT_UNAVAILABLE`. A valid observed price outside the mandatory range permits
+a price-only rejection; missing or invalid price evidence cannot create that
+rejection. Required inputs must match symbol/feed/raw/session and be available
+by the recorded decision. Local raw capture precedes parsing; pagination must
+terminate for each exact historical query. Later versions are new observations,
+not retroactive replacements. Snapshot requests span time, so this evidence is
+an offline observed-as-of screen, not a simultaneous market snapshot or accepted
+execution-freshness contract.
+
+Primary API semantics were checked against the official
+[assets](https://docs.alpaca.markets/us/reference/get-v2-assets-1),
+[calendar](https://docs.alpaca.markets/us/reference/legacycalendar),
+[historical bars](https://docs.alpaca.markets/us/reference/stockbars), and
+[market-data FAQ](https://docs.alpaca.markets/us/docs/market-data-faq).
+Calendar early closes describe regular hours, not the full NY daily bucket;
+`asof` controls symbol mapping, not knowledge-time availability. Token exhaustion
+means that query had no further page at retrieval, not immutable market truth.
+
+This component cannot authorize an entry, risk rule, order, formal paper study
+or G03/G04 release. Full W2-05 remains open where it requires an independently
+accepted executable strategy and qualified execution inputs. The three bounded
+scanner deliverables should be assessed using the new contract, not blocked by
+the still-unreconstructed Ross formula.
+
+### Acceptance evidence
+
+The [dated acceptance record](../evidence/w2-05-adapted-screen-acceptance-2026-10-15.json)
+binds the implementation, test results and local raw archive. An actual
+read-only sweep covered all 14,398 identities in the observed catalog. It
+returned 13,479 snapshot objects and explicitly retained 919 omissions. Offline
+evaluation recorded 31 `SCREEN_MATCH`, 7,386 `RULE_NOT_MET` and 6,981
+`INPUT_UNAVAILABLE` outcomes; these sum to the catalog identity count. This is
+actual captured-input evidence, separate from the synthetic threshold and error
+fixtures. It is not a claim that every catalog symbol had qualified data.
+
+Repeated replay reproduced the same result payload. Required raw inputs were
+visible by the declared evaluation clock; the derived result remained invisible
+until its own actual processing clock. Independent raw-data checks recomputed
+a match, an RVOL rejection, a price-only rejection and exact identity partitions.
+All requests were read-only Alpaca GETs; EODHD usage was zero. No order endpoint,
+paid data, live-trading enablement or formal paper evaluation was involved.
 
 ## Closure work — 2026-10-15 Los Angeles
 

@@ -1,0 +1,57 @@
+{
+  "profile_id": "GENERAL_IEX_DAILY30_SCREEN_V1",
+  "classification": "USER_ACCEPTED_ADAPTATION_NOT_ROSS_REPLICA",
+  "accepted_on": "2026-10-15",
+  "acceptance_basis": "User explicitly selected current-day cumulative IEX volume divided by the prior 30 complete trading days' IEX mean volume, raw adjustment, 5x threshold; scanner and replay only.",
+  "original_comparison_profile": "ROSS_TOOLKIT_GENERAL_2025_SCREEN",
+  "rules": {
+    "price_minimum_inclusive": "1",
+    "price_maximum_exclusive": "20",
+    "rvol_minimum_inclusive": "5",
+    "rvol_numerator": "current New York calendar day's observed cumulative IEX dailyBar volume",
+    "rvol_denominator": "sum of raw IEX daily volumes for exactly the previous 30 calendar-confirmed trading sessions divided by 30",
+    "decision_arithmetic": "Compare current_volume * 30 >= 5 * sum(history); no rounded ratio threshold",
+    "session_scope": "FULL_NEW_YORK_CALENDAR_DAY",
+    "history_completion": "next New York midnight has elapsed; not a claim of immutable vendor finality",
+    "adjustment": "raw",
+    "feed": "iex",
+    "ranking": "descending exact percentage change from prior-session raw IEX daily close, symbol ascending for ties",
+    "news": "optional preference, unavailable without separately validated evidence",
+    "float": "optional preference, unavailable without separately validated evidence",
+    "additional_gain_threshold": null,
+    "top_n_truncation": null
+  },
+  "discovery": {
+    "scope": "ALPACA_CURRENT_ACTIVE_US_EQUITY_CATALOG",
+    "catalog_query": {"status": "active", "asset_class": "us_equity"},
+    "identity_acceptance": "every literal catalog symbol requested exactly once; no silently dropped or aliased symbols",
+    "missing_snapshot": "INPUT_UNAVAILABLE, retained by identity",
+    "current_catalog_not_historical_universe": true,
+    "full_market_coverage": false,
+    "coverage_label": "NOT_SIP_EQUIVALENT"
+  },
+  "time_acceptance": {
+    "basis": "recorded local availability and explicit source timestamps at offline evaluation",
+    "future_or_missing_required_input": "INPUT_UNAVAILABLE",
+    "missing_history_bar": "INPUT_UNAVAILABLE, never zero-filled",
+    "pagination": "each query's token chain must terminate with no next token",
+    "revisions": "new observations available only after their own recorded receipt/processing clocks",
+    "source_freshness": "NO_EXECUTION_TTL_ACCEPTANCE",
+    "scope": "observed-as-of offline screening, not a simultaneous or fresh executable market snapshot"
+  },
+  "outcomes": ["SCREEN_MATCH", "RULE_NOT_MET", "INPUT_UNAVAILABLE"],
+  "authority": {
+    "strategy_eligibility": "BLOCKED_RESEARCH",
+    "order_authority": false,
+    "formal_paper_evaluation": false,
+    "ross_replication_claim": false,
+    "g03_g04_global_release": false
+  },
+  "primary_references_checked": [
+    "https://cdn.warriortrading.com/warriortrading.com/assets/2025-Small-Account-Tool-Kit-1013.pdf",
+    "https://docs.alpaca.markets/us/reference/get-v2-assets-1",
+    "https://docs.alpaca.markets/us/reference/legacycalendar",
+    "https://docs.alpaca.markets/us/reference/stockbars",
+    "https://docs.alpaca.markets/us/docs/market-data-faq"
+  ]
+}
