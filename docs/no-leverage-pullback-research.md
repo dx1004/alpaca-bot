@@ -363,6 +363,79 @@ prospective usability are separate. The reviewer approved the correction with no
 remaining finding in the reviewed scope. That pass did not independently verify
 screenshots or teacher webpages; those remain coordinator source checks.
 
+#### Gap-closure follow-up: author evidence and vendor semantics
+
+Additional primary retrieval found Martin's
+[edited guest study](https://tradingresourcehub.substack.com/p/martin-luk-study-process),
+published January 10, 2026. The publisher attributes the ideas to him, identifies
+an incomplete April 2025 draft and includes later Q&A whose exact date is unknown.
+It supplies first-party short-side techniques, not a later-version long policy:
+prior-hourly-low breakdown or intraday VWAP/HOD-AVWAP retest; day-high or
+breakdown-candle-high stop; typical 1.5–5% distance. Q&A describes about 15% trims
+beyond 3R and at support, and exiting on subjective extension or an hourly close
+above 50 EMA. It also states 0.5% risk and a 35% position cap. The author explicitly
+denies that these are hard rules. Do not import that cap into the newer interview
+where its universal use is contradicted. Publication date cannot date each rule.
+The new registry source is an inventory entry, not an addition to the executable
+candidate's accepted rules or source selection.
+
+The study links a [March 29, 2025 thread](https://x.com/martinlukkt/status/1905971936137818494);
+direct retrieval returned HTTP 403 and its full text was not verified. It is not the
+missing May post. It also links Martin's
+[December 15, 2025 stream at 13:40](https://www.youtube.com/watch?v=O1LZJYaMqnQ&t=820)
+and a [Brian presentation at 25:55](https://www.youtube.com/watch?v=Jew-Algmi0k&t=1555).
+The article identifies the latter as the 2021 TraderLion conference. The video
+pages did not expose speech to this retrieval; these are original-source leads,
+not new transcript acceptance.
+
+| Vendor evidence now resolved | What it still cannot establish |
+| --- | --- |
+| [TradingView's AVWAP drawing help](https://www.tradingview.com/support/solutions/43000669764-anchored-vwap-drawing-tool/) starts from a user-selected point. The current [Advanced Charts drawing override API](https://www.tradingview.com/charting-library-docs/latest/api/interfaces/Charting_Library.AnchoredvwapLineToolOverrides/) documents source default `hlc3`. | This is a specific vendor/API default, not proof of Martin's saved settings, historical software version or Supercharts parity. Anchor-bar inclusion and sessions remain unknown; no default was adopted. |
+| [TradingView EMA help](https://www.tradingview.com/support/solutions/43000592270-exponential-moving-average/) documents default close source and offset zero. Its [Pine execution model](https://www.tradingview.com/pine-script-docs/language/execution-model/) distinguishes historical-bar execution and repeated updates on open realtime bars. | Martin's live/closed-bar choice, initialization, warmup and session scope remain unknown. Pine indicator behavior does not prove the drawing's implementation. |
+| [Alpaca's stock-bar FAQ](https://docs.alpaca.markets/us/docs/market-data-faq) uses an internal eligible-volume denominator for base-bar VWAP; it can differ from normal returned bar volume. Larger bars instead volume-weight constituent VWAPs. | Aggregating returned `vw * v` does not generally recover eligible-trade AVWAP or TradingView values. Compatible feed, trade conditions, sessions, adjustments, correction state, alignment and source formula still require validation. |
+
+Deterministic synthetic counterexample: two base bars have VWAPs 10 and 20 and
+returned volumes 100 and 100. If their internal VWAP-eligible volumes are 10 and
+100, the returned-volume aggregate is 15 while eligible-trade VWAP is 210/11
+(about 19.09). Exact rational arithmetic verifies they differ. These are invented
+mathematical inputs demonstrating non-equivalence, not observed Alpaca market
+data or a parity test. Rounded inputs and partial anchor bars introduce further
+limits. No currently implemented strategy computation was changed.
+
+#### Closure status and concrete remaining choices
+
+| Gap | Newly established / closure status | Remaining evidence or proposed candidate separation |
+| --- | --- | --- |
+| Anchor family and discretionary alternatives | Documentary family inventory established in M04–M12. | Need source frames for exact coordinates, when they became known, and any selection hierarchy. Fixed-extreme and reaction-fitted anchors remain separate hypotheses; no guessed reaction score. |
+| Indicator calculation | Some vendor-default and aggregation facts are established above. | Keep TradingView-style bar-source, Alpaca bar-VWAP aggregation and eligible-trade VWAP as different methods. Martin's exact method/configuration and cross-provider parity remain unverified. |
+| Entry confirmation | Newer ASR describes prior-bar-high; short-study confirms its own lower-timeframe alternatives. | Do not invert the short hourly rule into a Martin long rule. Need audio for the ASR time-bucket conflict and intrabar/completed-bar semantics. |
+| Stops | Multiple locations are documented in both materials; they are conditional choices. | Preserve day-low, breakout-bar-low and previous-bar-low as distinct long-side research variants. Their selection, offsets and precedence are not identified, and none is frozen. |
+| Exits | An explicit short-study description is now available. | It is short/version-scoped. Newer long exits and their precedence remain unresolved; no automatic mirrored exit was adopted. |
+| Risk and $500 feasibility | Source quantities can be documented and arithmetic checked independently. | Variable risk and position-size control remain unspecified. A constant-risk candidate would be an explicit adaptation, not demonstrated Martin behavior. |
+| Full automatic qualification | No new market-data entitlement or field evidence was acquired. | IEX, float/universe, news and strategy release gates remain separate; no author reference closes them. |
+
+Arithmetic-only feasibility, not an adopted risk policy: with equity `E`, proposed
+risk fraction `r` and fractional stop distance `s`, target notional is `E*r/s`.
+A 1x notional ceiling permits the full target only when `r <= s`, ignoring fees,
+slippage and broker holds. If 0.5% were separately accepted, $500 would imply a
+$2.50 planned risk budget: 1% stop gives $250 target notional, 2% gives $125,
+0.5% gives $500, and 0.25% gives $1,000, exceeding 1x. These exact calculations
+do not select a stop or permit leverage. Account-available funds and whole-share
+rounding can reduce exposure further; a budget is not a guaranteed realized loss.
+
+This follow-up closes additional documentary/vendor questions, not the author's
+discretionary policy. A complete deterministic bot would require explicitly
+specified adaptations for the remaining choices; neither teachers nor current
+vendor defaults establish those as Martin's personal rules. The already
+authorized hybrid-research path permits proposing/testing such adaptations with
+separate attribution, not silently selecting them or approving paper execution.
+
+Independent GPT-6.1 Sol Low retrieval, coordinator source readback and a verified
+public-only Cloud `gemma4:31b` critique informed this follow-up. The critique's
+claim that discretionary teachings cannot be codified at all was narrowed: they
+cannot identify a uniquely faithful deterministic policy, but separately labeled
+candidate adaptations remain possible. No attachment was exported to Cloud.
+
 ### Consequence for W2-05
 
 Two historical firsthand source IDs remain in the existing **CANDIDATE** hybrid

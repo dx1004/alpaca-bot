@@ -1,5 +1,12 @@
 schema_version: 1
 sources:
+  - source_id: MARTIN_LUK_STUDY_PROCESS_2026
+    kind: OTHER_TRADER_FIRST_PARTY
+    title: Martin Luk edited guest study on shorts, April 2025 draft and later Q&A published January 2026
+    url: https://tradingresourcehub.substack.com/p/martin-luk-study-process
+    published_on: '2026-01-10'
+    accessed_on: '2026-10-15'
+    version_ids: [HYBRID_500_IEX_CANDIDATE_V1]
   - source_id: MARTIN_LUK_GUEST_2025
     kind: OTHER_TRADER_FIRST_PARTY
     title: Martin Luk guest contribution, edited by Kyna Kosling, 2024 lessons and scanning workflow

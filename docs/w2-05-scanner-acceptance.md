@@ -120,6 +120,16 @@ the newer transcript, but exact parameter continuity remains unproven. This is a
 research specification; no executable profile, data eligibility, replay outcome,
 W2-05 acceptance checkbox or paper authority is created.
 
+A subsequent [gap-closure follow-up](no-leverage-pullback-research.md#gap-closure-follow-up-author-evidence-and-vendor-semantics)
+adds Martin's edited short-study source, scopes its April-2025-draft/January-2026
+publication provenance and records indicator semantics from official vendors.
+In particular, Alpaca's normal bar volume can differ from the hidden volume
+used for base-bar VWAP. Bar-VWAP aggregation is not generally exact eligible-trade
+AVWAP reconstruction. Vendor defaults cannot stand in for Martin's actual saved
+settings, and short-study risk/exit rules do not freeze the newer long profile.
+The closure table separates resolved documentary facts from unresolved
+discretionary choices and feed eligibility; the original gate remains blocked.
+
 Targeted scanner tests, deterministic replay, full pytest, Ruff, strict mypy,
 formatting and scoped diff checks are recorded with final counts in
 [Week 2 evidence](week2-evidence.md). Live validation proves only two small

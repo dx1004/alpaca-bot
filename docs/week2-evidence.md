@@ -1,5 +1,28 @@
 # Week 2 acceptance evidence
 
+## Martin gap-closure and indicator semantics (2026-10-15 UTC)
+
+The [follow-up closure table](no-leverage-pullback-research.md#closure-status-and-concrete-remaining-choices)
+distinguishes additional firsthand short-study descriptions from the newer
+long-profile unknowns and verified vendor semantics from unverified user settings.
+The edited Martin study is registered as source inventory only; it has not been
+added to the candidate's selected source IDs or runtime rules. Its 35% cap is not
+imported over the newer interview's contrary evidence. A missing May post and
+unreadable linked-video speech remain unresolved.
+
+Coordinator exact-rational checks verified a synthetic VWAP non-equivalence
+counterexample (normal-volume weighting 15; eligible-volume weighting 210/11)
+and four hypothetical $500 risk/stop feasibility calculations. These are
+mathematical checks, not observed market data, provider parity, replay acceptance
+or accepted strategy parameters. No account/data purchase/order call occurred.
+
+Locked/offline `pytest tests/test_evidence.py -q`: 9 passed. Local-link targets
+and fragments, unchanged candidate source selection and `git diff --check` passed.
+Independent quant/data review verified the guest-study provenance, official
+Alpaca/TradingView distinctions and exact arithmetic, finding no actionable issue
+in that scope. That reviewer did not run pytest or authenticate linked video/X
+speech. No runtime code changed; no new replay, paper or W2-05 acceptance is claimed.
+
 ## Martin newer-interview reconstruction follow-up (2026-10-15 UTC)
 
 The [authoritative research document](no-leverage-pullback-research.md#martin-newer-interview-reconstruction-2026-10-15-utc)
