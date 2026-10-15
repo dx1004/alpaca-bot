@@ -59,8 +59,8 @@ and a separate token-only private store outside Git. Atomic creation prevents
 implicit overwrites; unsafe permissions, symlinks, oversized/malformed files and
 echo fallback fail closed. Explicit replacement is optional. `--check` verifies
 local storage and format only, without contacting EODHD. Development accessed
-synthetic temporary credentials only; the actual-user key is still unconfigured
-and no authenticated EODHD small-cap probe has occurred.
+synthetic temporary credentials only. The user subsequently configured the actual
+key; local format/privacy validation passed without exposing its contents.
 
 The existing raw capture/replay design will use HTTP API access directly.
 EODHD's [official MCP documentation](https://eodhd.com/lp/eodhd-mcp-server) confirms
@@ -74,6 +74,29 @@ helper/test files. Independent current-byte review approved the bounded scope an
 verified hidden input through a real controlling terminal with synthetic temporary
 credentials, without accessing actual credentials or network endpoints.
 Full W2-05/G03/G04 acceptance remains blocked.
+
+### RTK launch correction and single-symbol authenticated probe
+
+RTK redirects stderr even when stdin remains a terminal. The CLI no longer
+requires terminal stderr or forces the hidden prompt into captured output;
+standard Unix `getpass` uses the controlling terminal directly. Nonterminal input
+and unsafe echo fallback still abort. All 38 focused credential/regression tests
+passed. Independent real-PTY tests through RTK and direct Python confirmed visible
+prompt, disabled echo during entry, no token echo and restored terminal settings.
+
+The [authenticated probe record](../evidence/w2-05-eodhd-personal-probe-2026-10-15.json)
+binds one QS response acquired with the user's local token. The sandbox's first
+DNS failure occurred before HTTP; a tool-approved network retry requested only
+QS. HTTP 200, matching identity, USD, positive integer reference fields and valid
+capture/snapshot ordering passed independent checks. Raw market data remains in
+the ignored local archive; the key and authenticated URL were never logged.
+
+This used one documented ticker-call unit; remaining daily quota was not queried.
+The 20-ticker/day free allowance does not establish sufficient candidate coverage.
+Batching does not save ticker units, and no cache age can be accepted from unknown
+float update semantics. No quota-based truncation, autonomous 20-symbol shortlist,
+paid subscription or strategy qualification was added. FMP/Finnhub free float
+entitlement and sufficient capacity remain unverified. W2-05/G03/G04 remain open.
 
 ## QS timing and stop wording clarification (2026-10-14 Los Angeles)
 

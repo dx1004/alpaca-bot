@@ -31,12 +31,13 @@ def main() -> None:
             "(contents hidden; provider access not checked)."
         )
         return
-    if not sys.stdin.isatty() or not sys.stderr.isatty():
+    if not sys.stdin.isatty():
         parser.exit(1, "Interactive terminal required; token was not read.\n")
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", getpass.GetPassWarning)
-            token = getpass.getpass("EODHD API token (hidden): ", stream=sys.stderr)
+            # RTK captures stderr; default getpass uses the controlling terminal.
+            token = getpass.getpass("EODHD API token (hidden): ")
         save_eodhd_token(DEFAULT_PATH, token, replace=args.replace)
     except (getpass.GetPassWarning, EOFError, KeyboardInterrupt):
         parser.exit(1, "Hidden input unavailable or cancelled; token was not saved.\n")

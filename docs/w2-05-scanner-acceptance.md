@@ -60,8 +60,8 @@ capacity allowance. Paid Fundamentals is a separate endpoint and is not Free.
 A successful public-demo AAPL response returned non-null integer float,
 outstanding shares and capitalization plus USD currency and snapshot time.
 This closes the previous absence of a documented, concretely observed free-float
-field path. Demo access is limited to specified examples; no actual-user key,
-small-cap coverage, sustained capacity or float freshness has passed acceptance.
+field path. Demo access is limited to specified examples and does not establish
+actual-user access, non-demo coverage, sustained capacity or float freshness.
 Snapshot time is not float effective/revision time. Forward-only local first-seen
 and changed-payload retention can establish knowledge time, but cannot invent
 the provider's missing update semantics or a historical archive.
@@ -87,6 +87,28 @@ The storage module enforces an owned private directory/file, rejects symlinks
 and unsafe metadata, bounds token-only JSON and prevents implicit overwrites.
 The optional `--check` validates local storage/format only; it does not authenticate
 with EODHD. No actual token was read or saved during development.
+
+RTK captures standard error even with terminal input. The credential CLI now
+requires terminal input and lets Unix `getpass` use its default controlling
+terminal, so the hidden prompt is visible through RTK. Unsafe echo fallback still
+aborts. Independent synthetic tests through both RTK and direct Python verified
+prompt visibility, disabled echo during entry and restored terminal settings.
+
+After the user configured the token, local format/privacy validation passed.
+The [separate authenticated probe record](../evidence/w2-05-eodhd-personal-probe-2026-10-15.json)
+binds one QS request and its locally retained raw bytes. It returned HTTP 200 with
+matching QS identity, USD and positive integer float/outstanding/capitalization
+fields. Independent validation checked hashes, shape, field consistency and clocks.
+This establishes one-symbol field access only. The first sandbox attempt failed
+DNS before HTTP; tool-level network permission resolved that isolated failure.
+Only the single QS request reached EODHD, representing one documented ticker-call
+unit. No remaining-quota balance was queried or inferred.
+
+The 20-ticker/day limit remains a capacity blocker for any workflow requiring more
+reference lookups. Batching does not reduce ticker charging; caching cannot prove
+unknown float freshness. No automatic shortlist, refresh interval or quota-based
+candidate omission is accepted. FMP and Finnhub still lack verified free float
+entitlement/capacity for this scope; a larger advertised generic quota is not proof.
 
 Direct HTTP API access is the selected integration path for the existing raw
 capture/replay design. EODHD's
@@ -114,16 +136,15 @@ public float.
 | Required closure | Work now concrete | Remaining prerequisite |
 | --- | --- | --- |
 | Source-scoped strategy/scanner specification | The three Ross contexts remain parallel; numeric source statements and their qualitative exceptions are preserved. Martin's historical scans, newer interview and user-clarified entry rhythm remain separately attributed. | No single applicable $500/1x executable version or deterministic interpretation of the remaining discretionary choices has been accepted. Neither IEX convenience nor the new provider selects a version. |
-| Required data | Actual broker catalog, two-symbol dated IEX history and a public-demo float schema are verified. Explicit consistency failures now have deterministic reasons. | A free personal key must establish actual float/cap access for predeclared real candidates; then verify identity, coverage, update/freshness and daily capacity. Full discovery and source-scoped RVOL session/baseline acceptance remain separate. |
+| Required data | Actual broker catalog, two-symbol dated IEX history, public-demo float schema and a single authenticated QS float/cap response are verified. Explicit consistency failures now have deterministic reasons. | Broader identity/coverage, float update/freshness and sufficient daily capacity remain unaccepted. Twenty ticker calls/day cannot be assumed sufficient. Full discovery and source-scoped RVOL session/baseline acceptance remain separate. |
 | Candidate/rejection evidence | Input-quality rejection paths can be tested without inventing a strategy; raw inputs and dated diagnostics are retained. | No qualified-candidate/rejection replay for an accepted strategy has occurred. A missing input is unavailable, not a failed trading rule. G03/G04 remain open. |
 
-Next external prerequisite is local configuration of the user's EODHD **free**
-personal key; reported registration alone does not verify provider access.
-The reviewable next probe is limited to a predeclared small-cap sample and
-at most the documented ticker-call budget; preserve absent/null fields and
-rejections. No paid subscription, account creation, live-price replacement,
-automated selection of 20 favored symbols, or trading authority follows from
-this source discovery.
+Local key configuration and one QS access check are complete. Further source
+acceptance requires documented update semantics and evidence that required lookup
+demand fits verified capacity, or a separately verified adequate source. Preserve
+absent/null fields and rejections. No paid subscription, account creation,
+live-price replacement, automated selection of 20 favored symbols, or trading
+authority follows from this source discovery.
 
 Validation for this increment: 103 new-module targeted tests passed. The current
 workspace full suite passed 251 tests, with one existing upstream

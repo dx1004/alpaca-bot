@@ -273,17 +273,19 @@ def test_check_cli_validates_without_input_or_token_output(
     assert "contents hidden" in output.out and TOKEN not in output.out + output.err
 
 
-def test_interactive_cli_saves_hidden_input_without_echoing(
+def test_tty_input_with_rtk_captured_stderr_uses_default_hidden_prompt(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     path = _path(tmp_path)
     main = _cli(path, monkeypatch)
-    stderr = Terminal()
+    stderr = io.StringIO()
     monkeypatch.setattr(sys, "stdin", Terminal())
     monkeypatch.setattr(sys, "stderr", stderr)
 
-    def hidden(prompt: str, *, stream: object) -> str:
-        assert stream is stderr and "hidden" in prompt
+    def hidden(prompt: str) -> str:
+        # Leave getpass's stream unspecified so it uses the controlling terminal,
+        # even when RTK captures stderr and buffers its output.
+        assert "hidden" in prompt and not stderr.isatty()
         return TOKEN
 
     monkeypatch.setattr(getpass, "getpass", hidden)

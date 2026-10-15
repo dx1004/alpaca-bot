@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "session_date_local": "2026-10-15",
+  "session_timezone": "America/Los_Angeles",
+  "scope": "ONE_READ_ONLY_QS_REFERENCE_ACCESS_PROBE",
+  "local_credential_check": "PRIVATE_STORAGE_AND_LOCAL_FORMAT_VERIFIED_WITH_CONTENTS_HIDDEN",
+  "user_reported_account_plan": "FREE",
+  "provider_account_plan_endpoint_queried": false,
+  "capture": {
+    "endpoint": "https://eodhd.com/api/us-quote-delayed",
+    "requested_symbols": [
+      "QS.US"
+    ],
+    "requested_fields": [
+      "symbol",
+      "currency",
+      "sharesFloat",
+      "sharesOutstanding",
+      "marketCap",
+      "timestamp"
+    ],
+    "requested_at": "2026-10-15T07:54:26.600381+00:00",
+    "received_at": "2026-10-15T07:54:26.783019+00:00",
+    "http_status": 200,
+    "response_bytes": 195,
+    "response_sha256": "b97ffd05e6e46897ef32a936be105db4cf7944cd8044c349323e765d9fa49897",
+    "documented_ticker_call_units": 1,
+    "authentication": "PRIVATE_LOCAL_PERSONAL_TOKEN_NOT_RECORDED",
+    "redirects_followed": false,
+    "retries": 0,
+    "strategy_eligibility": "BLOCKED_RESEARCH"
+  },
+  "runtime_archive_relative": "var/research/w205-input-audit/2026-10-15/eodhd-personal-probe/19f03723d9b24c27961590943451108e",
+  "checks": {
+    "hash_matches": true,
+    "byte_count_matches": true,
+    "http_200": true,
+    "exactly_one_requested_qs_row": true,
+    "positive_integer_reference_fields": true,
+    "usd": true,
+    "float_not_above_outstanding": true,
+    "local_request_receipt_order": true,
+    "snapshot_not_future": true
+  },
+  "provider_snapshot_at": "2026-10-15T00:37:00+00:00",
+  "provider_time_semantics": "SNAPSHOT_NOT_FLOAT_EFFECTIVE_OR_REVISION_TIME",
+  "float_effective_at": null,
+  "float_revision_at": null,
+  "trusted_float_shares": null,
+  "field_access_scope": "OBSERVED_ON_ONE_QS_REQUEST_ONLY",
+  "float_freshness": "UNVERIFIED",
+  "broader_coverage": "UNVERIFIED",
+  "recurring_capacity_acceptance": "UNVERIFIED_20_TICKER_DAILY_LIMIT",
+  "remaining_daily_quota": "NOT_QUERIED_OR_INFERRED",
+  "independent_validation": "PASS_CAPTURE_CONSISTENCY_ONLY",
+  "environment_fault": {
+    "initial_result": "SANDBOX_DNS_GAIERROR_BEFORE_HTTP",
+    "resolution": "TOOL_APPROVED_SINGLE_QS_REQUEST_SUCCEEDED",
+    "original_three_ticker_attempt_reached_provider": false
+  },
+  "terminal_fix_validation": {
+    "focused_tests_passed": 38,
+    "independent_controlling_pty_modes": [
+      "RTK_PROXY",
+      "DIRECT_PYTHON"
+    ],
+    "prompt_visible_before_input": true,
+    "echo_disabled_during_input": true,
+    "echo_restored_after_exit": true,
+    "synthetic_token_absent_from_output": true,
+    "actual_secret_store_used_for_terminal_tests": false
+  },
+  "sources": [
+    "https://eodhd.com/financial-apis/live-v2-for-us-stocks-extended-quotes-2025",
+    "https://eodhd.com/pricing",
+    "https://eodhd.com/lp/eodhd-mcp-server"
+  ],
+  "strategy_eligibility": "BLOCKED_RESEARCH",
+  "w2_05_accepted": false,
+  "g03_closed": false,
+  "g04_closed": false,
+  "order_or_position_endpoint_called": false,
+  "subscription_purchased": false,
+  "private_token_or_authenticated_url_recorded": false
+}
