@@ -1,0 +1,157 @@
+{
+  "actual_proof_binding": {
+    "all_outcomes_have_proof": true,
+    "alpaca_requests_this_increment": 0,
+    "archive": "var/research/w205-adapted-screen/2026-10-15/c7b0f08c10d64c47a39e2c374f0ea405-baseline-replay",
+    "contract_sha256": "5ce35ecf7e4869dfda490c5e54b0d17d35c47b4d29cd641ccf2d14f87d8bc88f",
+    "distinct_input_refs_verified": 177,
+    "eodhd_requests_this_increment": 0,
+    "old_outcomes_unchanged": true,
+    "outcome_count": 14398,
+    "repeated_proof_payload_identical": true,
+    "replay_at_result": 1,
+    "replay_before_result": 0,
+    "result_sequence": 13806,
+    "result_sha256": "bf4c1dedb54d94666a46a2d2482b29bab395db827c753b6941a237d47e3c79b9",
+    "status_counts": {
+      "INPUT_UNAVAILABLE": 6981,
+      "RULE_NOT_MET": 7386,
+      "SCREEN_MATCH": 31
+    }
+  },
+  "date": "2026-10-15",
+  "formal_paper_evaluation": false,
+  "full_goal_status": "NOT_ACHIEVED",
+  "full_strategy_versions": [
+    {
+      "accepted_executable_strategy": false,
+      "blocked_domains": [
+        "SCREENING",
+        "RELATIVE_VOLUME",
+        "NEWS",
+        "ENTRY",
+        "ADDS",
+        "RISK",
+        "STOPS",
+        "EXIT",
+        "DAILY_LIMIT",
+        "STOP_TRADING",
+        "ACCOUNT_STAGE"
+      ],
+      "manifest_path": "evidence/strategy-versions/ROSS_SMALL_ACCOUNT_CANDIDATE_V1.yaml",
+      "manifest_sha256": "697a1d3bb8ff7b25a75a73c2dc4d92a1317f8893d8bb7dbb872c7e66918645ea",
+      "matrix_path": "evidence/fidelity-matrix.yaml",
+      "matrix_sha256": "7587951114fa4c86654ffce656ddcc99424809884bb322923c2774d625418882",
+      "status": "CANDIDATE",
+      "version_id": "ROSS_SMALL_ACCOUNT_CANDIDATE_V1"
+    },
+    {
+      "accepted_executable_strategy": false,
+      "blocked_domains": [
+        "SCREENING",
+        "RELATIVE_VOLUME",
+        "NEWS",
+        "ENTRY",
+        "ADDS",
+        "RISK",
+        "STOPS",
+        "EXIT",
+        "DAILY_LIMIT",
+        "STOP_TRADING",
+        "ACCOUNT_STAGE"
+      ],
+      "manifest_path": "evidence/strategy-versions/HYBRID_500_IEX_CANDIDATE_V1.yaml",
+      "manifest_sha256": "2a6b93caca13365c31397de34e808bec4f3ce807c65a184150b39fb5aabd074e",
+      "matrix_path": "evidence/hybrid-fidelity-matrix.yaml",
+      "matrix_sha256": "8b99cfb1a9038485b434576c95e90b85fbd53c2be5080e78be438ee1d2462ea3",
+      "status": "CANDIDATE",
+      "version_id": "HYBRID_500_IEX_CANDIDATE_V1"
+    }
+  ],
+  "goal_must_remain_active": true,
+  "model_routing": {
+    "adopted": "Raw digest, schema uniqueness, version/scope checks",
+    "cloud": "gemma4:31b remote inference verified 2026-10-15T18:25:30.499Z",
+    "input_scope": "Public Python documentation URLs and a generic hypothetical JSON binding task only; no local files or captures exported",
+    "rejected": "Unnecessary signed order authorization token proposal"
+  },
+  "objective": "Complete full W2-05 without reducing its original requirements",
+  "order_authority": false,
+  "previous_goal_turn_classification": "PROGRESS",
+  "proof_binding_implementation_sha256": {
+    "scripts/replay_adapted_scanner.py": "47792e4313cb8d3e53de54bf2d8c3e3b9d31bee37623d3f76002b2041946d482",
+    "src/alpaca_ross_bot/adapted_scanner.py": "93fc0fa0aaefff57961e6b76944be8abe97b1c6976017fb73fa67bb592a85917",
+    "src/alpaca_ross_bot/scanner_contract.py": "12849a49ae4b5eae79c0b930c5f907d3b94ae213272c3451b9624f1d2a8125a5",
+    "tests/test_adapted_scanner.py": "f344bd60f3978504de8d78d714555516a0e994e29f177c371a707758317c2170",
+    "tests/test_adapted_scanner_replay.py": "7a6df0ee78c70c45d31f21ed467d1698d782b084c2d6961504ac8605877664e1",
+    "tests/test_scanner_contract.py": "38350db34c49bdb557ee64d931fb30eda3c2832373597319cc20a185172039c1"
+  },
+  "requirements": [
+    {
+      "evidence": "Both authoritative full-strategy manifests remain CANDIDATE; blocked operational rules are not executable acceptance.",
+      "id": "W205-FROZEN-STRATEGY",
+      "requirement": "Accepted frozen Ross or separately attributed full hybrid strategy version",
+      "state": "INCOMPLETE"
+    },
+    {
+      "evidence": "Component acceptance documented in TODO.md and week2-evidence.md; does not establish G04 execution eligibility.",
+      "id": "W205-PREREQUISITE-COMPONENTS",
+      "requirement": "W1-06 inventory, W2-03 collection/health component, W2-04 availability replay",
+      "state": "COMPONENT_ACCEPTED"
+    },
+    {
+      "evidence": "Accepted independent scan contract is pinned; every outcome carries contract digest, specification rule IDs and source sequence refs. Float/news remain non-veto preferences.",
+      "id": "W205-SCANNER-VERSION-PROOF",
+      "requirement": "Version-scoped universe, price, change, RVOL and float rules with traceable calculations/rejections",
+      "state": "PASS_SCANNER_ONLY"
+    },
+    {
+      "evidence": "Recorded raw offline discovery/price-volume/calendar evidence passes; no execution freshness acceptance or selected full-version required-data contract.",
+      "id": "W205-QUALIFIED-REQUIRED-INPUTS",
+      "requirement": "Verified Alpaca sources and decision-time data actually required by the selected full version",
+      "state": "PARTIAL_OFFLINE_ONLY"
+    },
+    {
+      "evidence": "Actual captured-input replay and synthetic adverse cases retained; proof-binding increment preserves old outcomes.",
+      "id": "W205-DETERMINISTIC-REPLAY",
+      "requirement": "Deterministic candidate/rejection/unavailable evidence",
+      "state": "PASS_OFFLINE_ADAPTATION"
+    },
+    {
+      "evidence": "NOT_SIP_EQUIVALENT and full_market_coverage=false retained.",
+      "id": "W205-IEX-DISCLOSURE",
+      "requirement": "IEX output never claims full-market fidelity",
+      "state": "PASS"
+    }
+  ],
+  "scanner_contract": {
+    "classification": "USER_ACCEPTED_ADAPTATION_NOT_ROSS_REPLICA",
+    "full_strategy_acceptance": false,
+    "order_authority": false,
+    "profile_id": "GENERAL_IEX_DAILY30_SCREEN_V1",
+    "rule_ids": [
+      "V1_PRICE_1_INCLUSIVE_20_EXCLUSIVE",
+      "V1_RVOL_IEX_RAW_DAILY30_GE5",
+      "V1_RANK_EXACT_CHANGE_SYMBOL_TIE",
+      "V1_DISCOVERY_CURRENT_ACTIVE_US_EQUITY",
+      "V1_NEWS_FLOAT_NONVETO_PREFERENCES",
+      "V1_AS_OBSERVED_NY_DAY_AVAILABILITY"
+    ],
+    "sha256": "5ce35ecf7e4869dfda490c5e54b0d17d35c47b4d29cd641ccf2d14f87d8bc88f"
+  },
+  "scope_authority": [
+    "TODO.md W2-05 dependency/acceptance",
+    "docs/development-plan-8-weeks.md Week 2",
+    "docs/w2-05-scanner-acceptance.md"
+  ],
+  "validation": {
+    "focused_pytest_passed": 94,
+    "format_six_files": "PASS",
+    "full_pytest_passed": 433,
+    "independent_review": "APPROVE_BOUNDED_INCREMENT_NOT_FULL_W205",
+    "isolated_baseline": "3f415c5a7f968130e0b4a1fccd63a9ed94e004a9 plus accepted scanner and proof-binding increments",
+    "known_warning": "Pre-existing websockets.legacy deprecation",
+    "ruff_six_files": "PASS",
+    "strict_mypy_six_files": "PASS_INDEPENDENT"
+  }
+}

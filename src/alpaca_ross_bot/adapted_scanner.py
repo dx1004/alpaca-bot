@@ -1,11 +1,16 @@
 """Offline, as-observed screen for the explicitly accepted IEX adaptation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from fractions import Fraction
 from zoneinfo import ZoneInfo
 
+from .scanner_contract import (
+    AcceptedScannerContract,
+    validate_accepted_scanner_contract,
+    validate_sequence_refs,
+)
 from .scanner_input_audit import (
     DatedDailyVolume,
     ScannerInputAuditError,
@@ -26,6 +31,8 @@ class ScreenContext:
     calendar_available_at: datetime
     catalog_symbols: tuple[str, ...]
     catalog_available_at: datetime
+    contract: AcceptedScannerContract
+    input_sequence_refs: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -51,10 +58,11 @@ class ScreenInput:
     pagination_exhausted: bool
     news_available_at: datetime | None = None
     float_available_at: datetime | None = None
+    input_sequence_refs: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
-class ScreenResult:
+class _UnboundResult:
     symbol: str
     status: str
     reasons: tuple[str, ...]
@@ -73,6 +81,13 @@ class ScreenResult:
     history_completion_basis: str = "ELAPSED_NY_DAY_NOT_VENDOR_IMMUTABILITY"
 
 
+@dataclass(frozen=True, kw_only=True)
+class ScreenResult(_UnboundResult):
+    contract_sha256: str
+    rule_ids: tuple[str, ...]
+    input_sequence_refs: tuple[int, ...]
+
+
 def _utc(stamp: datetime) -> bool:
     return (
         isinstance(stamp, datetime)
@@ -82,6 +97,8 @@ def _utc(stamp: datetime) -> bool:
 
 
 def _context_reasons(context: ScreenContext) -> set[str]:
+    validate_accepted_scanner_contract(context.contract)
+    validate_sequence_refs(context.input_sequence_refs)
     stamps = (
         context.decision_at,
         context.calendar_available_at,
@@ -140,6 +157,26 @@ def evaluate_one(context: ScreenContext, item: ScreenInput) -> ScreenResult:
 def _evaluate_safe(
     context: ScreenContext, item: ScreenInput, prepared: _PreparedContext
 ) -> ScreenResult:
+    validate_sequence_refs(item.input_sequence_refs)
+    return _bind(
+        _evaluate_unbound(context, item, prepared), context, item.input_sequence_refs
+    )
+
+
+def _bind(
+    result: _UnboundResult, context: ScreenContext, refs: tuple[int, ...] = ()
+) -> ScreenResult:
+    return ScreenResult(
+        **{field.name: getattr(result, field.name) for field in fields(_UnboundResult)},
+        contract_sha256=context.contract.sha256,
+        rule_ids=context.contract.rule_ids,
+        input_sequence_refs=tuple(sorted(set(context.input_sequence_refs) | set(refs))),
+    )
+
+
+def _evaluate_unbound(
+    context: ScreenContext, item: ScreenInput, prepared: _PreparedContext
+) -> _UnboundResult:
     dates = [item.current_price.session_date]
     if item.prior_close is not None:
         dates.append(item.prior_close.session_date)
@@ -154,8 +191,8 @@ def _evaluate_safe(
         return _unavailable(item.symbol, "INVALID_VOLUME_INPUT_CONTRACT")
 
 
-def _unavailable(symbol: str, reason: str) -> ScreenResult:
-    return ScreenResult(
+def _unavailable(symbol: str, reason: str) -> _UnboundResult:
+    return _UnboundResult(
         symbol,
         "INPUT_UNAVAILABLE",
         (reason,),
@@ -169,7 +206,7 @@ def _unavailable(symbol: str, reason: str) -> ScreenResult:
 
 def _evaluate_one(
     context: ScreenContext, item: ScreenInput, prepared: _PreparedContext
-) -> ScreenResult:
+) -> _UnboundResult:
     """Evaluate supplied observations; neither collection nor live freshness proof.
 
     Available preferences mean supplied information exists, not that low float or
@@ -196,7 +233,7 @@ def _evaluate_one(
     )
     # A proven mandatory price failure cannot be rescued by missing RVOL inputs.
     if not reasons and price_valid and not Decimal(1) <= price.value < Decimal(20):
-        return ScreenResult(
+        return _UnboundResult(
             item.symbol,
             "RULE_NOT_MET",
             ("PRICE_OUTSIDE_1_TO_UNDER_20",),
@@ -207,7 +244,7 @@ def _evaluate_one(
             "UNAVAILABLE",
         )
     if item.prior_close is None or item.current_volume is None:
-        return ScreenResult(
+        return _UnboundResult(
             item.symbol,
             "INPUT_UNAVAILABLE",
             tuple(sorted(reasons | {"REQUIRED_MARKET_INPUT_MISSING"})),
@@ -283,7 +320,7 @@ def _evaluate_one(
         status = "RULE_NOT_MET" if reasons else "SCREEN_MATCH"
     else:
         status = "INPUT_UNAVAILABLE"
-    return ScreenResult(
+    return _UnboundResult(
         item.symbol,
         status,
         tuple(sorted(reasons)),
@@ -317,15 +354,18 @@ def evaluate_all(
     present = {item.symbol for item in items}
     for symbol in prepared.catalog - present:
         results.append(
-            ScreenResult(
-                symbol,
-                "INPUT_UNAVAILABLE",
-                ("OBSERVATION_MISSING",),
-                None,
-                None,
-                None,
-                "UNAVAILABLE",
-                "UNAVAILABLE",
+            _bind(
+                _UnboundResult(
+                    symbol,
+                    "INPUT_UNAVAILABLE",
+                    ("OBSERVATION_MISSING",),
+                    None,
+                    None,
+                    None,
+                    "UNAVAILABLE",
+                    "UNAVAILABLE",
+                ),
+                context,
             )
         )
     return tuple(

@@ -1,6 +1,7 @@
 from dataclasses import replace
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
+from pathlib import Path
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
@@ -15,6 +16,7 @@ from alpaca_ross_bot.adapted_scanner import (
     evaluate_all,
     evaluate_one,
 )
+from alpaca_ross_bot.scanner_contract import load_accepted_scanner_contract_file
 from alpaca_ross_bot.scanner_input_audit import DatedDailyVolume, VolumeContract
 
 NY = ZoneInfo("America/New_York")
@@ -49,7 +51,16 @@ def fixture(
         session_date=prior_day,
         event_at=datetime.combine(prior_day, time(16), NY).astimezone(UTC),
     )
-    return ScreenContext(decision, days, decision, (symbol,), decision), ScreenInput(
+    return ScreenContext(
+        decision,
+        days,
+        decision,
+        (symbol,),
+        decision,
+        load_accepted_scanner_contract_file(
+            Path("evidence/general-iex-daily30-screen-v1.json")
+        ),
+    ), ScreenInput(
         symbol, price, prior, bar(today, 500, False), history, decision, True
     )
 
@@ -335,3 +346,22 @@ def test_catalog_context_validated_once_per_batch() -> None:
             key=lambda r: r.symbol,
         )
     )
+
+
+@pytest.mark.parametrize("mode", ["match", "price", "unavailable", "missing"])
+def test_every_outcome_binds_contract_rules_and_inputs(mode: str) -> None:
+    context, item = fixture()
+    context = replace(context, input_sequence_refs=(3, 1))
+    item = replace(item, input_sequence_refs=(2, 3))
+    if mode == "price":
+        item = replace(
+            item, current_price=replace(item.current_price, value=Decimal("20"))
+        )
+    elif mode == "unavailable":
+        item = replace(item, prior_close=None)
+    results = evaluate_all(context, () if mode == "missing" else (item,))
+    result = results[0]
+    assert result.contract_sha256 == context.contract.sha256
+    assert result.rule_ids == context.contract.rule_ids
+    assert result.input_sequence_refs == ((1, 3) if mode == "missing" else (1, 2, 3))
+    assert not result.order_authority

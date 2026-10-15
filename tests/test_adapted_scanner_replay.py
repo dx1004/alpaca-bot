@@ -14,6 +14,7 @@ import pytest
 
 from alpaca_ross_bot.config import PaperCredentials, SecretValue
 from alpaca_ross_bot.journal import Journal
+from alpaca_ross_bot.scanner_contract import load_accepted_scanner_contract
 from alpaca_ross_bot.scanner_data import AlpacaScannerData
 
 NOW = datetime(2026, 1, 15, 17, tzinfo=UTC)
@@ -237,6 +238,65 @@ def test_real_collector_capture_replays_with_fixed_decision_and_all_input_clocks
     assert first["replay_at_total"] == first["replay_before_total"] + 1
     assert first["strategy_eligibility"] == "BLOCKED_RESEARCH"
     assert not first["order_authority"] and first["eodhd_requests"] == 0
+
+
+def test_every_outcome_binds_contract_rules_and_its_raw_inputs(tmp_path: Path) -> None:
+    directory = make_capture(tmp_path)
+    summary = runner().replay_capture(directory, tmp_path)
+    capture = json.loads((directory / "capture.json").read_text())
+    journal = Journal(directory / "journal.sqlite3", tmp_path)
+    try:
+        result_pair = journal.read_event(summary["result_sequence"])
+        manifest_pair = journal.read_event(capture["manifest_sequence"])
+        assert result_pair is not None and manifest_pair is not None
+        result = json.loads(result_pair[1])
+        manifest = json.loads(manifest_pair[1])
+        context_refs = {
+            manifest["asset_directory_sequence"],
+            capture["manifest_sequence"],
+            capture["calendar_sequence"],
+        }
+        snapshot_ref = manifest["snapshot_batch_sequences"][0]
+        history_refs = {page["sequence"] for page in capture["history_pages"]}
+        for row in result["results"]:
+            assert row["contract_sha256"] == summary["contract_sha256"]
+            assert tuple(row["rule_ids"]) == tuple(summary["rule_ids"])
+            assert row["rule_ids"]
+            expected_refs = set(context_refs)
+            if row["symbol"] != "MISSING":
+                expected_refs.add(snapshot_ref)
+            if row["symbol"] == "AAA":
+                expected_refs.update(history_refs)
+            assert set(row["input_sequence_refs"]) == expected_refs
+            assert all(journal.read_event(ref) is not None for ref in expected_refs)
+    finally:
+        journal.close()
+
+
+def test_contract_drift_aborts_before_result_is_recorded(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    directory = make_capture(tmp_path)
+    capture = json.loads((directory / "capture.json").read_text())
+    next_sequence = max(page["sequence"] for page in capture["history_pages"]) + 1
+    module = runner()
+    accepted_path = Path("evidence/general-iex-daily30-screen-v1.json")
+    altered = accepted_path.read_bytes().replace(
+        b'"rvol_minimum_inclusive": "5"', b'"rvol_minimum_inclusive": "4"'
+    )
+    assert altered != accepted_path.read_bytes()
+    monkeypatch.setattr(
+        module,
+        "load_accepted_scanner_contract_file",
+        lambda path: load_accepted_scanner_contract(altered),
+    )
+    with pytest.raises(ValueError, match="digest"):
+        module.replay_capture(directory, tmp_path)
+    journal = Journal(directory / "journal.sqlite3", tmp_path)
+    try:
+        assert journal.read_event(next_sequence) is None
+    finally:
+        journal.close()
 
 
 @pytest.mark.parametrize(

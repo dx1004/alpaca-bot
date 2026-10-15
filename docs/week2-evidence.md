@@ -1,5 +1,30 @@
 # Week 2 acceptance evidence
 
+## W2-05 full-scope continuation and result proof binding (2026-10-15)
+
+The independent completion audit retained the original W2-05 dependency on an
+accepted frozen Ross or separately attributed full hybrid strategy and qualified
+required inputs. Both authoritative strategy versions remain candidates; no
+blocked operational rule was relabeled accepted. The three previously completed
+scanner items do not close the entire task.
+
+The accepted scanner JSON had been documentary acceptance without a runtime
+digest/rule binding. It now has a typed, pinned loader; contract changes,
+cross-version fields and invalid sequence references fail closed. Every outcome
+requires proof fields, and the journaled replay output binds the actual raw input
+references. Independent review found and verified a repair for a contract/volume
+variable collision in the replay loader. Thresholds and prior mathematical
+outcomes remain unchanged. An isolated committed baseline plus these scanner
+increments passed 433 tests, with the existing upstream deprecation warning;
+94 focused tests, strict types, Ruff and formatting passed for the changed code.
+
+The [full-task release audit](../evidence/w2-05-release-audit-2026-10-15.json)
+records the implementation hashes, actual proof-bound replay and the remaining
+requirements. The prior dated adaptation record is preserved as historical
+evidence rather than rewritten to claim that its earlier source hashes are the
+latest implementation. This increment used cached raw observations, no API
+requests and no trading, and it does not begin formal paper evaluation.
+
 ## W2-05 independently accepted IEX daily-30 screen (2026-10-15)
 
 The user accepted a separately named `GENERAL_IEX_DAILY30_SCREEN_V1`: observed

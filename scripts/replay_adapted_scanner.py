@@ -25,6 +25,7 @@ from alpaca_ross_bot.adapted_scanner import (
 from alpaca_ross_bot.events import EventEnvelope
 from alpaca_ross_bot.journal import Journal
 from alpaca_ross_bot.replay import ReplayMode, replay_at
+from alpaca_ross_bot.scanner_contract import load_accepted_scanner_contract_file
 from alpaca_ross_bot.scanner_discovery_audit import audit_iex_asset_discovery
 from alpaca_ross_bot.scanner_input_audit import DatedDailyVolume, VolumeContract
 
@@ -160,6 +161,10 @@ def clocked_price(
 
 
 def replay_capture(directory: Path, runtime_root: Path) -> dict[str, Any]:
+    accepted_contract = load_accepted_scanner_contract_file(
+        Path(__file__).resolve().parents[1]
+        / "evidence/general-iex-daily30-screen-v1.json"
+    )
     capture = strict_json((directory / "capture.json").read_bytes())
     if not isinstance(capture, dict) or capture.get("status") != "CAPTURE_COMPLETE":
         raise ValueError("capture incomplete")
@@ -223,8 +228,15 @@ def replay_capture(directory: Path, runtime_root: Path) -> dict[str, Any]:
             read(
                 audit.catalog_sequence, "ASSET_DIRECTORY_RAW_RESPONSE", "asset_master"
             )[0].available_at,
+            accepted_contract,
+            (
+                audit.catalog_sequence,
+                audit.manifest_sequence,
+                calendar_event.sequence,
+            ),
         )
         snapshots: dict[str, tuple[dict[str, Any], datetime]] = {}
+        snapshot_sequences: dict[str, int] = {}
         for sequence in audit.snapshot_batch_sequences:
             event, _, values = read(sequence, "IEX_SNAPSHOT_RAW_RESPONSE", "iex")
             snapshots.update(
@@ -233,6 +245,7 @@ def replay_capture(directory: Path, runtime_root: Path) -> dict[str, Any]:
                     for symbol, value in values.items()
                 }
             )
+            snapshot_sequences.update({symbol: sequence for symbol in values})
         eligible: list[str] = []
         for symbol, (snapshot, available) in snapshots.items():
             try:
@@ -252,6 +265,7 @@ def replay_capture(directory: Path, runtime_root: Path) -> dict[str, Any]:
             raise ValueError("price prefilter coverage mismatch")
         histories: dict[str, list[DatedDailyVolume]] = {}
         history_clocks: dict[str, datetime] = {}
+        history_sequences: dict[str, list[int]] = {}
         queried: list[str] = []
         next_token: str | None = None
         active_query: dict[str, str] | None = None
@@ -329,6 +343,7 @@ def replay_capture(directory: Path, runtime_root: Path) -> dict[str, Any]:
             next_token = token
             for symbol in symbols:
                 history_clocks[symbol] = event.available_at
+                history_sequences.setdefault(symbol, []).append(event.sequence)
             for symbol, rows in values["bars"].items():
                 if not isinstance(rows, list):
                     raise ValueError("historical bars must be lists")
@@ -385,6 +400,14 @@ def replay_capture(directory: Path, runtime_root: Path) -> dict[str, Any]:
                         tuple(histories.get(symbol, [])),
                         history_clocks.get(symbol, available),
                         symbol in history_clocks,
+                        input_sequence_refs=tuple(
+                            sorted(
+                                {
+                                    snapshot_sequences[symbol],
+                                    *history_sequences.get(symbol, ()),
+                                }
+                            )
+                        ),
                     )
                 )
             except (KeyError, TypeError, ValueError):
@@ -403,6 +426,8 @@ def replay_capture(directory: Path, runtime_root: Path) -> dict[str, Any]:
         payload = json.dumps(
             {
                 "profile_id": PROFILE_ID,
+                "contract_sha256": accepted_contract.sha256,
+                "rule_ids": accepted_contract.rule_ids,
                 "decision_at": decision.isoformat(),
                 "input_sequences": inputs,
                 "results": result_rows,
@@ -459,6 +484,8 @@ def replay_capture(directory: Path, runtime_root: Path) -> dict[str, Any]:
             raise ValueError("result availability replay failed")
         summary = {
             "profile_id": PROFILE_ID,
+            "contract_sha256": accepted_contract.sha256,
+            "rule_ids": accepted_contract.rule_ids,
             "decision_at": decision.isoformat(),
             "catalog_count": len(audit.catalog_symbols),
             "requested_count": len(audit.requested_symbols),

@@ -3,6 +3,40 @@
 Review session: 2026-10-14 Los Angeles; authenticated probe date: 2026-10-15 UTC.
 Status: **independent IEX adaptation selected; original Ross/full strategy gates remain BLOCKED_RESEARCH**.
 
+## Full-task completion audit and enforced scanner freeze
+
+The continuation objective is the original W2-05, not only the accepted offline
+adaptation. The [current release audit](../evidence/w2-05-release-audit-2026-10-15.json)
+checks its requirements separately. Full completion remains unproven: both
+authoritative Ross/hybrid strategy manifests are `CANDIDATE`, and the selected
+full strategy's execution-input eligibility is not accepted. Renaming a version
+`FROZEN` would not accept its blocked entry, stop, exit or risk rules. Missing
+preferred news/float and deferred SIP/Webull are not newly imposed vetoes.
+
+One actual completion gap is now closed: the scanner's accepted specification is
+enforced in code. `scanner_contract.py` accepts only the exact reviewed raw JSON
+digest, bounded strict UTF-8/unique-key input and the typed scanner-only identity.
+Callers cannot substitute another version or raise its authority. Every public
+screen result requires the contract digest, six specification rule IDs and
+input sequence references, including price failures, malformed input and missing
+observations. Rule IDs identify the active specification; they do not claim that
+every predicate was evaluated after an earlier mandatory price failure.
+
+The replay loader binds common catalog/manifest/calendar references and each
+symbol's snapshot/history references after verifying their raw provenance.
+Missing-object results point to the audited catalog and manifest, whose batch
+references preserve the absence evidence. Pure-engine references remain caller
+declarations, not independently verified journal provenance. Actual replay
+verifies the journal chain before recording outputs. Contract drift aborts
+before a result is appended.
+
+This adds traceability without changing any earlier outcome, price/RVOL rule,
+ranking or preference role. The earlier dated acceptance record remains a
+historical snapshot at its commit; the current release audit binds the updated
+implementation and replay. Neither scanner freeze nor its tests accepts the
+parent task's full-strategy dependency or execution freshness. Those conditions
+must pass before W2-05 can be marked complete.
+
 ## Accepted independent screen — 2026-10-15
 
 The user explicitly accepted `GENERAL_IEX_DAILY30_SCREEN_V1` for scanner and
