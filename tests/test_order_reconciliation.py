@@ -1,6 +1,7 @@
 """Synthetic account-wide recovery scenarios; never contact a broker."""
 
 import base64
+import hashlib
 import json
 import sqlite3
 import stat
@@ -1004,6 +1005,45 @@ def test_open_private_creates_owner_only_account_state(tmp_path: Path) -> None:
         item.require_private_order_state()
     finally:
         item.close()
+
+
+def test_forged_semantic_deduplication_cannot_hide_a_new_fill(
+    journal: Journal, reconciler: OrderReconciler, tmp_path: Path
+) -> None:
+    raw = _frame(_order(filled="5", seconds=2), "partial_fill", "future-fill")
+    identity = json.dumps(
+        json.loads(raw), sort_keys=True, separators=(",", ":")
+    ).encode()
+    key = "order_evidence:" + ACCOUNT_REF + ":ws_execution:future-fill:partial_fill"
+    value = {
+        "hash": "sha256:" + hashlib.sha256(identity).hexdigest(),
+        "sequence": reconciler.view()["watermark"],
+    }
+    rows = journal.read_order_events()
+    with sqlite3.connect(tmp_path / "private/journal.sqlite3") as connection:
+        connection.execute("INSERT INTO state VALUES (?,?)", (key, json.dumps(value)))
+    assert not reconciler.verify_rebuild()
+    with pytest.raises(JournalError, match="deduplication"):
+        reconciler.ingest_frame(raw, _at(3), "session-1")
+    assert journal.read_order_events() == rows
+    with pytest.raises(JournalError, match="durable evidence"):
+        OrderReconciler(journal, ACCOUNT_REF, clock=lambda: NOW)
+
+
+def test_orphan_deduplication_blocks_empty_cache_initialization(
+    journal: Journal, tmp_path: Path
+) -> None:
+    with sqlite3.connect(tmp_path / "private/journal.sqlite3") as connection:
+        connection.execute(
+            "INSERT INTO state VALUES (?,?)",
+            (
+                "order_evidence:" + ACCOUNT_REF + ":orphan",
+                json.dumps({"hash": "sha256:" + "0" * 64, "sequence": 99}),
+            ),
+        )
+    with pytest.raises(JournalError, match="durable evidence"):
+        OrderReconciler(journal, ACCOUNT_REF, clock=lambda: NOW)
+    assert journal.read_order_events() == ()
 
 
 @pytest.mark.parametrize("broad_path", ["directory", "database"])

@@ -219,6 +219,75 @@ class PaperOrderHttp:
             None,
         )
 
+    def cancel_engineering_entry_once(
+        self, journal: Journal, client_order_id: str, started_at: datetime
+    ) -> PaperHttpResponse:
+        """Attempt one owned entry cancellation; HTTP acceptance is not finality."""
+        journal.require_private_order_state()
+        if journal.has_order_cancel_attempt(client_order_id):
+            raise JournalError("order cancellation was already attempted")
+        intent = journal.read_order_intent(client_order_id)
+        if not isinstance(intent, dict) or set(intent) != {
+            "paper_endpoint",
+            "paper_account_ref",
+            "purpose",
+            "request_body",
+        }:
+            raise PaperOrderHttpError("reserved paper entry intent is invalid")
+        if (
+            intent["paper_endpoint"] != PAPER_TRADING_URL
+            or not isinstance(intent["paper_account_ref"], str)
+            or not intent["paper_account_ref"].strip()
+            or (
+                self._paper_account_ref is not None
+                and intent["paper_account_ref"] != self._paper_account_ref
+            )
+            or intent["purpose"] != "ENGINEERING_TEST"
+            or not journal.has_order_send_attempt(client_order_id)
+        ):
+            raise PaperOrderHttpError("reserved paper entry identity is invalid")
+        request_body = intent["request_body"]
+        if not isinstance(request_body, str):
+            raise PaperOrderHttpError("reserved paper entry request is invalid")
+        if not request_body or len(request_body.encode()) > self._max_request_bytes:
+            raise PaperOrderHttpError("reserved paper entry request exceeds its cap")
+        try:
+            request = validate_saved_request(request_body)
+            canonical = json.dumps(
+                request, sort_keys=True, separators=(",", ":"), allow_nan=False
+            )
+        except (PaperContractError, ValueError, TypeError) as exc:
+            raise PaperOrderHttpError(
+                "reserved paper entry request is invalid"
+            ) from exc
+        if (
+            canonical != request_body
+            or request["client_order_id"] != client_order_id
+            or request["side"] != "buy"
+        ):
+            raise PaperOrderHttpError(
+                "only canonical owned buy entries may be canceled"
+            )
+        snapshot = self.reconcile_order_snapshot(journal, client_order_id)
+        if snapshot is None or snapshot.status not in {
+            "accepted",
+            "new",
+            "partially_filled",
+        }:
+            raise PaperOrderHttpError(
+                "entry cancellation requires a working owned order"
+            )
+        journal.mark_order_cancel_attempt(
+            client_order_id, snapshot.broker_order_id, started_at
+        )
+        return self._request_and_record(
+            journal,
+            client_order_id,
+            "DELETE",
+            f"/v2/orders/{snapshot.broker_order_id}",
+            None,
+        )
+
     def read_open_orders_page(
         self, *, after_order_id: str | None = None
     ) -> PaperHttpResponse:

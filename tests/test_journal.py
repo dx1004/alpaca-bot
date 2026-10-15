@@ -210,6 +210,7 @@ def test_version_one_journal_migrates_without_losing_events(tmp_path: Path) -> N
     journal.append(envelope(), PAYLOAD)
     journal.close()
     with sqlite3.connect(path) as connection:
+        connection.execute("DROP TABLE order_cancel_attempts")
         connection.execute("DROP TABLE paper_account_verifications")
         connection.execute("DROP TABLE order_http_observations")
         connection.execute("DROP TABLE order_send_attempts")
@@ -249,6 +250,7 @@ def test_version_two_intents_survive_send_marker_migration(tmp_path: Path) -> No
     journal.reserve_order_intent("client-1", {"test": True})
     journal.close()
     with sqlite3.connect(path) as connection:
+        connection.execute("DROP TABLE order_cancel_attempts")
         connection.execute("DROP TABLE paper_account_verifications")
         connection.execute("DROP TABLE order_http_observations")
         connection.execute("DROP TABLE order_send_attempts")
@@ -306,6 +308,7 @@ def test_version_three_send_marker_survives_http_observation_migration(
     journal.mark_order_send_attempt("client-1", NOW)
     journal.close()
     with sqlite3.connect(path) as connection:
+        connection.execute("DROP TABLE order_cancel_attempts")
         connection.execute("DROP TABLE paper_account_verifications")
         connection.execute("DROP TABLE order_http_observations")
         connection.execute("PRAGMA user_version=3")
@@ -340,9 +343,36 @@ def test_schema_four_http_evidence_survives_account_binding_migration(
     journal.record_order_http_observation("client-1", response)
     journal.close()
     with sqlite3.connect(path) as connection:
+        connection.execute("DROP TABLE order_cancel_attempts")
         connection.execute("DROP TABLE paper_account_verifications")
         connection.execute("PRAGMA user_version=4")
     reopened = Journal(path, tmp_path / "var")
     assert reopened.read_order_http_observations("client-1") == (response,)
     assert reopened.read_paper_account_ref() is None
     reopened.close()
+
+
+def test_schema_five_state_survives_cancellation_migration(tmp_path: Path) -> None:
+    path = tmp_path / "var" / "journal.sqlite3"
+    journal = private_journal(path, tmp_path / "var")
+    journal.append(envelope(), PAYLOAD, {"existing": {"value": "preserved"}})
+    journal.reserve_order_intent("client-1", {"valid": True})
+    journal.mark_order_send_attempt("client-1", NOW)
+    response = OrderHttpObservation("POST", "HTTP_RESPONSE", NOW, 504, b"timeout")
+    journal.record_order_http_observation("client-1", response)
+    journal.record_paper_account_verification("account-1", b"first", NOW)
+    journal.close()
+    with sqlite3.connect(path) as connection:
+        connection.execute("DROP TABLE order_cancel_attempts")
+        connection.execute("PRAGMA user_version=5")
+    reopened = Journal(path, tmp_path / "var")
+    assert reopened.read_event(1) == (envelope(), PAYLOAD)
+    assert reopened.read_state("existing") == {"value": "preserved"}
+    assert reopened.read_order_intent("client-1") == {"valid": True}
+    assert reopened.has_order_send_attempt("client-1")
+    assert reopened.read_order_http_observations("client-1") == (response,)
+    assert reopened.read_paper_account_ref() == "account-1"
+    assert reopened.read_order_cancel_attempt("client-1") is None
+    reopened.close()
+    with sqlite3.connect(path) as connection:
+        assert connection.execute("PRAGMA user_version").fetchone() == (6,)

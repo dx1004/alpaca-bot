@@ -221,3 +221,128 @@ W3-05 is accepted as an engineering component. Its state/report cannot authorize
 new exposure, cancel protection, clear an unresolved send marker, enable live
 trading or begin formal paper. W3-06 protection/incident rules and W3-07 actual
 order-cycle evidence remain open, alongside independent strategy/risk/data gates.
+
+## W3-06 through W3-08 — Verified increment, full acceptance open (2026-10-15)
+
+The user requested the execution, risk, SDET and quantitative-validation roles
+to complete all three tasks. Their full requirements and dependencies remain
+unchanged. This is a checked implementation increment, not completion of those
+tasks. Current source is authoritative: the separately accepted
+`HYBRID_500_IEX_INTRADAY_RESEARCH_V1` fixes P01–P13 for research, including P11
+partial-fill/exit obligations and P12/P13 vetoes. Its
+[acceptance record](../evidence/hybrid-500-iex-intraday-research-v1.json)
+explicitly grants no executable release, data qualification or order authority.
+W3-01/W3-02 and the executable/data gates remain open.
+
+### Incident and cancellation increment
+
+`incident_state.py` projects version/account/round-trip-scoped obligations from
+explicit baseline, cumulative order evidence, observed inventory and gate facts.
+It preserves known fills and valid protection during uncertainty; tracks entry,
+cancel, target and closing obligations; detects missing protection, excess exits,
+reverse inventory and live exits after flat. Correctly sized partial target/stop
+fills are not mislabeled as oversells. Stale or identity-vetoed events retain
+their original fingerprints; changed reuse is a durable conflict. Specific
+research obligations require the named version and P11/P12/P13 references.
+No proposal dispatches a broker request or authorizes automatic liquidation.
+
+`incident_journal.py` commits raw facts, deduplication identity and projection
+atomically in a separate `ALPACA_INCIDENT` namespace. Rebuild checks every scoped
+immutable event and its complete deduplication cache. Unambiguous tuple keys
+separate scopes. Restart preserves inventory, protection and pending obligations,
+adds a recovery veto and grants no dispatch. The persistent component rejects
+caller-supplied runtime-accepted flags until the real risk/protection acceptance
+verifier exists; a boolean plus an arbitrary hash is not acceptance.
+
+Journal schema 6 adds immutable owned-entry cancel attempts; migration tests
+preserve schema-5 account, intent, send, HTTP and event evidence. A cancel marker
+requires a sent simple buy engineering intent, matching request/client identity
+and one unambiguous broker UUID across valid local evidence. It commits before
+DELETE. Unsupported/sell/protective shapes are refused. Duplicate cancellation
+is blocked locally, including after restart, timeout or 422. DELETE responses
+are append-only evidence and require the prior cancel marker. The existing POST
+contract is unchanged.
+
+The shared journal now checks cached deduplication claims against their immutable
+source before suppression. The lifecycle rebuild also verifies its complete
+deduplication map. This closes a demonstrated orphan-cache case that could hide
+a new fill without changing the visible projection. Incident insertion does not
+pollute W3-05 lifecycle replay.
+
+Independent review reproduced and verified corrections for two cancellation
+ownership gaps and four incident defects: orphan deduplication, scope/event key
+collision, changed stale-event evidence loss and legitimate partial-exit false
+alarms. The final bounded rereview approved this increment. Relevant tests also
+exercise the six W3-06 fault groups at reducer/storage level, failed-commit
+rollback, coherent cache rewind, missing/hash/sequence cache faults, restart,
+cross-scope identity and the inability to self-grant runtime authority.
+
+### Protection handoff decision remains unresolved
+
+Primary-source retrieval used independent GPT-6.1 Sol Low and coordinator review:
+[order/group semantics](https://docs.alpaca.markets/us/docs/orders-at-alpaca),
+[cancellation](https://docs.alpaca.markets/us/reference/deleteorderbyorderid-1),
+[replacement](https://docs.alpaca.markets/us/reference/patchorderbyorderid-1),
+[single-position close](https://docs.alpaca.markets/us/reference/deleteopenposition-1),
+and the tagged
+[v0.44.0 request models](https://raw.githubusercontent.com/alpacahq/alpaca-py/v0.44.0/alpaca/trading/requests.py).
+Cancellation acceptance is not finality. Native bracket exits wait for complete
+entry fill; group exits can race. Independent exits reserve available inventory.
+These facts leave this exact P11 transition unqualified:
+
+| Phase | Required behavior | Current qualification |
+| --- | --- | --- |
+| First partial entry | Protect its actual filled quantity at frozen S and cancel the entry remainder | Cumulative ownership/cancel primitives implemented; real stop dispatch, quantity growth and racing fills still need acceptance |
+| Entry becomes terminal | Reconcile fills/average F, then fix the whole-position target | Research definition exists; risk/price/charge ownership is still W3-02 work |
+| Existing stop to target-plus-stop | Retain protection while establishing the final target | No cited retail API/SDK contract establishes atomic standalone-stop-to-OCO conversion |
+| Incident or session close | Act only on owned, reconciled residual quantity through an accepted close disposition | Close-position does not document atomic coordination with a working stop; no dispatcher is enabled |
+
+Documented PATCH fields do not establish group conversion or atomic coupling
+with another order's fills. This is an evidence gap, not proof that Alpaca can
+never support a solution. Keeping the stop while investigating amendments leaves
+target installation unresolved. Cancel-confirm-reconcile-submit-OCO introduces
+a protection gap, with no documented bound; a timeout cannot rename that gap as
+continuous protection. Per-fill OCO groups introduce early-target and reservation
+semantics that are not the accepted P11 policy. None was silently selected.
+Broker confirmation or a separately accepted adaptation is required before
+accepting this handoff. No account-wide cancel/close endpoint is authorized as a
+workaround.
+
+### Four-week protocol and remaining acceptance
+
+The user selected engineering reliability plus strategy-rule execution
+consistency; P&L is descriptive, never a pass threshold. The
+[W3-08 draft](w3-paper-protocol.md) defines the proposed four-week window,
+pre-launch hashes, full natural-candidate census, per-cell positive/negative
+coverage witnesses, a natural filled-to-flat witness, independently blinded
+prospective fidelity review, six separate engineering fault groups, fixed
+restart/abort rules and PASS/FAIL/INCONCLUSIVE outcomes. Coverage witnesses are
+not a powered sample or statistical reliability claim. No signal/coverage
+shortfall can be repaired by inducing trades, lowering a quota or extending the
+window after observing outcomes.
+
+The draft still requires accepted executable/risk/data/incident contracts,
+actual calendar/build/account freeze fields and independent review assignments.
+W3-07 still requires the real stop/close/cancel integration, an isolated bounded
+engineering harness and actual owned-order cleanup/reconciliation evidence after
+all dependencies pass. Current tests inject responses; none is a real broker
+cycle. No new credential access, broker request, order, cancellation, runtime
+migration or formal paper enrollment occurred in this increment.
+
+Public-only Ollama Cloud inference was verified twice as `route=cloud`,
+`model=gemma4:31b`, `success=true` for generic incident and study-design critique.
+No local proposal, account data or credentials were exported. Claims that a
+unique client ID alone makes retries safe, cumulative fills need no baseline,
+a closing flag handles already working exits, every four-week study lacks
+statistical power, or synthetic packets can replace natural witnesses were
+rejected. Deterministic code and source review own the adopted controls.
+
+Validation: the complete current repository suite passed **792 tests**, with one
+upstream `websockets.legacy` deprecation warning. Full Ruff check/format passed;
+strict mypy passed for `src`, `tests` and `scripts/reconcile_paper_orders.py`
+(77 files), and scoped diff checks passed.
+The full pytest command used the already verified tool-approved execution path.
+The sandboxed async executor-shutdown ENV_FAULT recurred during independent
+verification; the affected run was stopped with exit 130. Static/synchronous
+checks remained safe, approved full execution completed, and no application or
+global-environment workaround was applied. Global sandbox repair is not claimed.

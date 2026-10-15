@@ -9,8 +9,14 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
+from uuid import UUID
 
 from alpaca_ross_bot.events import EventEnvelope, EventError
+from alpaca_ross_bot.paper_order_contract import (
+    PaperContractError,
+    validate_order_snapshot,
+    validate_saved_request,
+)
 
 
 class JournalError(ValueError):
@@ -84,10 +90,10 @@ class Journal:
         try:
             self._db.execute("BEGIN IMMEDIATE")
             version = self._db.execute("PRAGMA user_version").fetchone()[0]
-            if version == 5:
+            if version == 6:
                 self._db.commit()
                 return
-            if version not in (0, 1, 2, 3, 4):
+            if version not in (0, 1, 2, 3, 4, 5):
                 raise JournalError("unsupported journal schema version")
             if version == 0:
                 self._db.execute(
@@ -145,21 +151,39 @@ class Journal:
                     )
             if version < 4:
                 self._migrate_http_observations()
-            self._db.execute(
-                """CREATE TABLE paper_account_verifications (
+            if version < 5:
+                self._db.execute(
+                    """CREATE TABLE paper_account_verifications (
                     sequence INTEGER PRIMARY KEY,
                     account_ref TEXT NOT NULL,
                     verified_at TEXT NOT NULL,
                     body BLOB NOT NULL
+                    )"""
+                )
+                for action in ("UPDATE", "DELETE"):
+                    trigger = "paper_account_verifications_no_" + action.lower()
+                    self._db.execute(
+                        f"CREATE TRIGGER {trigger} "
+                        f"BEFORE {action} ON paper_account_verifications BEGIN "
+                        "SELECT RAISE(ABORT, 'account verifications are immutable'); "
+                        "END"
+                    )
+            self._db.execute(
+                """CREATE TABLE order_cancel_attempts (
+                    client_order_id TEXT PRIMARY KEY,
+                    broker_order_id TEXT NOT NULL UNIQUE,
+                    started_at TEXT NOT NULL,
+                    FOREIGN KEY (client_order_id)
+                        REFERENCES order_send_attempts(client_order_id)
                 )"""
             )
             for action in ("UPDATE", "DELETE"):
                 self._db.execute(
-                    f"CREATE TRIGGER paper_account_verifications_no_{action.lower()} "
-                    f"BEFORE {action} ON paper_account_verifications BEGIN "
-                    "SELECT RAISE(ABORT, 'account verifications are immutable'); END"
+                    f"CREATE TRIGGER order_cancel_attempts_no_{action.lower()} "
+                    f"BEFORE {action} ON order_cancel_attempts BEGIN "
+                    "SELECT RAISE(ABORT, 'cancel attempts are immutable'); END"
                 )
-            self._db.execute("PRAGMA user_version=5")
+            self._db.execute("PRAGMA user_version=6")
             self._db.commit()
         except Exception:
             self._db.rollback()
@@ -377,14 +401,74 @@ class Journal:
         identity_payload: bytes | None = None,
         prepare_payload: Callable[[bytes], bytes] | None = None,
     ) -> EventEnvelope | None:
+        return self._apply_private_event(
+            account_ref=account_ref,
+            state_key=state_key,
+            dedupe_key=dedupe_key,
+            event_kind=event_kind,
+            payload=payload,
+            received_at=received_at,
+            reduce=reduce,
+            identity_payload=identity_payload,
+            prepare_payload=prepare_payload,
+            namespace="order_lifecycle",
+            source_id="ALPACA_ORDER_LIFECYCLE",
+            dedupe_namespace="order_evidence",
+        )
+
+    def apply_incident_event(
+        self,
+        *,
+        account_ref: str,
+        state_key: str,
+        dedupe_key: str,
+        event_kind: str,
+        payload: bytes,
+        received_at: datetime,
+        reduce: Callable[[object | None, bool, int], object],
+        identity_payload: bytes | None = None,
+        prepare_payload: Callable[[bytes], bytes] | None = None,
+    ) -> EventEnvelope | None:
+        """Keep incident evidence separate from the lifecycle replay namespace."""
+        return self._apply_private_event(
+            account_ref=account_ref,
+            state_key=state_key,
+            dedupe_key=dedupe_key,
+            event_kind=event_kind,
+            payload=payload,
+            received_at=received_at,
+            reduce=reduce,
+            identity_payload=identity_payload,
+            prepare_payload=prepare_payload,
+            namespace="incident",
+            source_id="ALPACA_INCIDENT",
+            dedupe_namespace="incident_evidence",
+        )
+
+    def _apply_private_event(
+        self,
+        *,
+        account_ref: str,
+        state_key: str,
+        dedupe_key: str,
+        event_kind: str,
+        payload: bytes,
+        received_at: datetime,
+        reduce: Callable[[object | None, bool, int], object],
+        identity_payload: bytes | None,
+        namespace: str,
+        source_id: str,
+        dedupe_namespace: str,
+        prepare_payload: Callable[[bytes], bytes] | None = None,
+    ) -> EventEnvelope | None:
         """Atomically deduplicate, preserve evidence and replace its projection.
 
         The reducer executes under the SQLite write lock. Reuse of a stable key
         with different bytes is preserved as a conflict, never as a new fill.
         """
         self.require_private_order_state()
-        if not state_key.startswith("order_lifecycle:") or not dedupe_key:
-            raise JournalError("invalid lifecycle state or deduplication key")
+        if not state_key.startswith(namespace + ":") or not dedupe_key:
+            raise JournalError("invalid private state or deduplication key")
         try:
             self._db.execute("BEGIN IMMEDIATE")
             if self.read_paper_account_ref() != account_ref:
@@ -398,8 +482,41 @@ class Journal:
                     payload if identity_payload is None else identity_payload
                 ).hexdigest()
             )
-            key = "order_evidence:" + account_ref + ":" + dedupe_key
+            key = dedupe_namespace + ":" + account_ref + ":" + dedupe_key
             previous_evidence = self.read_state(key)
+            if previous_evidence is not None:
+                if (
+                    not isinstance(previous_evidence, dict)
+                    or set(previous_evidence) != {"hash", "sequence"}
+                    or type(previous_evidence["sequence"]) is not int
+                ):
+                    raise JournalError("private deduplication cache is invalid")
+                original = self.read_event(previous_evidence["sequence"])
+                if (
+                    original is None
+                    or original[0].source_id != source_id
+                    or original[0].feed != "paper"
+                ):
+                    raise JournalError("private deduplication evidence is missing")
+                if identity_payload is None:
+                    recorded_identity = original[0].payload_ref
+                else:
+                    try:
+                        metadata = json.loads(original[1])
+                        if (
+                            metadata["account_ref"] != account_ref
+                            or metadata["dedupe_key"] != dedupe_key
+                        ):
+                            raise ValueError
+                        recorded_identity = "sha256:" + metadata["identity_hash"]
+                    except (ValueError, KeyError, TypeError):
+                        raise JournalError(
+                            "semantic deduplication evidence is invalid"
+                        ) from None
+                if previous_evidence["hash"] != recorded_identity:
+                    raise JournalError(
+                        "private deduplication cache differs from evidence"
+                    )
             if (
                 isinstance(previous_evidence, dict)
                 and previous_evidence.get("hash") == identity_hash
@@ -414,7 +531,7 @@ class Journal:
             )
             event = EventEnvelope(
                 sequence=sequence,
-                source_id="ALPACA_ORDER_LIFECYCLE",
+                source_id=source_id,
                 feed="paper",
                 event_kind=event_kind,
                 payload_ref=digest,
@@ -438,11 +555,40 @@ class Journal:
         self, *, through_sequence: int | None = None
     ) -> tuple[tuple[EventEnvelope, bytes], ...]:
         """Read immutable private lifecycle evidence at a fixed watermark."""
+        return self._read_private_events("ALPACA_ORDER_LIFECYCLE", through_sequence)
+
+    def read_incident_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        return self._read_private_events("ALPACA_INCIDENT", None)
+
+    def read_order_evidence_cache(self, account_ref: str) -> dict[str, object]:
+        return self._read_evidence_cache("order_evidence", account_ref)
+
+    def read_incident_evidence_cache(self, account_ref: str) -> dict[str, object]:
+        return self._read_evidence_cache("incident_evidence", account_ref)
+
+    def _read_evidence_cache(
+        self, namespace: str, account_ref: str
+    ) -> dict[str, object]:
+        self.require_private_order_state()
+        if self.read_paper_account_ref() != account_ref:
+            raise JournalError("private evidence cache account is not bound")
+        prefix = namespace + ":" + account_ref + ":"
+        return {
+            key[len(prefix) :]: json.loads(encoded)
+            for key, encoded in self._db.execute(
+                "SELECT key,value_json FROM state WHERE substr(key,1,?)=?",
+                (len(prefix), prefix),
+            )
+        }
+
+    def _read_private_events(
+        self, source_id: str, through_sequence: int | None
+    ) -> tuple[tuple[EventEnvelope, bytes], ...]:
         self.require_private_order_state()
         sequences = self._db.execute(
-            "SELECT sequence FROM events WHERE source_id='ALPACA_ORDER_LIFECYCLE' "
+            "SELECT sequence FROM events WHERE source_id=? "
             "AND (? IS NULL OR sequence<=?) ORDER BY sequence",
-            (through_sequence, through_sequence),
+            (source_id, through_sequence, through_sequence),
         ).fetchall()
         result = []
         for (sequence,) in sequences:
@@ -603,13 +749,115 @@ class Journal:
             is not None
         )
 
+    def mark_order_cancel_attempt(
+        self, client_order_id: str, broker_order_id: str, started_at: datetime
+    ) -> None:
+        """Durably fence one owned engineering-entry cancellation before DELETE."""
+        self.require_private_order_state()
+        if started_at.tzinfo is None or started_at.utcoffset() != timedelta(0):
+            raise JournalError("cancel attempt timestamp must be UTC")
+        try:
+            identity = str(UUID(broker_order_id))
+        except (ValueError, TypeError, AttributeError):
+            raise JournalError("cancel attempt broker UUID is invalid") from None
+        try:
+            self._db.execute("BEGIN IMMEDIATE")
+            intent = self.read_order_intent(client_order_id)
+            account_ref = self.read_paper_account_ref()
+            if (
+                not isinstance(intent, dict)
+                or account_ref is None
+                or intent.get("purpose") != "ENGINEERING_TEST"
+                or intent.get("paper_endpoint") != "https://paper-api.alpaca.markets"
+                or intent.get("paper_account_ref") != account_ref
+                or not isinstance(intent.get("request_body"), str)
+                or not self.has_order_send_attempt(client_order_id)
+            ):
+                raise JournalError("cancel attempt requires an owned sent intent")
+            request = validate_saved_request(intent["request_body"])
+            if request["client_order_id"] != client_order_id:
+                raise JournalError("cancel attempt client identity differs")
+            if request["side"] != "buy":
+                raise JournalError("only engineering entry cancellation is supported")
+            known_ids: set[str] = set()
+            for row in self.read_order_http_observations(client_order_id):
+                if (
+                    row.request_kind not in ("POST", "GET")
+                    or row.http_status not in (200, 201)
+                    or row.body is None
+                ):
+                    continue
+                try:
+                    known_ids.add(
+                        validate_order_snapshot(
+                            intent["request_body"], row.body
+                        ).broker_order_id
+                    )
+                except PaperContractError:
+                    continue
+            if known_ids != {identity}:
+                raise JournalError("cancel attempt broker ownership is unresolved")
+            for other_cid in self.read_order_intent_ids():
+                if other_cid == client_order_id:
+                    continue
+                other = self.read_order_intent(other_cid)
+                if not isinstance(other, dict) or not isinstance(
+                    other.get("request_body"), str
+                ):
+                    continue
+                for row in self.read_order_http_observations(other_cid):
+                    if (
+                        row.request_kind not in ("POST", "GET")
+                        or row.http_status not in (200, 201)
+                        or row.body is None
+                    ):
+                        continue
+                    try:
+                        known = validate_order_snapshot(other["request_body"], row.body)
+                    except PaperContractError:
+                        continue
+                    if known.broker_order_id == identity:
+                        raise JournalError(
+                            "cancel attempt broker ownership is ambiguous"
+                        )
+            self._db.execute(
+                "INSERT INTO order_cancel_attempts VALUES (?, ?, ?)",
+                (client_order_id, identity, started_at.isoformat()),
+            )
+            self._db.commit()
+        except sqlite3.IntegrityError:
+            self._db.rollback()
+            raise JournalError("order cancellation was already attempted") from None
+        except PaperContractError:
+            self._db.rollback()
+            raise JournalError("cancel attempt request contract is invalid") from None
+        except Exception:
+            self._db.rollback()
+            raise
+
+    def read_order_cancel_attempt(self, client_order_id: str) -> tuple[str, str] | None:
+        self.require_private_order_state()
+        row = self._db.execute(
+            "SELECT broker_order_id, started_at FROM order_cancel_attempts "
+            "WHERE client_order_id=?",
+            (client_order_id,),
+        ).fetchone()
+        return None if row is None else (str(row[0]), str(row[1]))
+
+    def has_order_cancel_attempt(self, client_order_id: str) -> bool:
+        return self.read_order_cancel_attempt(client_order_id) is not None
+
     def record_order_http_observation(
         self, client_order_id: str, observation: OrderHttpObservation
     ) -> None:
         """Append transport evidence; never turn it into retry authority."""
         self.require_private_order_state()
-        if observation.request_kind not in ("POST", "GET"):
+        if observation.request_kind not in ("POST", "GET", "DELETE"):
             raise JournalError("invalid order HTTP request kind")
+        if observation.request_kind == "DELETE" and not self.has_order_cancel_attempt(
+            client_order_id
+        ):
+            raise JournalError("cancel attempt must precede DELETE evidence")
         if (
             observation.observed_at.tzinfo is None
             or observation.observed_at.utcoffset() != timedelta(0)

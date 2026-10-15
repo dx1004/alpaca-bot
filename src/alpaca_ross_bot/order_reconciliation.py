@@ -1071,12 +1071,15 @@ class OrderReconciler:
         raw = self.journal.read_state(self.state_key)
         events = self.journal.read_order_events()
         if raw is None:
-            return not events
+            return not events and not self.journal.read_order_evidence_cache(
+                self.account_ref
+            )
         state = self._state(raw)
         if not events or int(str(state["watermark"])) != events[-1][0].sequence:
             return False
         projected: object | None = None
         seen: dict[str, str] = {}
+        expected_cache: dict[str, object] = {}
         for event, payload in events:
             item = json.loads(payload)
             if item.get("account_ref") != self.account_ref:
@@ -1084,7 +1087,14 @@ class OrderReconciler:
             key, fingerprint = item["dedupe_key"], item["identity_hash"]
             conflict = key in seen and seen[key] != fingerprint
             seen.setdefault(key, fingerprint)
+            expected_cache.setdefault(
+                key, {"hash": "sha256:" + fingerprint, "sequence": event.sequence}
+            )
             projected = self._reduce(
                 projected, item, event.system_first_seen_at, conflict, event.sequence
             )
-        return projected == state
+        return (
+            projected == state
+            and expected_cache
+            == self.journal.read_order_evidence_cache(self.account_ref)
+        )

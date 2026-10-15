@@ -163,17 +163,20 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
   Accept: account position, open orders and local intent differences are always explicit.
   Verified 2026-10-15 for the supported engineering component: deterministic cumulative-fill projections, atomic private evidence/deduplication, SDK subscription confirmation, paginated REST recovery, account inventory differences and restart verification passed synthetic fault tests and independent review. Same-journal read-only paper captures before/after restart passed; private permissions, integrity, hashes and zero send markers were verified. See [Week 3 evidence](docs/week3-evidence.md#w3-05--lifecycle-sdk-updates-and-account-reconciliation-2026-10-15). No order was sent; W3-06/W3-07, strategy/risk/data gates and formal paper remain separate. Sandboxed asyncio shutdown remains an isolated environment limitation; approved execution verified the affected tests without a repository workaround.
 
-- [ ] **W3-06 [P0] Implement protection and incident state machine**  
+- [-] **W3-06 [P0] Implement protection and incident state machine**
   Depends: W3-02, W3-05. Preserve valid protection, stop new exposure, detect double exits/reverse positions and use only pre-authorized disposition states.  
   Accept: fault tests cover lost response, disconnect, disk failure, cancel/fill race, partial fill crash and both exit legs filling.
+  Partial 2026-10-15: typed incident obligations, separate atomic private incident journal, restart veto, preserved fills/protection, corrupt-cache rejection and six synthetic fault groups are implemented and independently reviewed. Runtime acceptance is refused until the real W3-02/protection verifier exists. Full acceptance remains blocked by W3-02 and actual stop/target/close qualification, including the unresolved protection-preserving standalone-stop-to-final-target handoff. See [Week 3 increment](docs/week3-evidence.md#w3-06-through-w3-08--verified-increment-full-acceptance-open-2026-10-15). No broker action occurred.
 
-- [ ] **W3-07 [P1] Run isolated Alpaca paper API engineering tests**  
+- [-] **W3-07 [P1] Run isolated Alpaca paper API engineering tests**
   Depends: W3-04..W3-06, credentials available. Minimal non-strategy orders in isolated state only.  
   Accept: complete order lifecycle/reconciliation evidence; test activity cannot enter the formal paper sample. If credentials are unavailable, mark blocked without fabricating acceptance.
+  Partial 2026-10-15: schema-6 immutable owned-entry cancel attempts and one-attempt paper DELETE transport pass synthetic timeout/422/204/restart/ownership/storage tests. A 204 never makes the order terminal or releases a send/cancel marker. Actual isolated broker cycles, protected cleanup and engineering-sample separation remain unexecuted, gated by W3-06/W3-02 and the bounded engineering harness. Existing credentials were not accessed for this increment.
 
-- [ ] **W3-08 [P0] Pre-register four-week paper protocol**  
+- [-] **W3-08 [P0] Pre-register four-week paper protocol**
   Depends: an accepted executable Ross or separately labeled hybrid version, W2-08, W3-02. Freeze window, minimum natural events/candidates, engineering scenarios, fidelity holdout and restart rules.  
   Accept: no threshold can be changed from observed paper P&L.
+  Draft 2026-10-15: the user selected engineering reliability and strategy-rule fidelity as primary objectives; P&L is descriptive only. [Four-week protocol](docs/w3-paper-protocol.md) declares the proposed window, complete census, structural natural-coverage minima, prospective independent holdout, six separate fault groups and fixed failure/inconclusive/restart rules. It is not preregistered for launch: accepted executable/risk/data/incident versions, actual freeze fields/calendar/account baseline and reviewer assignments are still missing. No formal window has started.
 
 ## Week 4 — Integration, audit, and release freeze
 
