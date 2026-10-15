@@ -5,6 +5,114 @@ Status: **engineering increment verified; full W2-05 remains BLOCKED_RESEARCH**.
 
 ## Closure work — 2026-10-15 Los Angeles
 
+### Scanner contract review and remaining decisions
+
+The current review removes an unnecessary condition: general stock-selection
+criteria do not each have to explicitly name a $500 account. The
+[$500 cash article](https://www.warriortrading.com/how-to-day-trade-with-500/)
+supports low-float/trend-continuation study but supplies no complete numerical
+intraday screen. Account-specific sizing, risk and execution still require their
+own acceptance. The genuine scanner blocker is conflicting source contexts and
+unfinished semantics, not the absence of "$500" beside each threshold.
+
+Public-source retrieval and coordinator checks on October 15 distinguish these
+reviewable profiles. This table is a research contract, not an enabled filter:
+
+| Source context | Explicit selection content | Unresolved execution meaning |
+| --- | --- | --- |
+| [2025 toolkit opening, PDF pp. 1–2](https://cdn.warriortrading.com/warriortrading.com/assets/2025-Small-Account-Tool-Kit-1013.pdf#page=1) | Minimum $1, below $20; at least 5× RVOL; descending percentage change; news and float below 20m expressed as preferences. | RVOL window/session, non-veto preference handling, complete discovery/rank ties and observation clock. |
+| [2025 toolkit detailed selection, PDF p. 8](https://cdn.warriortrading.com/warriortrading.com/assets/2025-Small-Account-Tool-Kit-1013.pdf#page=8) | At least 5× RVOL with a typically 30-day daily mean; at least 10% daily gain with a prior-day continuation exception; $1–20 preference and headline review. | Exact session/normalization, continuation detection, price exceptions and causal headline evaluation. |
+| [2025 worksheet, PDF p. 4](https://cdn.warriortrading.com/warriortrading.com/assets/2025-Small-Account-Tool-Kit-1013.pdf#page=4) | $5–10; premarket top five plus positive catalyst; float below 20m hot / 10m cold. The price floor is motivated by leverage unavailable below $5. | Range endpoints, regime/catalyst definitions, premarket universe/ties and applicability of the leverage-dependent range to 1×. |
+| [Later cash-account article](https://www.warriortrading.com/can-you-trade-in-a-cash-account/) | $2–20; at least 5× RVOL; float below 20m, narrowed below 5m when colder; linked $2,000 example. | Endpoints, RVOL window, regime and catalyst semantics; no precedence over the toolkit is established. |
+| [General watchlist article](https://www.warriortrading.com/day-trading-watch-list-top-stocks-to-watch/) | Selection prose uses a 14-day volume average; displayed RVOL is a separate five-minute measure. Opening gap becomes fixed after 9:30, whereas change from prior close keeps moving. | These columns and teaching examples do not identify one reproduced toolkit scanner algorithm. |
+
+The user selected the toolkit opening alone as the research focus on October 15:
+$1 inclusive to $20 exclusive, 5× RVOL, and news/low float as preferences. The
+detailed section, worksheet and cash article remain comparisons, not extra filters
+added to it. This closes the research-profile choice and preference-role decision;
+it does not freeze an executable strategy or settle RVOL/session/discovery gaps.
+In particular, no 10% gain minimum, top-five cutoff, hot/cold switch or alternative
+price range is inherited into the selected opening profile.
+
+### Float update evidence and capacity acceptance
+
+EODHD's [provider-maintained update reference](https://raw.githubusercontent.com/EodHistoricalData/eodhd-claude-skills/main/skills/eodhd-api/references/general/update-times.md)
+(marked February 2026) describes daily US SharesStats updates with a typical
+two-to-three-day lag and possible split delay. It explicitly calls much timing
+guidance empirical and subject to change. It does not tie that schedule to Live
+v2 `sharesFloat` or give a float-specific effective clock or maximum lag guarantee.
+The [Live v2 schema](https://eodhd.com/financial-apis/live-v2-for-us-stocks-extended-quotes-2025)
+still defines `timestamp` as a snapshot time. No two/three-day cache TTL or
+snapshot-time freshness shortcut is accepted.
+
+The exact unresolved provider questions are the Live v2 float source/pipeline,
+corporate-action propagation, and an observable float clock or documented lag
+bound. These questions are recorded for clarification; no message was sent to
+the provider and no new authenticated API request was made during this review.
+
+Capacity must be evaluated against an explicitly required lookup set after an
+accepted source-scoped prefilter, only for evaluations actually using reference
+fields. Missing preferred float remains an unavailable preference, not a failed
+price/RVOL rule or an automatic stock rejection. More than 20 charged ticker observations exceed
+the recurring free allowance; fewer can still exceed the actual remaining quota.
+That balance remains unqueried. Welcome credit cannot prove recurring capacity.
+No arbitrary top-20 cutoff, cache credit or estimated candidate count is accepted.
+The pure capacity audit assesses one lookup per supplied identity; repeated
+refreshes/retries cost additional units and are not a covered daily workload.
+Its input balance is caller-reported, not a validated balance or runtime quota owner.
+
+### Candidate/rejection acceptance sequence
+
+1. Select the source profile, resolve required-versus-preferred criteria and pin
+   the formula/session/exception semantics. Retain unresolved criteria explicitly.
+2. Bind discovery scope, identities and required price/volume inputs to
+   decision-time availability. Float/news preference observations keep their own
+   availability and missing states; their absence is not a hard-filter rejection.
+3. Measure required reference lookup demand without silently dropping symbols;
+   assess recurring capacity and a separately evidenced remaining balance.
+4. Replay both matching and nonmatching cases only for accepted rules/data.
+   Keep `INPUT_UNAVAILABLE` distinct from a demonstrated `RULE_NOT_MET`; until
+   prerequisites pass, report no qualified candidate rather than an invented
+   strategy rejection. Historical gaps may require the predeclared prospective
+   plan, never a backdated float observation or reused development holdout.
+
+The [dated contract evidence](../evidence/w2-05-scanner-contract-review-2026-10-15.json)
+records the user's focus and synthetic capacity cases. It also recomputes 14/30
+full-day-mean hypotheses from the two already archived IEX samples with raw hash
+and explicit session-date bindings. These are ex-post, all-eligible-hours numerical
+comparisons: receipt occurred after the numerator session and provider finality
+is unproven. They are not fresh scanner decisions or historical acceptance cases.
+A synthetic counterexample crosses the 5× threshold under one window but not the
+other, demonstrating why the windows cannot silently substitute for each other.
+Neither hypothesis is accepted as the general profile's RVOL formula.
+
+A further bounded check followed the actual links in the
+[scanner manual](https://support.warriortrading.com/support/solutions/articles/19000117763)
+(modified January 8, 2026): daily and five-minute RVOL columns link to the same
+[generic terminology page](https://www.warriortrading.com/relative-volume-day-trading-terminology/).
+That link does not specify the full calculation. The Ross-attributed
+[technical-indicators article](https://www.warriortrading.com/technical-indicators/)
+supports a same-time-of-day comparison but does not bind a lookback/session
+definition to this toolkit opening. The remaining question is which column and
+normalization apply, with which historical sessions, resets and adjustment rules.
+No missing member-only reconstruction is required; these are explicit unresolved
+formula semantics within the inspected public evidence.
+
+Independent GPT-6.1 Sol Low retrieval supplied public evidence. A verified remote
+Ollama Cloud `gemma4:31b` response was reviewed and rejected where it merged
+profiles, reversed a hot/cold threshold, suggested snapshot-based float freshness,
+or presented incomplete arithmetic. No model output supplied accepted filters.
+
+Validation for this contract/capacity increment: 91 focused input/scanner/evidence
+tests passed; the current workspace full suite passed 309 tests with one existing
+upstream deprecation warning. Ruff, strict mypy and format checks passed for the
+four changed source/test files. The full suite includes unrelated unfinished W3
+changes, which remain outside this scoped work. None of these checks closes
+W2-05/G03/G04.
+Independent current-byte review approved the bounded contract/engineering scope,
+reran the 91 focused tests and recomputed every capacity and RVOL comparison.
+The 309-test full suite and static checks were coordinator-run.
+
 The user requested resolution of strategy specification, data eligibility and
 candidate/rejection acceptance. Work is split across quantitative/source research,
 trading-strategy interpretation, market-data engineering, development and
@@ -135,13 +243,14 @@ public float.
 
 | Required closure | Work now concrete | Remaining prerequisite |
 | --- | --- | --- |
-| Source-scoped strategy/scanner specification | The three Ross contexts remain parallel; numeric source statements and their qualitative exceptions are preserved. Martin's historical scans, newer interview and user-clarified entry rhythm remain separately attributed. | No single applicable $500/1x executable version or deterministic interpretation of the remaining discretionary choices has been accepted. Neither IEX convenience nor the new provider selects a version. |
-| Required data | Actual broker catalog, two-symbol dated IEX history, public-demo float schema and a single authenticated QS float/cap response are verified. Explicit consistency failures now have deterministic reasons. | Broader identity/coverage, float update/freshness and sufficient daily capacity remain unaccepted. Twenty ticker calls/day cannot be assumed sufficient. Full discovery and source-scoped RVOL session/baseline acceptance remain separate. |
+| Source-scoped strategy/scanner specification | The user selected the toolkit opening research focus and news/float preference roles; other Ross contexts and Martin evidence stay separate. | The selected scanner still lacks accepted RVOL/session/discovery semantics and a complete executable strategy version. Other profiles' 10%/top-five/regime rules are not prerequisites for this selected focus. Account-specific risk/execution acceptance remains separate. |
+| Required data | Actual broker catalog, two-symbol dated IEX history, public-demo float schema and a single authenticated QS float/cap response are verified. Explicit consistency failures now have deterministic reasons. | Required discovery/identity/price-volume/session availability still needs acceptance. Float-dependent preference enrichment additionally needs update semantics and adequate capacity; missing preferred float alone cannot reject a stock or fail price/RVOL. Twenty ticker calls/day cannot be assumed sufficient for that enrichment. |
 | Candidate/rejection evidence | Input-quality rejection paths can be tested without inventing a strategy; raw inputs and dated diagnostics are retained. | No qualified-candidate/rejection replay for an accepted strategy has occurred. A missing input is unavailable, not a failed trading rule. G03/G04 remain open. |
 
-Local key configuration and one QS access check are complete. Further source
-acceptance requires documented update semantics and evidence that required lookup
-demand fits verified capacity, or a separately verified adequate source. Preserve
+Local key configuration and one QS access check are complete. Further float
+preference-data acceptance requires documented update semantics and evidence that
+its declared lookup demand fits verified capacity, or a separately verified adequate
+source. This is not a universal hard float filter. Preserve
 absent/null fields and rejections. No paid subscription, account creation,
 live-price replacement, automated selection of 20 favored symbols, or trading
 authority follows from this source discovery.
@@ -211,9 +320,9 @@ eligibility and an explicit `NOT_SIP_EQUIVALENT` label for any IEX enrichment.
 | --- | --- | --- |
 | Limited ranking access and fields | Two authenticated fixed-endpoint GETs with `top=1` validated actual schemas; most-actives returned one row, movers two rows across its lists. The temporary journal and raw responses were deleted. | Observed technical access/schema pass only; capacity, coverage and freshness not accepted. |
 | Full Ross candidate discovery | Alpaca lists are capped; movers shows the previous market day's results before its market-open reset. Most-actives session boundaries and completeness are not specified. | Cannot establish current premarket gap ranks, complete universe or Ross ranking recall. |
-| Point-in-time share float | Neither examined Alpaca screener schema supplies share float. No independently accepted free provider with usable field coverage, availability/effective/revision clocks and account entitlement was established. | Missing float blocks qualification. Shares outstanding and dollar public float are not substituted. |
+| Point-in-time share float | Neither examined Alpaca screener schema supplies share float. EODHD QS access is verified once, but broader coverage/update semantics are unaccepted. | In the selected opening research profile, missing preferred float is unavailable, not a hard-filter rejection. Any float-dependent preference assessment still needs eligible evidence. Shares outstanding and dollar public float are not substituted. |
 | RVOL | Toolkit describes comparison with a typically 30-day daily average; a separate Ross article describes comparison at the same time of day. Existing 30/50-day full-day ratios remain descriptive. | Preserve source contexts; do not designate one as the reproduced scanner algorithm or mix SIP ranking volumes into IEX ratios. |
-| Source-scoped rules | Toolkit opening, detailed selection and worksheet profiles remain separate; range endpoints, prior-day continuation, market regime and account-stage applicability are unresolved where source evidence is insufficient. | No default version, silent rule merging or executable version acceptance. |
+| Source-scoped rules | The user selected the opening research profile and its price bounds/preference roles. Other contexts retain their own unresolved endpoints, continuation and regime semantics without constraining this focus. | No cross-profile rule merging or executable version acceptance; selected-profile formula/data gaps remain explicit. |
 | News influence on scanning | Warrior's Five Pillars scanner admits stocks without news; the worksheet separately asks for a positive catalyst. | News presence is not one universal hard filter. W2-06 acceptance remains independent. |
 | Historical and prospective evidence | No complete historical source-time universe, float and scanner-reference dataset was acquired. | New observations cannot validate old Ross cases or become an unseen historical holdout. |
 
@@ -297,6 +406,9 @@ authenticated responses against this schema. It does not prove a different
 session's behavior, limits, license rights, complete discovery, strategy fidelity,
 profitability or any permission to trade.
 
-Completion requires source-scoped scanner specifications plus actual eligible
-universe/float/RVOL inputs and their acceptance evidence. This task's acceptance
-criteria have not been weakened to call a permanently blocked scanner complete.
+Completion requires accepted source-scoped scanner specifications and eligible
+discovery/price-volume inputs actually required by that selected profile, with
+decision-time evidence. Float/news observations need eligible evidence when used
+for their preference assessments; missing preferred inputs are not universal
+qualification vetoes. The task remains incomplete pending its applicable
+acceptance evidence.

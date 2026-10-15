@@ -118,6 +118,43 @@ def test_measurements_rank_only_supplied_iex_symbols(tmp_path: Path) -> None:
     journal.close()
 
 
+def test_general_profile_does_not_inherit_other_profiles_formula_or_filters(
+    tmp_path: Path,
+) -> None:
+    journal = Journal(tmp_path / "var" / "journal.sqlite3", tmp_path / "var")
+    snapshot = capture_scanner_observations(
+        journal,
+        (_observation("ABC", price="2"),),
+        first_seen_at=AS_OF,
+        processed_at=AS_OF + timedelta(seconds=1),
+    )
+    rows = snapshot["rows"]
+    assert isinstance(rows, list)
+    general, detailed, worksheet = rows[0]["source_scoped_screening_measurements"]
+    assert rows[0]["session_volume_over_30d_mean"] == "10"
+    assert detailed["measurements"]["rvol_30d_at_least_5x"]["result"] == (
+        "MEASURED_THRESHOLD_MET"
+    )
+    measurements = general["measurements"]
+    assert measurements["relative_volume_at_least_5x"] == {
+        "result": "UNAVAILABLE_GENERAL_PROFILE_RVOL_FORMULA",
+        "reported_minimum": "5",
+        "window": "UNSPECIFIED_FOR_GENERAL_PROFILE",
+    }
+    assert "daily_gain_at_least_10pct" not in measurements
+    assert "top_five_premarket_gapper" not in measurements
+    assert measurements["minimum_price_1_usd"]["result"] == "MEASURED_THRESHOLD_MET"
+    assert measurements["under_20_usd_preference"]["result"] == (
+        "MEASURED_THRESHOLD_MET"
+    )
+    assert worksheet["measurements"]["reported_price_range_5_to_10_usd"]["result"] == (
+        "MEASURED_OUTSIDE_REPORTED_RANGE"
+    )
+    assert general["strategy_eligibility"] == "BLOCKED_RESEARCH"
+    assert snapshot["strategy_eligibility"] == "BLOCKED_RESEARCH"
+    journal.close()
+
+
 def test_local_first_seen_cannot_precede_provider_observation(
     tmp_path: Path,
 ) -> None:

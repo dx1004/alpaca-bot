@@ -50,6 +50,14 @@ def _general_toolkit_measurements(
         "measurements": {
             "minimum_price_1_usd": _threshold(price, ">=", Decimal("1")),
             "under_20_usd_preference": _threshold(price, "<", Decimal("20")),
+            "relative_volume_at_least_5x": {
+                "result": "UNAVAILABLE_GENERAL_PROFILE_RVOL_FORMULA",
+                "reported_minimum": "5",
+                "window": "UNSPECIFIED_FOR_GENERAL_PROFILE",
+            },
+            "ranking_preference": (
+                "DESCENDING_PERCENTAGE_CHANGE_TODAY_SOURCE_SEMANTICS_UNRESOLVED"
+            ),
             "float_under_20m": _float_threshold(
                 float_shares,
                 float_status,

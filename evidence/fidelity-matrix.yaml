@@ -5,11 +5,11 @@ rules:
     version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
     domain: SCREENING
     fidelity: BLOCKED_RESEARCH
-    statement: Broad toolkit filters and the narrower challenge worksheet are distinct candidate scopes.
-    source_ids: [ROSS_TOOLKIT_GENERAL_2025, ROSS_TOOLKIT_WORKSHEET_2025, ROSS_CASH_ACCOUNT_GUIDE_2026]
+    statement: General stock-selection teaching and the leverage-sensitive worksheet are distinct source scopes; each scanner criterion need not independently name 500 dollars.
+    source_ids: [ROSS_TOOLKIT_GENERAL_2025, ROSS_TOOLKIT_WORKSHEET_2025, ROSS_CASH_ACCOUNT_GUIDE_2026, ROSS_500_CASH_ARTICLE]
     equivalence_evidence: null
     engineering_basis: null
-    blocking_reason: The cash-account guide narrows price, float and first-pullback preferences but is framed around a 2000 dollar challenge; no first-party mapping establishes a complete 500 dollar Alpaca limited-margin paper profile or resolves version differences.
+    blocking_reason: On 2026-10-15 the user selected the 2025 toolkit opening as the scanner research focus, with price at least 1 and below 20 dollars, 5x RVOL and news/low float as preferences. This resolves research-profile choice only; exact RVOL/session/discovery/ranking semantics and eligible inputs remain incomplete. The worksheet's leverage-dependent 5 dollar floor, top-five rule and hot/cold float switches are not inherited. Requiring every scanner criterion to separately mention 500 dollars is not an acceptance condition; account risk and broker adaptation remain separate.
   - rule_id: ROSS_RVOL_001
     version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
     domain: RELATIVE_VOLUME
@@ -18,7 +18,7 @@ rules:
     source_ids: [ROSS_TOOLKIT_RVOL_2025, ROSS_WATCHLIST, ROSS_CASH_ACCOUNT_GUIDE_2026]
     equivalence_evidence: null
     engineering_basis: null
-    blocking_reason: Denominator, intraday interval and scanner ranking semantics are not version-resolved; Webull 10-day RVOL is not presumed equivalent.
+    blocking_reason: The toolkit detailed section describes a typical 30-day daily mean, watchlist prose a 14-day average and its display a last-five-minute ratio; the opening and cash profiles do not specify a window. No source-profile linkage resolves session inclusion, time-of-day normalization or ranking semantics. These metrics cannot be merged or silently substituted; Webull remains deferred.
   - rule_id: ROSS_NEWS_001
     version_id: ROSS_SMALL_ACCOUNT_CANDIDATE_V1
     domain: NEWS

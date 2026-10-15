@@ -1,7 +1,8 @@
 import hashlib
-from dataclasses import replace
+from dataclasses import FrozenInstanceError, replace
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
+from typing import cast
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -13,6 +14,7 @@ from alpaca_ross_bot.scanner_input_audit import (
     VolumeContract,
     VolumeHistoryAudit,
     audit_daily_volume_history,
+    audit_eodhd_reference_capacity,
     parse_nasdaq_directory,
 )
 
@@ -403,3 +405,107 @@ def test_bar_event_datetime_cannot_substitute_for_explicit_session_date() -> Non
     bar = replace(_bar(DAYS[0]), session_date=DECISION)
     with pytest.raises(ScannerInputAuditError, match="session date"):
         _audit((bar, _bar(DAYS[1])))
+
+
+def test_recurring_reference_capacity_boundary_counts_tickers_not_batches() -> None:
+    twenty = tuple(f"TICKER{number}.US" for number in range(20))
+    within = audit_eodhd_reference_capacity(twenty, reported_remaining_units=20)
+    assert within.consistent and within.required_units == 20
+    assert within.required_identity_count == 20
+    assert within.recurring_daily_limit_units == 20
+    assert within.units_per_queried_identity == 1
+    assert within.cost_basis == "ONE_LOOKUP_PER_SUPPLIED_IDENTITY"
+    assert within.strategy_eligibility == "BLOCKED_RESEARCH"
+    assert within.scope == "REPORTED_INPUT_CAPACITY_CONSISTENCY_ONLY"
+    assert within.remaining_units_status == "CALLER_REPORTED_NOT_VERIFIED_BALANCE"
+    over = audit_eodhd_reference_capacity(
+        (*twenty, "EXTRA.US"), reported_remaining_units=20
+    )
+    assert over.required_units == 21
+    assert over.reasons == (
+        "REQUIRED_SET_EXCEEDS_RECURRING_DAILY_LIMIT",
+        "INSUFFICIENT_REPORTED_REMAINING_UNITS",
+    )
+
+
+def test_insufficient_reported_capacity_preserves_every_identity_and_order() -> None:
+    identities = ("BRK-B.US", "BRK.B.US", *(f"T{number}.US" for number in range(18)))
+    result = audit_eodhd_reference_capacity(identities, reported_remaining_units=19)
+    assert result.required_identities == identities
+    assert result.required_identity_count == result.required_units == 20
+    assert result.reported_remaining_units == 19
+    assert result.reasons == ("INSUFFICIENT_REPORTED_REMAINING_UNITS",)
+
+
+def test_welcome_bonus_cannot_expand_recurring_daily_capacity() -> None:
+    identities = tuple(f"T{number}.US" for number in range(21))
+    result = audit_eodhd_reference_capacity(
+        identities, reported_remaining_units=100_000
+    )
+    assert not result.consistent
+    assert result.required_identities == identities
+    assert result.reasons == ("REQUIRED_SET_EXCEEDS_RECURRING_DAILY_LIMIT",)
+    assert result.reported_remaining_units == 100_000
+
+
+def test_unknown_capacity_remains_unknown_for_even_one_required_identity() -> None:
+    result = audit_eodhd_reference_capacity(("AAPL.US",), reported_remaining_units=None)
+    assert not result.consistent
+    assert result.reasons == ("REMAINING_UNITS_UNKNOWN",)
+    assert result.reported_remaining_units is None and result.required_units == 1
+
+
+def test_zero_reported_remaining_units_cannot_cover_one_identity() -> None:
+    result = audit_eodhd_reference_capacity(("AAPL.US",), reported_remaining_units=0)
+    assert result.reasons == ("INSUFFICIENT_REPORTED_REMAINING_UNITS",)
+    assert result.required_identities == ("AAPL.US",)
+
+
+def test_empty_required_set_needs_no_units_but_does_not_verify_balance() -> None:
+    result = audit_eodhd_reference_capacity((), reported_remaining_units=0)
+    assert result.consistent
+    assert result.required_identities == ()
+    assert result.required_units == result.required_identity_count == 0
+    assert result.strategy_eligibility == "BLOCKED_RESEARCH"
+    unknown = audit_eodhd_reference_capacity((), reported_remaining_units=None)
+    assert unknown.required_units == 0
+    assert unknown.reasons == ("REMAINING_UNITS_UNKNOWN",)
+
+
+@pytest.mark.parametrize(
+    "identities",
+    [
+        ("AAPL.US", "AAPL.US"),
+        (None,),
+        (123,),
+        (True,),
+        ("aapl.US",),
+        ("AAPL",),
+        ("AAPL.LSE",),
+        (" AAPL.US",),
+        ("AAPL.US?api_token=value",),
+    ],
+)
+def test_invalid_or_duplicate_reference_identities_fail_without_normalization(
+    identities: tuple[object, ...],
+) -> None:
+    with pytest.raises(ScannerInputAuditError):
+        audit_eodhd_reference_capacity(
+            cast(tuple[str, ...], identities), reported_remaining_units=20
+        )
+
+
+@pytest.mark.parametrize("remaining", [True, False, -1, 1.0, "20"])
+def test_reported_remaining_capacity_requires_nonnegative_nonboolean_integer(
+    remaining: object,
+) -> None:
+    with pytest.raises(ScannerInputAuditError, match="remaining units"):
+        audit_eodhd_reference_capacity(
+            ("AAPL.US",), reported_remaining_units=cast(int, remaining)
+        )
+
+
+def test_reference_capacity_report_is_immutable() -> None:
+    result = audit_eodhd_reference_capacity(("AAPL.US",), reported_remaining_units=20)
+    with pytest.raises(FrozenInstanceError):
+        result.required_units = 0  # type: ignore[misc]

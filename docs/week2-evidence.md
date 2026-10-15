@@ -1,5 +1,54 @@
 # Week 2 acceptance evidence
 
+## W2-05 selected scanner research contract and capacity checks (2026-10-15)
+
+The user selected `ROSS_TOOLKIT_GENERAL_2025_SCREEN` as the research focus:
+price at least $1 and below $20, at least 5× RVOL, news and low float as preferences.
+The [contract review](w2-05-scanner-acceptance.md#scanner-contract-review-and-remaining-decisions)
+and [dated evidence](../evidence/w2-05-scanner-contract-review-2026-10-15.json)
+separate this choice from executable acceptance. General screening criteria do
+not each have to explicitly name $500. Account risk/broker adaptation remain
+separate. The worksheet's leverage-based price floor, top-five and regime rules,
+the detailed section's 10% gain/continuation rule and other RVOL windows are not
+added to the selected opening profile.
+
+The general measurement now explicitly exposes the documented 5× RVOL threshold
+with an unavailable formula, and its descending-percentage-change preference.
+A regression verifies that a computed 30-day ratio cannot silently satisfy the
+general profile and that other profiles' price/gain/top-five rules stay separate.
+All observations remain `BLOCKED_RESEARCH`.
+
+`audit_eodhd_reference_capacity` adds a pure immutable audit of one lookup per
+explicit identity, the recurring 20-ticker allowance and an unverified reported
+remaining balance. It retains every identity and never chooses a query schedule,
+truncates a set, assumes cache validity or admits runtime work. Synthetic boundary
+cases cover 20/21 identities, fewer remaining units, unknown balance and welcome
+credit that cannot prove recurring capacity. Repeated refresh/retry demand is
+outside this one-lookup-per-identity audit and must be assessed separately.
+
+Missing preferred float/news is unavailable rather than an automatic stock
+rejection. Float-dependent enrichment still lacks accepted freshness/capacity.
+The provider-maintained February 2026 update guide gives empirical SharesStats
+timing, not a Live v2 float-specific clock or lag guarantee. No cache TTL, provider
+support message, additional authenticated request or paid service was introduced.
+
+Independent GPT-6.1 Sol Low public retrieval, coordinator source verification and
+actual remote `gemma4:31b` analysis remained separate. The Cloud response's merged
+criteria, reversed regime threshold, snapshot-freshness shortcut and incomplete
+arithmetic were rejected. No local files, credentials or account data were sent.
+The selected research focus does not close W2-05/G03/G04 or authorize paper orders.
+
+Two archived IEX samples were recomputed under explicit 14/30-session daily-mean
+hypotheses, with raw hashes and dates bound in the dated record. They remain
+ex-post observations with unproven finality, not historical acceptance or fresh
+scanner inputs. A separate synthetic case changes its 5× comparison across the
+two windows; no general-profile formula is silently selected.
+
+Validation: 91 focused input/scanner/evidence tests passed; the current workspace
+full suite passed 309 tests with one existing `websockets.legacy` warning. Scoped
+Ruff, strict mypy and formatting passed for the four changed source/test files.
+Unfinished W3 changes were present in that suite and remain outside this change.
+
 ## W2-05 closure work and free-float source (2026-10-15 Los Angeles)
 
 The [current closure record](w2-05-scanner-acceptance.md#closure-work--2026-10-15-los-angeles)

@@ -1,0 +1,395 @@
+{
+  "schema_version": 1,
+  "review_date_local": "2026-10-15",
+  "timezone": "America/Los_Angeles",
+  "status": "RESEARCH_FOCUS_SELECTED_EXECUTABLE_SCANNER_UNACCEPTED",
+  "version_id": "ROSS_SMALL_ACCOUNT_CANDIDATE_V1",
+  "version_status": "CANDIDATE",
+  "selected_research_profile": "ROSS_TOOLKIT_GENERAL_2025_SCREEN",
+  "selection_authority": "USER_EXPLICIT_PROFILE_SELECTION_2026_10_15",
+  "primary_source_id": "ROSS_TOOLKIT_GENERAL_2025",
+  "primary_source_url": "https://cdn.warriortrading.com/warriortrading.com/assets/2025-Small-Account-Tool-Kit-1013.pdf#page=1",
+  "selected_research_criteria": {
+    "price_usd": {
+      "minimum": "1",
+      "minimum_inclusive": true,
+      "maximum": "20",
+      "maximum_inclusive": false
+    },
+    "relative_volume": {
+      "minimum": "5",
+      "operator": ">=",
+      "accepted_formula": null,
+      "session": null,
+      "normalization": null
+    },
+    "ranking": {
+      "preference": "DESCENDING_PERCENTAGE_CHANGE_TODAY",
+      "accepted_discovery_scope": null,
+      "accepted_reference_clock": null,
+      "accepted_tie_policy": null
+    },
+    "news": {
+      "role": "PREFERENCE_NOT_HARD_FILTER",
+      "missing": "UNAVAILABLE_NOT_RULE_NOT_MET"
+    },
+    "float": {
+      "role": "PREFERENCE_NOT_HARD_FILTER",
+      "preferred_upper_bound_shares": 20000000,
+      "operator": "<",
+      "missing": "UNAVAILABLE_NOT_RULE_NOT_MET",
+      "accepted_freshness_policy": null
+    }
+  },
+  "not_inherited_from_other_sources": [
+    "DAILY_GAIN_MINIMUM_10_PERCENT",
+    "PREMARKET_TOP_FIVE",
+    "WORKSHEET_PRICE_5_TO_10",
+    "HOT_COLD_FLOAT_SWITCH",
+    "CASH_ARTICLE_PRICE_2_TO_20",
+    "WATCHLIST_14_DAY_OR_FIVE_MINUTE_RVOL",
+    "DETAILED_TOOLKIT_30_DAY_RVOL_AS_AUTOMATIC_GENERAL_FORMULA"
+  ],
+  "account_applicability_correction": "EACH_GENERAL_SCANNER_CRITERION_NEED_NOT_REPEAT_500_DOLLARS; ACCOUNT_RISK_AND_EXECUTION_ACCEPTANCE_REMAIN_SEPARATE",
+  "data_findings": {
+    "provider_snapshot_is_float_effective_time": false,
+    "provider_update_reference": "https://raw.githubusercontent.com/EodHistoricalData/eodhd-claude-skills/main/skills/eodhd-api/references/general/update-times.md",
+    "reference_marked_updated": "February 2026",
+    "us_shares_stats_guidance": "DAILY_WITH_TYPICAL_2_TO_3_DAY_LAG_AND_POSSIBLE_SPLIT_LAG",
+    "guidance_character": "EMPIRICAL_SUBJECT_TO_CHANGE_NOT_LIVE_V2_FLOAT_SLA",
+    "live_v2_float_pipeline_mapping_verified": false,
+    "float_specific_effective_revision_clock_verified": false,
+    "float_cache_ttl_accepted": null,
+    "provider_question": "For Live v2 sharesFloat, identify source and update pipeline, corporate-action propagation and an observable effective/revision clock or documented maximum lag.",
+    "support_message_sent": false
+  },
+  "capacity": {
+    "scope": "CONDITIONAL_FLOAT_PREFERENCE_ENRICHMENT_NOT_UNIVERSAL_SCANNER_VETO",
+    "recurring_daily_ticker_units": 20,
+    "units_per_ticker_lookup": 1,
+    "production_required_lookup_set": null,
+    "production_refresh_retry_demand": null,
+    "actual_remaining_daily_units": null,
+    "sufficiency_accepted": false,
+    "query_set_truncation_or_cache_credit": false,
+    "synthetic_scenarios": [
+      {
+        "scenario": "one_identity_unknown_balance",
+        "input_kind": "SYNTHETIC_NOT_DISCOVERED_CANDIDATES",
+        "consistent": false,
+        "required_identities": [
+          "SYNTHETIC0.US"
+        ],
+        "required_identity_count": 1,
+        "required_units": 1,
+        "reported_remaining_units": null,
+        "reasons": [
+          "REMAINING_UNITS_UNKNOWN"
+        ],
+        "recurring_daily_limit_units": 20,
+        "units_per_queried_identity": 1,
+        "cost_basis": "ONE_LOOKUP_PER_SUPPLIED_IDENTITY",
+        "remaining_units_status": "CALLER_REPORTED_NOT_VERIFIED_BALANCE",
+        "scope": "REPORTED_INPUT_CAPACITY_CONSISTENCY_ONLY",
+        "strategy_eligibility": "BLOCKED_RESEARCH"
+      },
+      {
+        "scenario": "twenty_identities_reported_twenty",
+        "input_kind": "SYNTHETIC_NOT_DISCOVERED_CANDIDATES",
+        "consistent": true,
+        "required_identities": [
+          "SYNTHETIC0.US",
+          "SYNTHETIC1.US",
+          "SYNTHETIC2.US",
+          "SYNTHETIC3.US",
+          "SYNTHETIC4.US",
+          "SYNTHETIC5.US",
+          "SYNTHETIC6.US",
+          "SYNTHETIC7.US",
+          "SYNTHETIC8.US",
+          "SYNTHETIC9.US",
+          "SYNTHETIC10.US",
+          "SYNTHETIC11.US",
+          "SYNTHETIC12.US",
+          "SYNTHETIC13.US",
+          "SYNTHETIC14.US",
+          "SYNTHETIC15.US",
+          "SYNTHETIC16.US",
+          "SYNTHETIC17.US",
+          "SYNTHETIC18.US",
+          "SYNTHETIC19.US"
+        ],
+        "required_identity_count": 20,
+        "required_units": 20,
+        "reported_remaining_units": 20,
+        "reasons": [],
+        "recurring_daily_limit_units": 20,
+        "units_per_queried_identity": 1,
+        "cost_basis": "ONE_LOOKUP_PER_SUPPLIED_IDENTITY",
+        "remaining_units_status": "CALLER_REPORTED_NOT_VERIFIED_BALANCE",
+        "scope": "REPORTED_INPUT_CAPACITY_CONSISTENCY_ONLY",
+        "strategy_eligibility": "BLOCKED_RESEARCH"
+      },
+      {
+        "scenario": "twenty_one_identities_reported_twenty",
+        "input_kind": "SYNTHETIC_NOT_DISCOVERED_CANDIDATES",
+        "consistent": false,
+        "required_identities": [
+          "SYNTHETIC0.US",
+          "SYNTHETIC1.US",
+          "SYNTHETIC2.US",
+          "SYNTHETIC3.US",
+          "SYNTHETIC4.US",
+          "SYNTHETIC5.US",
+          "SYNTHETIC6.US",
+          "SYNTHETIC7.US",
+          "SYNTHETIC8.US",
+          "SYNTHETIC9.US",
+          "SYNTHETIC10.US",
+          "SYNTHETIC11.US",
+          "SYNTHETIC12.US",
+          "SYNTHETIC13.US",
+          "SYNTHETIC14.US",
+          "SYNTHETIC15.US",
+          "SYNTHETIC16.US",
+          "SYNTHETIC17.US",
+          "SYNTHETIC18.US",
+          "SYNTHETIC19.US",
+          "SYNTHETIC20.US"
+        ],
+        "required_identity_count": 21,
+        "required_units": 21,
+        "reported_remaining_units": 20,
+        "reasons": [
+          "REQUIRED_SET_EXCEEDS_RECURRING_DAILY_LIMIT",
+          "INSUFFICIENT_REPORTED_REMAINING_UNITS"
+        ],
+        "recurring_daily_limit_units": 20,
+        "units_per_queried_identity": 1,
+        "cost_basis": "ONE_LOOKUP_PER_SUPPLIED_IDENTITY",
+        "remaining_units_status": "CALLER_REPORTED_NOT_VERIFIED_BALANCE",
+        "scope": "REPORTED_INPUT_CAPACITY_CONSISTENCY_ONLY",
+        "strategy_eligibility": "BLOCKED_RESEARCH"
+      },
+      {
+        "scenario": "twenty_identities_reported_nineteen",
+        "input_kind": "SYNTHETIC_NOT_DISCOVERED_CANDIDATES",
+        "consistent": false,
+        "required_identities": [
+          "SYNTHETIC0.US",
+          "SYNTHETIC1.US",
+          "SYNTHETIC2.US",
+          "SYNTHETIC3.US",
+          "SYNTHETIC4.US",
+          "SYNTHETIC5.US",
+          "SYNTHETIC6.US",
+          "SYNTHETIC7.US",
+          "SYNTHETIC8.US",
+          "SYNTHETIC9.US",
+          "SYNTHETIC10.US",
+          "SYNTHETIC11.US",
+          "SYNTHETIC12.US",
+          "SYNTHETIC13.US",
+          "SYNTHETIC14.US",
+          "SYNTHETIC15.US",
+          "SYNTHETIC16.US",
+          "SYNTHETIC17.US",
+          "SYNTHETIC18.US",
+          "SYNTHETIC19.US"
+        ],
+        "required_identity_count": 20,
+        "required_units": 20,
+        "reported_remaining_units": 19,
+        "reasons": [
+          "INSUFFICIENT_REPORTED_REMAINING_UNITS"
+        ],
+        "recurring_daily_limit_units": 20,
+        "units_per_queried_identity": 1,
+        "cost_basis": "ONE_LOOKUP_PER_SUPPLIED_IDENTITY",
+        "remaining_units_status": "CALLER_REPORTED_NOT_VERIFIED_BALANCE",
+        "scope": "REPORTED_INPUT_CAPACITY_CONSISTENCY_ONLY",
+        "strategy_eligibility": "BLOCKED_RESEARCH"
+      },
+      {
+        "scenario": "twenty_one_identities_large_welcome_balance",
+        "input_kind": "SYNTHETIC_NOT_DISCOVERED_CANDIDATES",
+        "consistent": false,
+        "required_identities": [
+          "SYNTHETIC0.US",
+          "SYNTHETIC1.US",
+          "SYNTHETIC2.US",
+          "SYNTHETIC3.US",
+          "SYNTHETIC4.US",
+          "SYNTHETIC5.US",
+          "SYNTHETIC6.US",
+          "SYNTHETIC7.US",
+          "SYNTHETIC8.US",
+          "SYNTHETIC9.US",
+          "SYNTHETIC10.US",
+          "SYNTHETIC11.US",
+          "SYNTHETIC12.US",
+          "SYNTHETIC13.US",
+          "SYNTHETIC14.US",
+          "SYNTHETIC15.US",
+          "SYNTHETIC16.US",
+          "SYNTHETIC17.US",
+          "SYNTHETIC18.US",
+          "SYNTHETIC19.US",
+          "SYNTHETIC20.US"
+        ],
+        "required_identity_count": 21,
+        "required_units": 21,
+        "reported_remaining_units": 500,
+        "reasons": [
+          "REQUIRED_SET_EXCEEDS_RECURRING_DAILY_LIMIT"
+        ],
+        "recurring_daily_limit_units": 20,
+        "units_per_queried_identity": 1,
+        "cost_basis": "ONE_LOOKUP_PER_SUPPLIED_IDENTITY",
+        "remaining_units_status": "CALLER_REPORTED_NOT_VERIFIED_BALANCE",
+        "scope": "REPORTED_INPUT_CAPACITY_CONSISTENCY_ONLY",
+        "strategy_eligibility": "BLOCKED_RESEARCH"
+      }
+    ]
+  },
+  "routing": {
+    "primary_source_retrieval": "INDEPENDENT_GPT_6_1_SOL_LOW",
+    "cloud_route_verified": true,
+    "cloud_model_returned": "gemma4:31b",
+    "cloud_input": "PUBLIC_URLS_AND_PUBLIC_SOURCE_PARAPHRASES_ONLY",
+    "cloud_proposals_adopted": false,
+    "cloud_rejection_reasons": [
+      "MERGED_SOURCE_PROFILES",
+      "REVERSED_HOT_COLD_THRESHOLD",
+      "UNSUPPORTED_SNAPSHOT_FLOAT_FRESHNESS",
+      "INCOMPLETE_CAPACITY_ARITHMETIC"
+    ]
+  },
+  "validation": {
+    "focused_tests_passed": 91,
+    "independent_current_scope_review": "APPROVED_BOUNDED_SCOPE",
+    "full_current_workspace_tests_passed": 309,
+    "upstream_deprecation_warnings": 1,
+    "ruff_changed_files": "PASS",
+    "strict_mypy_changed_files": "PASS",
+    "format_changed_files": "PASS",
+    "full_suite_includes_unrelated_unfinished_w3_changes": true,
+    "independent_focused_tests_passed": 91,
+    "independent_capacity_and_rvol_recomputations": "PASS"
+  },
+  "remaining_acceptance": [
+    "GENERAL_PROFILE_RVOL_SESSION_BASELINE_NORMALIZATION",
+    "REQUIRED_DISCOVERY_SCOPE_IDENTITIES_PRICE_VOLUME_AVAILABILITY",
+    "DETERMINISTIC_NON_VETO_PREFERENCE_HANDLING",
+    "CONDITIONAL_REFERENCE_FRESHNESS_AND_CAPACITY",
+    "ACCEPTED_VERSION_CANDIDATE_AND_REJECTION_REPLAY"
+  ],
+  "new_authenticated_provider_requests_during_review": 0,
+  "strategy_eligibility": "BLOCKED_RESEARCH",
+  "w2_05_accepted": false,
+  "g03_closed": false,
+  "g04_closed": false,
+  "orders_or_formal_paper_evaluation_started": false,
+  "rvol_research_diagnostics": {
+    "accepted_general_formula": null,
+    "raw_bindings": {
+      "bars.json": {
+        "response_sha256": "6b7c07d39e650425d0c2e0b1dc672d83ba84e8bca58e9a6da28fd28579ec8ea5",
+        "response_bytes": 8919,
+        "received_at": "2026-10-15T07:11:05.281845+00:00"
+      },
+      "calendar.json": {
+        "response_sha256": "c14f3f047264b051d922104920e0eb4fe1dc7310e590739d293443757bd556f7",
+        "response_bytes": 5419,
+        "received_at": "2026-10-15T07:11:04.800246+00:00"
+      }
+    },
+    "actual_ex_post_samples": [
+      {
+        "symbol": "AAPL",
+        "numerator_session": "2026-10-14",
+        "received_at": "2026-10-15T07:11:05.281845+00:00",
+        "scope": "EX_POST_IEX_ALL_ELIGIBLE_VOLUME_NOT_FRESH_DECISION_INPUT",
+        "source_finality": "UNPROVEN",
+        "comparisons": [
+          {
+            "hypothesis": "EX_POST_SESSION_VOLUME_OVER_14_FULL_DAY_MEAN",
+            "sessions": 14,
+            "baseline_start": "2026-09-24",
+            "baseline_end": "2026-10-13",
+            "exact_ratio": "3748658/2204947",
+            "numeric_at_least_5": false,
+            "strategy_rule_result": "NOT_EVALUATED"
+          },
+          {
+            "hypothesis": "EX_POST_SESSION_VOLUME_OVER_30_FULL_DAY_MEAN",
+            "sessions": 30,
+            "baseline_start": "2026-09-01",
+            "baseline_end": "2026-10-13",
+            "exact_ratio": "28114935/18102827",
+            "numeric_at_least_5": false,
+            "strategy_rule_result": "NOT_EVALUATED"
+          }
+        ]
+      },
+      {
+        "symbol": "QS",
+        "numerator_session": "2026-10-14",
+        "received_at": "2026-10-15T07:11:05.281845+00:00",
+        "scope": "EX_POST_IEX_ALL_ELIGIBLE_VOLUME_NOT_FRESH_DECISION_INPUT",
+        "source_finality": "UNPROVEN",
+        "comparisons": [
+          {
+            "hypothesis": "EX_POST_SESSION_VOLUME_OVER_14_FULL_DAY_MEAN",
+            "sessions": 14,
+            "baseline_start": "2026-09-24",
+            "baseline_end": "2026-10-13",
+            "exact_ratio": "6842234/8204099",
+            "numeric_at_least_5": false,
+            "strategy_rule_result": "NOT_EVALUATED"
+          },
+          {
+            "hypothesis": "EX_POST_SESSION_VOLUME_OVER_30_FULL_DAY_MEAN",
+            "sessions": 30,
+            "baseline_start": "2026-09-01",
+            "baseline_end": "2026-10-13",
+            "exact_ratio": "14661930/16820627",
+            "numeric_at_least_5": false,
+            "strategy_rule_result": "NOT_EVALUATED"
+          }
+        ]
+      }
+    ],
+    "synthetic_window_sensitivity": {
+      "input_kind": "SYNTHETIC_NOT_A_MARKET_CASE",
+      "current_volume": 600,
+      "prior_sixteen_session_volumes": 300,
+      "latest_fourteen_session_volumes": 100,
+      "ratio_14": "6",
+      "ratio_30": "90/31",
+      "threshold_5_result_differs": true
+    },
+    "claim_limit": "NUMERICAL_SENSITIVITY_ONLY_NO_GENERAL_PROFILE_FORMULA_ACCEPTANCE_OR_HISTORICAL_HOLDOUT"
+  },
+  "rvol_public_formula_check": {
+    "retrieved_on": "2026-10-15",
+    "scanner_manual_url": "https://support.warriortrading.com/support/solutions/articles/19000117763",
+    "manual_modified_label": "2026-01-08 14:40; timezone not assigned",
+    "daily_and_five_minute_columns_share_generic_link": true,
+    "generic_definition_url": "https://www.warriortrading.com/relative-volume-day-trading-terminology/",
+    "same_time_hypothesis_url": "https://www.warriortrading.com/technical-indicators/",
+    "same_time_author": "Ross Cameron byline observed",
+    "opening_profile_complete_formula_binding": "NOT_ESTABLISHED_IN_INSPECTED_SOURCES",
+    "unresolved_fields": [
+      "intended_column",
+      "historical_lookback",
+      "cumulative_or_interval_normalization",
+      "premarket_RTH_afterhours_inclusion",
+      "session_reset",
+      "shortened_sessions",
+      "missing_history",
+      "corporate_action_volume_adjustments"
+    ],
+    "membership_or_private_chapter_required": false
+  }
+}

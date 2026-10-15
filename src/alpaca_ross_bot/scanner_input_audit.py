@@ -39,6 +39,69 @@ class ScannerInputAuditError(ValueError):
 
 
 @dataclass(frozen=True)
+class ReferenceCapacityAudit:
+    required_identities: tuple[str, ...]
+    required_identity_count: int
+    required_units: int
+    reported_remaining_units: int | None
+    reasons: tuple[str, ...]
+    recurring_daily_limit_units: int = 20
+    units_per_queried_identity: int = 1
+    cost_basis: str = "ONE_LOOKUP_PER_SUPPLIED_IDENTITY"
+    remaining_units_status: str = "CALLER_REPORTED_NOT_VERIFIED_BALANCE"
+    scope: str = "REPORTED_INPUT_CAPACITY_CONSISTENCY_ONLY"
+    strategy_eligibility: str = "BLOCKED_RESEARCH"
+
+    @property
+    def consistent(self) -> bool:
+        return not self.reasons
+
+
+def audit_eodhd_reference_capacity(
+    required_identities: tuple[str, ...], *, reported_remaining_units: int | None
+) -> ReferenceCapacityAudit:
+    """Compare supplied premises with recurring free ticker-unit capacity only.
+
+    One lookup per supplied identity consumes one unit, regardless of batching.
+    Additional refreshes/retries incur extra units not modeled by this set audit.
+    The recurring daily limit is 20 ticker units; a reported welcome balance
+    above 20 cannot expand it. This is independent of per-minute request limits.
+    The balance is caller-reported and unverified. Empty input demands no units;
+    an unknown balance remains explicitly unknown even with no demand. Nothing
+    selects identities, credits caching, schedules queries or admits live work.
+    """
+    if not isinstance(required_identities, tuple) or any(
+        not isinstance(symbol, str)
+        or re.fullmatch(r"[A-Z0-9][A-Z0-9._-]*\.US", symbol) is None
+        for symbol in required_identities
+    ):
+        raise ScannerInputAuditError("required EODHD US identities are invalid")
+    if len(set(required_identities)) != len(required_identities):
+        raise ScannerInputAuditError("required EODHD US identities must be unique")
+    if reported_remaining_units is not None and (
+        type(reported_remaining_units) is not int or reported_remaining_units < 0
+    ):
+        raise ScannerInputAuditError(
+            "reported remaining units must be nonnegative integer or unknown"
+        )
+    required = len(required_identities)
+    reasons: list[str] = []
+    if required > 20:
+        reasons.append("REQUIRED_SET_EXCEEDS_RECURRING_DAILY_LIMIT")
+    if reported_remaining_units is None:
+        reasons.append("REMAINING_UNITS_UNKNOWN")
+    elif required > reported_remaining_units:
+        reasons.append("INSUFFICIENT_REPORTED_REMAINING_UNITS")
+    return ReferenceCapacityAudit(
+        required_identities=tuple(required_identities),
+        required_identity_count=required,
+        required_units=required,
+        reported_remaining_units=reported_remaining_units,
+        reasons=tuple(reasons),
+    )
+
+
+@dataclass(frozen=True)
 class DirectoryAliasCollision:
     namespace: str
     alias: str
