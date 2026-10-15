@@ -111,6 +111,15 @@ formula follow-up. The roughly four-minute audio trim is not an exact timestamp
 mapping. Slide evidence is separate from authenticated spoken rules. These findings
 reduce documentary gaps; they do not establish eligible live inputs or close G03/G04.
 
+The [newer-interview reconstruction](no-leverage-pullback-research.md#martin-newer-interview-reconstruction-2026-10-15-utc)
+adds 20 ASR/slide-scoped propositions, retained/changed-rule distinctions, five
+explicit hypotheses, counterexamples and a source-time validation contract.
+It supersedes using the old scanner settings or teacher parameters as implicit
+defaults for Martin's newer candidate. Scan-workflow continuity is described in
+the newer transcript, but exact parameter continuity remains unproven. This is a
+research specification; no executable profile, data eligibility, replay outcome,
+W2-05 acceptance checkbox or paper authority is created.
+
 Targeted scanner tests, deterministic replay, full pytest, Ruff, strict mypy,
 formatting and scoped diff checks are recorded with final counts in
 [Week 2 evidence](week2-evidence.md). Live validation proves only two small

@@ -1,5 +1,30 @@
 # Week 2 acceptance evidence
 
+## Martin newer-interview reconstruction follow-up (2026-10-15 UTC)
+
+The [authoritative research document](no-leverage-pullback-research.md#martin-newer-interview-reconstruction-2026-10-15-utc)
+now records 20 separately attributed propositions from the supplied transcript
+and slides, five competing hypotheses, changed/retained/unknown conditions,
+development cases and negative cases, and a proposed source-time validation
+sequence. The transcript SHA-256 and line positions bind the local attachment;
+the approximate audio trim is not an authenticated YouTube time mapping.
+Independent GPT-6.1 Sol Low information collection covered Martin evidence and
+public teacher sources separately; actual public-only Cloud `gemma4:31b`
+analysis and coordinator source checks preserved teacher/student attribution.
+No attachment or browser screenshot was exported. A proposed original May X
+post could not be retrieved; no missing wording was fabricated.
+
+Deterministic checks verified exactly M01–M20, attachment digest, referenced
+speaker-start line bounds, local links and the blocked execution boundary.
+Locked/offline `pytest tests/test_evidence.py -q`: 9 passed; documentation diff
+check passed. No runtime change or replay outcome is claimed. Independent
+quant/model review matched all 20 propositions to the transcript and found one
+hypothesis/falsifier mismatch. The corrected A1–A3 target individual case mappings
+and distinguish retrospective interpretation from prospective usability. The
+reviewer approved the correction with no remaining finding in scope; it did not
+independently authenticate screenshots or teacher pages. All W2-05/strategy/data
+release gates remain open and unrelated W3 changes remain untouched.
+
 ## W2-05 formula/source follow-up (2026-10-15 UTC)
 
 The [Martin research follow-up](no-leverage-pullback-research.md#formula-follow-up-and-user-supplied-visuals-2026-10-15-utc)
