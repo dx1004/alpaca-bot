@@ -1,5 +1,17 @@
 # Week 2 acceptance evidence
 
+## W2-05 formula/source follow-up (2026-10-15 UTC)
+
+The [Martin research follow-up](no-leverage-pullback-research.md#formula-follow-up-and-user-supplied-visuals-2026-10-15-utc)
+records coordinator-verified TradingView volatility, turnover and average-volume
+definitions, the earlier interview link, user-supplied slide/chart evidence and
+the approximate audio-trim boundary. Independent GPT-6.1 Sol Low retrieval and
+verified public-only Cloud `gemma4:31b` analysis were used; attachments were not
+exported. Unknown original filter intervals, data coverage, point-in-time inputs
+and strategy acceptance remain blockers. No runtime settings or TODO acceptance
+checkbox changed. Locked/offline `pytest tests/test_evidence.py -q`: 9 passed.
+Scoped documentation diff check passed. Unrelated W3 work remains untouched.
+
 ## W2-05 team follow-up — limited SIP ranking capture/replay (2026-10-14)
 
 The implementation and unresolved acceptance dependencies are recorded in

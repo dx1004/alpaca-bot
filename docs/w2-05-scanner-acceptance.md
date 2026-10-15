@@ -104,7 +104,12 @@ Verified firsthand dated scanner replies now appear in the
 [supplemental research record](no-leverage-pullback-research.md#martin-luk-supplemental-source-review-2026-10-14).
 This resolves the author's identity and adds candidate-source settings; it does
 not close the table's data or operational-rule gaps. Original video metadata was
-read, but its caption response was empty, so no spoken video rule is accepted.
+read, but its caption response was empty. A later user-supplied transcript and
+visuals, current official vendor formulas, remaining timeframe uncertainties and
+the original earlier-interview link are recorded in that same research document's
+formula follow-up. The roughly four-minute audio trim is not an exact timestamp
+mapping. Slide evidence is separate from authenticated spoken rules. These findings
+reduce documentary gaps; they do not establish eligible live inputs or close G03/G04.
 
 Targeted scanner tests, deterministic replay, full pytest, Ruff, strict mypy,
 formatting and scoped diff checks are recorded with final counts in

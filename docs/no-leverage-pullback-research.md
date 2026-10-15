@@ -121,6 +121,53 @@ No explicit float, RVOL or news-validity criterion appears in this reply; omissi
 cannot authorize removal of those rules from Ross or establish that Martin never
 uses them. These are three alternatives, not one merged scanner.
 
+### Formula follow-up and user-supplied visuals (2026-10-15 UTC)
+
+Independent GPT-6.1 Sol Low retrieval and coordinator source readback resolve
+part of the vendor-definition gap. These are current official definitions,
+not proof that Martin's 2025 settings used an identical vendor implementation.
+
+| Field | Official definition now established | Remaining acceptance evidence |
+| --- | --- | --- |
+| Volatility 1W | [TradingView's daily-chart reference script](https://www.tradingview.com/support/solutions/43000635876-how-is-volatility-calculated-in-the-screener/) averages daily `(high-low)/abs(low)*100` over a bar count found using a seven-calendar-day timestamp search. | Preserve the published search/count and zero/insufficient-history semantics; do not replace it with five sessions, weekly high-low range or standard deviation. The page warns about historical/realtime differences involving `timenow`; source-time parity needs validation. |
+| Vol*Price | [TradingView turnover](https://www.tradingview.com/support/solutions/43000775793-how-are-the-most-popular-filters-connected-with-volume-calculated/) is current selected bar close times current selected bar volume. | The explicitly weekly field uses weekly-bar inputs; it is not summed trade-dollar turnover. The reply's unsuffixed 50M field still lacks a verified selected timeframe, currency/session and update boundary. |
+| Avg volume 10D | [TradingView average volume](https://www.tradingview.com/support/solutions/43000745917-how-do-we-calculate-average-volume/) describes a daily-volume SMA and excludes extended hours. | Verify partial-current-day inclusion, source coverage and timestamp-controlled reference values before declaring parity. |
+
+The earlier interview is identified as
+[283% Gain in 1 Year — The Story of the 22-Year-Old Swing Trader](https://www.youtube.com/watch?v=lS9zbnLi1Gg).
+Its title is independently readable. Scanner timestamps around 1:30–1:34 from
+secondary indexes are navigation leads only; no primary-verified timestamp or
+full-video review is claimed.
+
+The user supplied an Otter transcript and screenshots from the 969% interview.
+The clear trading-style slide displays 9/21/50 EMA, Dollar Volume and AVWAP;
+0.5% portfolio risk per trade with equity-curve/market-condition variation;
+stop distance below 50% of ADR with a 5% maximum; and a focus on hot-sector stocks
+with ADR above 5%. The 35% maximum-position line is visibly struck through and
+is not an accepted limit. These are slide statements, not a frozen $500 risk
+policy; ADR calculation and the discretionary adjustments remain unspecified.
+The BBAI screenshots show daily and five-minute chart examples, not screener
+filter dialogs. They do not resolve filter timeframe, a signal trigger or VWAP
+anchor. The user reports removing roughly four minutes from the beginning of
+the audio: transcript timestamps are approximate navigation only until aligned
+to matching speech in the original video. No exact offset is asserted.
+
+Closure sequence: verify the original filter dialogs and field intervals;
+freeze each separate source-scoped scanner specification; obtain permitted,
+timestamped universe/capitalization and matching OHLCV inputs; compare computed
+fields and candidate membership against the source reference before eligibility.
+Missing historical evidence stays missing; prospective observations require a
+predeclared plan and cannot validate historical cases retroactively. IEX-only
+inputs retain `NOT_SIP_EQUIVALENT`. Neither an IEX implementation nor capped
+SIP-derived rankings can reconstruct missing consolidated trades by arithmetic.
+Martin's capitalization condition does not supply Ross's share-float requirement.
+
+A public-input-only Cloud analysis returned actual model `gemma4:31b` and was
+checked against primary sources. No user attachment or local document was sent
+to Cloud. Two explicit output-limit values were rejected by the router; omitting
+that optional argument restored inference using its configured default. No
+global configuration changed. No strategy rule or runtime path is enabled here.
+
 ### Consequence for W2-05
 
 Two firsthand source IDs are added to the existing **CANDIDATE** hybrid source
