@@ -1,5 +1,22 @@
 # Week 2 acceptance evidence
 
+## QS chart evidence follow-up (2026-10-14 Los Angeles)
+
+The [case inventory](no-leverage-pullback-research.md#case-and-counterexample-inventory)
+now records supplied QS daily/hourly/one-minute/five-minute frames and their
+player navigation range. M14 explicitly distinguishes ASR's mention of a
+15-minute interval from the intervals actually shown. One-minute and five-minute
+cursor dates differ; no synchronized same-trade sample or actual fill is claimed.
+The 1.39% annotation is not promoted into a stop policy. Audio wording, exact
+interval switching, bar confirmation and stop precedence remain unverified.
+The user subsequently confirmed hearing "so the QS" at video 1:55:45. This
+replaces the rough 1:55:00 navigation estimate, with explicit `USER_AUDIO_CHECK`
+provenance. It maps inside the transcript segment starting 1:51:17, not exactly
+to its first word, so a 4:28 global offset is not asserted.
+This is documentary evidence only, with no new executable behavior or acceptance
+checkbox. Local evidence-reference/link checks and the documentation diff check
+are the appropriate validation; no new runtime/replay pass is claimed.
+
 ## CRCL visual evidence follow-up (2026-10-15 UTC)
 
 New user-supplied frames confirm the previously ambiguous Circle case as CRCL

@@ -198,6 +198,8 @@ prices, anchor coordinates and statements such as "here" need visual alignment.
   only to the displayed statement, not its application on every trade.
 - `MARTIN_FRAME`: chart content readable in a supplied frame; it confirms the
   depicted instrument/view, not unseen narration or source-time trade knowledge.
+- `USER_AUDIO_CHECK`: wording/time the user reports hearing in the original;
+  do not relabel it as audio independently heard by the assistant.
 - `TEACHER_FRAMEWORK`: a teacher's own public teaching, never proof of adoption.
 - `MARTIN_INFERRED`: a specific reconstruction with a source chain, contrary
   evidence and a falsification condition. Confidence describes the inference,
@@ -247,7 +249,7 @@ preferences, examples, remembered trades and stated exceptions distinct.
 | M11 / MARTIN_ASR, T 1:36:37–1:37:20 L301–314 | BE looks good daily, but late/slow intraday recovery is unsuitable for him; prefers a fast morning flush/recovery. | Separate strength preference from Hong Kong sleeping hours. Do not replace his timing with an assumed all-day US bot policy. |
 | M12 / MARTIN_ASR, T 1:37:20–1:40:39 L313–320 | Adjusts an anchor on the hourly chart to a reversal/high-related candle or actual intraday low to fit more reactions. | Exact adjustment search, candidate set, information cutoff and tie handling remain unknown. |
 | M13 / MARTIN_ASR, T 1:44:44 L331–332 | Distinguishes multi-day anchors from one/five-minute intraday anchors; changes view and then discovers a wrong year/date. | "Hourly/weekly" wording and shown coordinates need verification. This interrupted demonstration cannot validate an intraday trade. |
-| M14 / MARTIN_ASR, T 1:51:17 L379–380 | In QS, describes a fast pullback to support followed by breaking a previous bar's high on a lower timeframe. | One/five/15-minute choices exist. "Before market open" contradicts surrounding first-15/15–60-minute discussion; exact time buckets remain unaccepted. Trigger is not always opening-range high. |
+| M14 / MARTIN_ASR, T 1:51:17 L379–380; later MARTIN_FRAME | In QS, describes a fast pullback to support followed by breaking a previous bar's high on a lower timeframe. Supplied QS frames confirm one- and five-minute chart views. | One/five/15-minute choices exist in the ASR; no supplied frame confirms a 15-minute view. "Before market open" contradicts surrounding first-15/15–60-minute discussion; exact time buckets remain unaccepted. Displayed cursor times are not verified fill times. Trigger is not always opening-range high. |
 | M15 / MARTIN_ASR, T 15:37–15:41 L22–29; 1:51:17 L379–380 | Usually day-low stop, sometimes entry/breakout-bar or previous-bar low if too wide; explicitly not a strict single rule. | Day low is provisional as known then, not final day's low. Missing selection priority/offset blocks sizing. A fixed pullback-low-only stop is unsupported. |
 | M16 / MARTIN_ASR, T 1:48:29 L367–368; 1:56:14–1:59:08 L382–395; 2:03:25 L400–401 | Criticizes extended/weak higher-timeframe entries in UPST, Circle and SOFI; small repeated losses remain possible. | Losing-trade explanations are retrospective, not proof a now-invented veto would have excluded them prospectively. No retry count is fixed. |
 | M17 / MARTIN_SLIDE; T 8:40 L13–14 | Describes about 0.5% average account risk with adjustments; stop below half ADR and 5% maximum; slide strikes through former 35% position limit. | Not a fixed $500 risk profile. Sizing descriptions and ASR arithmetic conflict elsewhere. ADR period, adjustments and maximum risk remain unaccepted. |
@@ -307,6 +309,41 @@ selection algorithm or prospective knowledge from the completed chart. These
 frames resolve the ticker ambiguity and supply visual context for the Circle
 counterexample; they are not the requested QS entry-time explanation and contain
 no audio. No fixed transcript/YouTube offset or new order rule is accepted.
+
+QS visual follow-up (`MARTIN_FRAME`, received 2026-10-14 America/Los_Angeles;
+appshot capture metadata 2026-10-15 06:40:55–06:41:53 UTC): the player metadata
+spans 1:55:48–1:58:23. Frames visibly identify **QS / QuantumScape**, with daily,
+one-hour, one-minute and five-minute views and replay controls. The daily/hourly
+frames supply broader decline/consolidation context; the minute views show an
+initial sharp move, selloff and rebound. This supplies context consistent with
+M14, not independent authentication of the narration or a mechanical buy signal.
+
+| Visible frame group | Observation supported | Remaining limit |
+| --- | --- | --- |
+| One-minute QS views | Chart cursor labels include Tuesday 05/08/2025 around 09:36–09:37; a rebound follows a sharp decline. | These are displayed cursor/date labels, not confirmed exchange-time timestamps, fills or selected breakout bars. The full context can include already completed future bars. |
+| Five-minute QS views | Cursor labels include Wednesday 30/07/2025 around 10:55–11:05. | This is a different displayed date. Do not combine these frames with the August one-minute views as one identified trade or one synchronized multiscale sample. |
+| Daily / one-hour QS views | Price/EMA context and a 1.39% chart annotation are visible. | A cursor date is not necessarily the trade date. The annotation does not establish stop meaning, stop placement priority or a universal stop width. |
+
+The frames strengthen the qualitative interpretation of higher-timeframe context
+plus lower-timeframe entry analysis and confirm that both one/five-minute views
+were demonstrated. They do not prove when he switches intervals, whether a bar
+must close before entry, which stop alternative wins, or which AVWAP anchor was
+used. The chart context makes an after-open interpretation of M14 plausible;
+the before/after wording still requires a reported audio check. No further static
+frame is needed merely to establish these chart intervals. All strategy and
+paper gates remain unchanged.
+
+Local synchronization update (`USER_AUDIO_CHECK`, 2026-10-14 Los Angeles): the
+user places the spoken phrase **"so the QS" at YouTube 1:55:45**, refining the
+earlier rough 1:55:00 estimate. This identifies the QS topic transition within
+T's Speaker 2 segment beginning 1:51:17 (L379–380). That segment begins with
+the previous trade's discussion, so its start and the QS phrase are not the same
+instant. The difference between the two displayed times is 268 seconds, but
+this is not a verified 4:28 constant offset: the phrase's elapsed time within
+the transcript segment has not been measured. Use 1:55:45 as the local QS
+navigation anchor and 1:55:48–1:58:23 as the supplied chart-frame range. Other
+sentences and other chapters remain only approximately aligned. No timing or
+stop rule is accepted from this navigation correction.
 
 #### Predeclared validation and required inputs
 
