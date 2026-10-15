@@ -22,8 +22,9 @@ Free-source follow-up found EODHD Live v2's documented free `sharesFloat` and
 `marketCap` fields. A real public-demo AAPL response verified their types and
 presence. The 20-ticker-calls/day plan, demo scope, missing float update clocks,
 actual-key prerequisite and personal-use conditions remain explicit. The user
-has no float-data account and requested free-only investigation; no account or
-subscription was created. This is a new actionable source candidate, not data
+initially had no float-data account and requested free-only investigation, then
+reported completing EODHD free registration. No account or subscription was
+created by the agent. This is a new actionable source candidate, not data
 eligibility or G03/G04 acceptance.
 
 Independent GPT-6.1 Sol Low source collection, public-only Cloud `gemma4:31b`
@@ -36,7 +37,8 @@ No local capture or user attachment was sent to Cloud.
 
 `eodhd_reference.py` adds raw-before-parse journal capture and independent
 idempotent reference projection, with missing-symbol, null/type, provenance and
-clock diagnostics. No token/network transport or strategy integration is added.
+clock diagnostics. This module handles no tokens, issues no network requests and
+does not integrate with a strategy.
 The actual archived public demo passed a real-journal projection and duplicate
 check. Independent validation also checked a separate temporary real journal and
 prospective replay before/after processing. Trusted float, actual-user entitlement,
@@ -49,6 +51,29 @@ Independent source/data/code validation approved this bounded engineering
 increment and recomputed raw hashes, counts, expected dates and exact ratios.
 It did not accept a full strategy or G03/G04. Unfinished W3 changes remain
 untouched and outside the scoped commit.
+
+### Local EODHD credential entry and direct API path
+
+`scripts/configure_eodhd_credentials.py` now provides a hidden interactive prompt
+and a separate token-only private store outside Git. Atomic creation prevents
+implicit overwrites; unsafe permissions, symlinks, oversized/malformed files and
+echo fallback fail closed. Explicit replacement is optional. `--check` verifies
+local storage and format only, without contacting EODHD. Development accessed
+synthetic temporary credentials only; the actual-user key is still unconfigured
+and no authenticated EODHD small-cap probe has occurred.
+
+The existing raw capture/replay design will use HTTP API access directly.
+EODHD's [official MCP documentation](https://eodhd.com/lp/eodhd-mcp-server) confirms
+data calls share normal API quotas and plan-controlled access. No MCP dependency
+is added; it would not establish missing float update semantics, candidate
+coverage or sufficient daily capacity.
+
+Validation: 36 new credential tests and two existing paper-credential regressions
+passed, as did scoped Ruff, strict mypy and formatting checks for the three new
+helper/test files. Independent current-byte review approved the bounded scope and
+verified hidden input through a real controlling terminal with synthetic temporary
+credentials, without accessing actual credentials or network endpoints.
+Full W2-05/G03/G04 acceptance remains blocked.
 
 ## QS timing and stop wording clarification (2026-10-14 Los Angeles)
 

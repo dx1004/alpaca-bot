@@ -75,7 +75,25 @@ projection is idempotent; later receipt of identical bytes is a new observation.
 Snapshot time, first-seen and processed availability remain separate. All derived
 values keep unknown float effective/revision time, unverified freshness and
 actual-user entitlement, a null trusted-float field and blocked eligibility.
-No network transport, token handling or strategy integration was added.
+Reference capture/projection handles no tokens, issues no network requests and
+does not integrate with a strategy.
+
+The user subsequently reported completing EODHD free registration. A separate
+local credential helper is now available in
+`scripts/configure_eodhd_credentials.py`. It reads a hidden token only from an
+interactive terminal and stores it outside Git at
+`~/.local/share/alpaca-bot/eodhd-reference.json`, separately from paper credentials.
+The storage module enforces an owned private directory/file, rejects symlinks
+and unsafe metadata, bounds token-only JSON and prevents implicit overwrites.
+The optional `--check` validates local storage/format only; it does not authenticate
+with EODHD. No actual token was read or saved during development.
+
+Direct HTTP API access is the selected integration path for the existing raw
+capture/replay design. EODHD's
+[official MCP documentation](https://eodhd.com/lp/eodhd-mcp-server) says data tool
+calls use the same API quota and plan-controlled data access. MCP is an optional
+AI-client interface, not a prerequisite or a solution to float freshness,
+small-cap coverage or free-plan capacity. No MCP installation is needed here.
 
 The archived public demo was also projected through a real local journal:
 one reference observation, no schema diagnostics, duplicate projection suppressed,
@@ -99,8 +117,9 @@ public float.
 | Required data | Actual broker catalog, two-symbol dated IEX history and a public-demo float schema are verified. Explicit consistency failures now have deterministic reasons. | A free personal key must establish actual float/cap access for predeclared real candidates; then verify identity, coverage, update/freshness and daily capacity. Full discovery and source-scoped RVOL session/baseline acceptance remain separate. |
 | Candidate/rejection evidence | Input-quality rejection paths can be tested without inventing a strategy; raw inputs and dated diagnostics are retained. | No qualified-candidate/rejection replay for an accepted strategy has occurred. A missing input is unavailable, not a failed trading rule. G03/G04 remain open. |
 
-Next external prerequisite is an EODHD **free** personal key, obtained by the
-user. The reviewable next probe is limited to a predeclared small-cap sample and
+Next external prerequisite is local configuration of the user's EODHD **free**
+personal key; reported registration alone does not verify provider access.
+The reviewable next probe is limited to a predeclared small-cap sample and
 at most the documented ticker-call budget; preserve absent/null fields and
 rejections. No paid subscription, account creation, live-price replacement,
 automated selection of 20 favored symbols, or trading authority follows from
@@ -114,6 +133,14 @@ modules and recomputed the actual directory/catalog/history counts, hashes and
 exact rational ratios. It approved the bounded engineering scope, explicitly
 withholding W2-05/G03/G04 acceptance. Unrelated unfinished W3 changes were
 present during the workspace suite and remain outside this change set.
+
+Credential-helper validation is separate: 36 new synthetic tests plus two existing
+paper-credential regressions passed. Scoped Ruff, strict mypy and formatting checks
+passed for the three helper/test files. These checks do not establish actual-user
+entitlement or close W2-05/G03/G04.
+Independent validation approved this bounded scope, including a real controlling
+terminal with synthetic temporary credentials that verified hidden input without
+token echo. It did not access the user's credential store or any provider API.
 
 ## Scope contract
 
