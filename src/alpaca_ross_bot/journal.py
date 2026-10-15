@@ -5,7 +5,7 @@ import json
 import os
 import sqlite3
 import stat
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -28,6 +28,39 @@ class OrderHttpObservation:
 
 class Journal:
     """Own event evidence and local state in one SQLite transaction."""
+
+    @classmethod
+    def open_private(cls, path: Path, runtime_root: Path) -> "Journal":
+        """Create owner-only state without relaxing or chmodding existing paths."""
+        root = runtime_root.resolve()
+        resolved = path.resolve()
+        if resolved == root or not resolved.is_relative_to(root):
+            raise JournalError("journal path must be inside the runtime root")
+        root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        details = root.stat()
+        if details.st_uid != os.getuid() or details.st_mode & 0o077:
+            raise JournalError("private journal filesystem permissions are unavailable")
+        resolved.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        try:
+            descriptor = os.open(resolved, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        except FileExistsError:
+            pass
+        else:
+            os.close(descriptor)
+        database = resolved.stat()
+        if (
+            not stat.S_ISREG(database.st_mode)
+            or database.st_uid != os.getuid()
+            or database.st_mode & 0o077
+        ):
+            raise JournalError("existing order journal storage is not private")
+        journal = cls(resolved, root)
+        try:
+            journal.require_private_order_state()
+        except Exception:
+            journal.close()
+            raise
+        return journal
 
     def __init__(self, path: Path, runtime_root: Path) -> None:
         root = runtime_root.resolve()
@@ -330,6 +363,94 @@ class Journal:
             "SELECT value_json FROM state WHERE key=?", (key,)
         ).fetchone()
         return None if row is None else json.loads(row[0])
+
+    def apply_order_event(
+        self,
+        *,
+        account_ref: str,
+        state_key: str,
+        dedupe_key: str,
+        event_kind: str,
+        payload: bytes,
+        received_at: datetime,
+        reduce: Callable[[object | None, bool, int], object],
+        identity_payload: bytes | None = None,
+        prepare_payload: Callable[[bytes], bytes] | None = None,
+    ) -> EventEnvelope | None:
+        """Atomically deduplicate, preserve evidence and replace its projection.
+
+        The reducer executes under the SQLite write lock. Reuse of a stable key
+        with different bytes is preserved as a conflict, never as a new fill.
+        """
+        self.require_private_order_state()
+        if not state_key.startswith("order_lifecycle:") or not dedupe_key:
+            raise JournalError("invalid lifecycle state or deduplication key")
+        try:
+            self._db.execute("BEGIN IMMEDIATE")
+            if self.read_paper_account_ref() != account_ref:
+                raise JournalError("lifecycle account is not bound to this journal")
+            if prepare_payload is not None:
+                payload = prepare_payload(payload)
+            digest = "sha256:" + hashlib.sha256(payload).hexdigest()
+            identity_hash = (
+                "sha256:"
+                + hashlib.sha256(
+                    payload if identity_payload is None else identity_payload
+                ).hexdigest()
+            )
+            key = "order_evidence:" + account_ref + ":" + dedupe_key
+            previous_evidence = self.read_state(key)
+            if (
+                isinstance(previous_evidence, dict)
+                and previous_evidence.get("hash") == identity_hash
+            ):
+                self._db.rollback()
+                return None
+            sequence = self._db.execute(
+                "SELECT COALESCE(MAX(sequence),0)+1 FROM events"
+            ).fetchone()[0]
+            projected = reduce(
+                self.read_state(state_key), previous_evidence is not None, sequence
+            )
+            event = EventEnvelope(
+                sequence=sequence,
+                source_id="ALPACA_ORDER_LIFECYCLE",
+                feed="paper",
+                event_kind=event_kind,
+                payload_ref=digest,
+                source_event_at=None,
+                provider_received_at=None,
+                system_first_seen_at=received_at,
+                processed_at=received_at,
+                available_at=received_at,
+            )
+            updates = {state_key: projected}
+            if previous_evidence is None:
+                updates[key] = {"hash": identity_hash, "sequence": sequence}
+            self._append_locked(event, payload, updates)
+            self._db.commit()
+            return event
+        except Exception:
+            self._db.rollback()
+            raise
+
+    def read_order_events(
+        self, *, through_sequence: int | None = None
+    ) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        """Read immutable private lifecycle evidence at a fixed watermark."""
+        self.require_private_order_state()
+        sequences = self._db.execute(
+            "SELECT sequence FROM events WHERE source_id='ALPACA_ORDER_LIFECYCLE' "
+            "AND (? IS NULL OR sequence<=?) ORDER BY sequence",
+            (through_sequence, through_sequence),
+        ).fetchall()
+        result = []
+        for (sequence,) in sequences:
+            item = self.read_event(sequence)
+            if item is None:
+                raise JournalError("lifecycle evidence disappeared")
+            result.append(item)
+        return tuple(result)
 
     def reserve_order_intent(
         self, client_order_id: str, intent: Mapping[str, object]

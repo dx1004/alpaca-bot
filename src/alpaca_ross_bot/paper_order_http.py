@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from http.client import HTTPException, HTTPSConnection
 from math import isfinite
 from urllib.parse import urlencode
+from uuid import UUID
 
 from alpaca_ross_bot.config import (
     PAPER_TRADING_URL,
@@ -32,6 +33,10 @@ _PAPER_HOST = "paper-api.alpaca.markets"
 
 class PaperOrderHttpError(ValueError):
     """A paper request failed without establishing its broker outcome."""
+
+
+class PaperOrderAuthenticationError(PaperOrderHttpError):
+    """Paper API credentials or account authorization could not be verified."""
 
 
 @dataclass(frozen=True)
@@ -93,6 +98,8 @@ class PaperOrderHttp:
         """Authenticate against the exact paper host and bind the private journal."""
         journal.require_private_order_state()
         response = self._request("GET", "/v2/account", None)
+        if response.status in (401, 403):
+            raise PaperOrderAuthenticationError("paper account authentication failed")
         if response.status != 200:
             raise PaperOrderHttpError("paper account verification failed")
         try:
@@ -211,6 +218,48 @@ class PaperOrderHttp:
             f"/v2/orders:by_client_order_id?{query}",
             None,
         )
+
+    def read_open_orders_page(
+        self, *, after_order_id: str | None = None
+    ) -> PaperHttpResponse:
+        """Read one fixed-size open-order page with an exclusive UUID cursor."""
+        query = [
+            ("status", "open"),
+            ("limit", "500"),
+            ("nested", "false"),
+            ("direction", "asc"),
+        ]
+        if after_order_id is not None:
+            try:
+                cursor = str(UUID(after_order_id))
+            except (ValueError, TypeError, AttributeError) as exc:
+                raise ValueError("open-order cursor must be an order UUID") from exc
+            query.append(("after_order_id", cursor))
+        return self._request("GET", "/v2/orders?" + urlencode(query), None)
+
+    def read_positions(self) -> PaperHttpResponse:
+        """Read account positions without altering order or position state."""
+        return self._request("GET", "/v2/positions", None)
+
+    def read_fill_activities_page(
+        self, broker_order_id: str, *, page_token: str | None = None
+    ) -> PaperHttpResponse:
+        """Read one FILL page scoped to an owned, validated broker order UUID."""
+        try:
+            identity = str(UUID(broker_order_id))
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise ValueError("fill activity order must be a broker UUID") from exc
+        query = [
+            ("activity_types", "FILL"),
+            ("order_id", identity),
+            ("direction", "asc"),
+            ("page_size", "100"),
+        ]
+        if page_token is not None:
+            if not isinstance(page_token, str) or not page_token.strip():
+                raise ValueError("fill activity cursor must be nonempty")
+            query.append(("page_token", page_token))
+        return self._request("GET", "/v2/account/activities?" + urlencode(query), None)
 
     def reconcile_order_snapshot(
         self, journal: Journal, client_order_id: str

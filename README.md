@@ -53,6 +53,23 @@ Windows-backed project drive cannot enforce those permissions. Empty snapshots
 do not resolve an uncertain submission or authorize trading. Without `--connect`,
 the script reports `NOT_RUN`.
 
+To verify the pinned SDK's paper trade-update subscription together with bounded
+REST order/fill/position recovery, run:
+
+```bash
+rtk proxy .venv/bin/python scripts/reconcile_paper_orders.py --credentials-file "$HOME/.local/share/alpaca-bot/paper.json" --runtime-root "$HOME/.local/state/alpaca-bot/paper-engineering" --connect
+```
+
+This finite probe only reads the broker and records private local evidence. On
+the first run, `--initialize-baseline` can register an empty starting inventory
+only after a fresh, complete account capture confirms no open orders, positions
+or local intents. Otherwise the missing baseline remains an explicit difference;
+do not delete state or reset it to bypass a discrepancy. The component API also
+supports a source-linked long-position baseline before any local intent.
+`MATCHED` describes the captured reconciliation, not an atomic broker snapshot
+or trading authority. Shutdown and restart require recovery again. Real order
+cycles and protection/incident behavior remain separate W3-06/W3-07 gates.
+
 To check only access to Alpaca's SIP-based market-ranker endpoints, use
 `--sip-screeners-only --connect` with the same credential file. This sends
 only two read-only GET requests and skips account, quote/trade, news, and

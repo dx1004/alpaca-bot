@@ -91,3 +91,133 @@ Independent local review found and verified fixes for blocked-account lookup sup
 Acceptance boundary: W3-04's account-bound engineering transport, durable evidence and no-duplicate-send contract can be accepted independently of W3-05 lifecycle/positions and W3-07 real order-cycle tests. Those later gates and G03/G04/G05 remain open. DNS resolution still has no proven hard deadline; unattended execution/protection requires its later fault/recovery gates. The broader repository checks encountered separate in-progress scanner-replay failures (noncontiguous replay input and a missing `Journal.read_events` dependency); they are not a passing release check or a reason to change scanner code in this W3 task.
 
 Final scoped checks: the journal/HTTP/contract subset passed 62 tests; strict mypy passed for `src`, the three direct test modules and `scripts/audit_paper_order_state.py` (34 source files). Ruff check/format passed for `src`, `tests` and the new audit script (60 files); `git diff --check` passed. The wider run observed 425 passing tests and 27 scanner-replay failures, and wider type checking found two missing-`read_events` errors in that separate test module. These broader failures remain reported and the release gates remain open; they do not invalidate the independently checked W3-04 component contract.
+
+## W3-05 — Lifecycle, SDK updates and account reconciliation (2026-10-15)
+
+This increment implements a read-only engineering reconciliation component for
+W3-04's supported simple-equity request contract. It cannot select trades, submit
+or cancel orders, resolve incident disposition, or start a formal paper sample.
+Strategy, risk, data eligibility, W3-06 protection and W3-07 real order cycles
+remain independent gates. It introduces no Ross or hybrid strategy parameter.
+
+### Sources and contract decisions
+
+Independent GPT-6.1 Sol Low retrieval and coordinator inspection covered Alpaca's
+[trade-update stream](https://docs.alpaca.markets/us/docs/websocket-streaming),
+[order states](https://docs.alpaca.markets/us/docs/orders-at-alpaca),
+[order-list pagination](https://docs.alpaca.markets/us/reference/getallorders-1),
+[account activities](https://docs.alpaca.markets/us/reference/getaccountactivities-2),
+and the pinned
+[`alpaca-py` v0.44.0 stream](https://raw.githubusercontent.com/alpacahq/alpaca-py/v0.44.0/alpaca/trading/stream.py).
+The installed SDK primitives were inspected as well. Public-only Ollama Cloud
+analysis returned `route=cloud`, model `gemma4:31b`, `success=true`; it supplied
+review suggestions, not operational authority. Proposed terminal-state rankings,
+WS/activity ID equivalence and microsecond-only ordering were rejected.
+
+- The SDK's paper connection/authentication/subscription primitives are reused
+  with the exact paper endpoint and pinned version. The wrapper additionally
+  requires the `listening` acknowledgement; SDK subscription intent alone is
+  insufficient. Incoming binary/text frames are preserved before decoding.
+  Outbound authentication is never journaled or logged.
+- Order snapshots carry cumulative `filled_qty`. Duplicate WS and REST snapshots
+  never add that quantity twice. Provider timestamps retain nanosecond precision;
+  local receipt datetimes allow only their 999ns representation uncertainty.
+- Activity IDs identify account activity records, not WS execution IDs. FILL
+  activity pages are summed independently and compared with cumulative fills.
+  Broker UUIDs must map to one owned client ID; activity IDs must not be reused
+  across broker orders.
+- There is no documented exactly-once/replay cursor for trade updates. Reconnect
+  and restart always require REST recovery. Open orders use the documented
+  order-ID cursor (500 per page), FILL activities use their last-record ID cursor
+  (100 per page); timestamp ties are not pagination cursors. Caps, duplicates,
+  loops, failed lookups and incomplete pages remain explicit differences.
+- Sequential REST snapshots are not atomic. Two matching capture rounds establish
+  observed convergence only. Account authentication brackets collection; owned
+  lookups, open orders, positions and activities must agree, with fresh clocks,
+  complete pages and unchanged local evidence. A lookup 404 never grants replay.
+- `done_for_day`, replacements, corrections and unsupported shapes remain
+  `UNKNOWN` or explicit blockers. REST short-position sign interpretation is
+  deliberately unaccepted for this long-equity component. Existing protections
+  are not canceled or modified.
+
+### Requirement-to-evidence map
+
+| Requirement | Implementation and validation |
+| --- | --- |
+| Accepted, rejected, partial, filled, cancel-pending, canceled, expired, unknown | `order_lifecycle.py`; pure transition tests preserve cumulative exposure, identity and timestamp conflicts without a terminal-state ranking. |
+| Durable raw evidence and atomic projection | `Journal.apply_order_event()` persists frame/batch, deduplication identity and projection in one SQLite transaction. Reducer/storage failures roll back together. Exact duplicates do not add fills; reused identities with different payloads remain conflicts. |
+| Restart recovery | `verify_rebuild()` reconstructs all immutable account lifecycle events and requires the cache to reach the latest event. Missing, rewound or changed caches fail closed. A valid restart retains known fills, invalidates stream trust and requires a new reconciliation. |
+| Local inputs cannot disappear during reconciliation | Intent, send-marker and successful HTTP history are reread under the write lock; concurrent changes are retained in the batch and block a clean match. |
+| WS plus REST fills and orders | `paper_trade_stream.py`, `paper_order_recovery.py`, `order_reconciliation.py`; bounded original-frame capture, explicit subscription/session health, owned lookups and FILL pages. |
+| Account inventory and external differences | A one-time baseline must reference a recent, complete, stable same-account recovery batch before any local intent. Open/external orders, unknown lookups, unsupported positions and fill/position differences are explicit. Generic or stale position snapshots cannot establish the baseline. |
+| Preserve known exposure on malformed/missing data | Valid order fills survive malformed WS `position_qty`; saved HTTP fills survive a current lookup 404 or missing historical timestamp. Unknown time is explicitly labeled; it is never replaced with an invented broker timestamp. |
+| Responsive collection and bounded close | REST collection owns a separate thread-local SQLite connection; stream callbacks remain on the event loop. Close timeout aborts the transport before awaiting cancellation acknowledgement. Incomplete collection is persisted before baseline initialization is refused. |
+| No broker write or formal paper authority | The verification CLI uses authentication, subscription and GET requests only. `trading_authorized=false`, `snapshots_atomic=false`; a matched capture cannot authorize a trade, resubmit or release a send marker. |
+
+Synthetic tests cover duplicate/changed execution IDs, shuffled and stale
+snapshots, terminal/cancel-fill conflicts, cumulative regressions, nanosecond
+ordering, concurrent journal connections, transactional failure, cache rollback, restart,
+pagination boundaries/loops/caps, external inventory, wrong account, malformed
+frames and unknown HTTP outcomes. Independent reviewers reproduced and checked
+the corrections; reviews do not establish real execution or strategy acceptance.
+
+`scripts/reconcile_paper_orders.py` is a finite, opt-in read-only probe. Raw account,
+order and stream evidence stays in the owner-only WSL journal; only redacted flags
+and difference codes may enter Git. Closing the stream leaves a recovery gap,
+including after a successful capture. Missing credentials, account mismatch,
+storage failure or incomplete evidence cannot silently produce acceptance.
+DNS resolution still has no proven hard deadline; this component must not be
+promoted into an unattended exposure/protection runner before later fault gates.
+
+### Verification and component acceptance
+
+The [redacted real verification](../evidence/paper-lifecycle-readonly-2026-10-15.json)
+contains two GET-only/SDK subscription captures against the same private journal,
+including a fresh process after the first stream closed. Both reconciled the
+empty engineering inventory and verified deterministic rebuild; both closed with
+a recovery gap. The private runtime's owner and 0700/0600 modes, SQLite integrity,
+lifecycle payload hashes and absence of local intents/send attempts were checked
+separately. Raw responses and account identity remain outside Git. This verifies
+transport integration and empty-account restart recovery, not a real fill,
+cancellation, short position or broker-order cycle.
+
+Independent review identified and verified corrections for rewound caches,
+concurrent local input omission, lookup404 rollback, malformed position quantity,
+reused broker/activity IDs, missing historical timestamps, historical fills lost
+behind an unsuccessful lookup, conflicting UUID quantity contamination, blocked
+stream callbacks, discarded partial captures and cancellation-resistant close.
+After corrections the final focused review approved its scope. The full current
+test suite, including async collector tests, passed 673 tests with one upstream
+`websockets.legacy` deprecation warning. Ruff check/format and strict mypy passed;
+the new verification script was included in static checks. No dependency upgrade
+or unrelated scanner/strategy repair was made by this W3-05 increment.
+
+```text
+rtk proxy .venv/bin/python -m pytest -q
+rtk proxy .venv/bin/ruff check src tests scripts/reconcile_paper_orders.py
+rtk proxy .venv/bin/ruff format --check src tests scripts/reconcile_paper_orders.py
+rtk proxy .venv/bin/mypy --strict src tests scripts/reconcile_paper_orders.py
+rtk git diff --check
+```
+
+The full pytest command used tool-approved execution outside the affected
+sandbox. Environment evidence and limitation:
+
+```text
+status: ENV_FAULT — isolated; affected operation verified through approved execution
+category: asyncio_default_executor_shutdown
+evidence: a repository-independent asyncio.run/to_thread(lambda: 1) reproduction
+returned the worker value but hung in sandbox runner shutdown (5-second cap,
+exit124). The identical approved operation printed runner_closed and exited0;
+the full test suite and both real read-only probes also exited successfully there.
+affected_scope: sandboxed async executor shutdown and test acceptance
+safe_to_continue: static/synchronous checks and the same approved test/probe paths
+recommended_action: preserve sandbox controls; use scoped tool approval for the
+affected checks. The sandbox root cause is not established or globally repaired.
+No repository timing/network workaround or global configuration reset was applied.
+```
+
+W3-05 is accepted as an engineering component. Its state/report cannot authorize
+new exposure, cancel protection, clear an unresolved send marker, enable live
+trading or begin formal paper. W3-06 protection/incident rules and W3-07 actual
+order-cycle evidence remain open, alongside independent strategy/risk/data gates.

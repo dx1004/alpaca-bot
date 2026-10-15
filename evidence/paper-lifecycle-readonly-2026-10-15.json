@@ -1,0 +1,33 @@
+{
+  "initial_capture": {
+    "broker_writes_performed": false,
+    "capture_status": "MATCHED",
+    "difference_codes": [],
+    "observed_at": "2026-10-15T18:48:35.188524+00:00",
+    "paper_account_verified": true,
+    "rebuild_verified": true,
+    "sdk_subscription_verified": true,
+    "shutdown_requires_recovery": true,
+    "snapshots_atomic": false,
+    "trading_authorized": false
+  },
+  "private_state_verification": {
+    "lifecycle_payload_hashes_verified": true,
+    "local_order_intents": 0,
+    "local_send_attempts": 0,
+    "owner_and_modes_verified": true,
+    "sqlite_integrity_verified": true
+  },
+  "restart_capture": {
+    "broker_writes_performed": false,
+    "capture_status": "MATCHED",
+    "difference_codes": [],
+    "observed_at": "2026-10-15T18:49:50.984792+00:00",
+    "paper_account_verified": true,
+    "rebuild_verified": true,
+    "sdk_subscription_verified": true,
+    "shutdown_requires_recovery": true,
+    "snapshots_atomic": false,
+    "trading_authorized": false
+  }
+}
