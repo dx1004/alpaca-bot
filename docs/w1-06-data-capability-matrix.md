@@ -1,5 +1,13 @@
 # W1-06 data capability matrix — research snapshot
 
+Current follow-up, **2026-10-15 Los Angeles**: the original snapshot below is
+historical. [W2-05 closure evidence](w2-05-scanner-acceptance.md#closure-work--2026-10-15-los-angeles)
+now verifies actual current catalog and two-symbol IEX history captures and
+identifies EODHD Live v2 as a documented free float/capitalization source
+candidate with a successful public-demo schema check. An actual user key,
+small-cap field coverage, float update/freshness semantics and capacity remain
+unverified. This does not convert float to PASS, IEX to SIP or G04 to accepted.
+
 Status: **W1-06 capability inventory accepted; G04 strategy-input eligibility open**, 2026-10-06. Account context: a normal Alpaca brokerage account using its paper trading endpoint, Basic data plan, proposed USD 500 / 1× stage. The user chose Alpaca-only Basic/IEX for current live equities and deferred Webull and paid SIP. This matrix records source capability and missing evidence for each input independently. It does not enable strategy evaluation or orders. The Ross inventory remains `CANDIDATE` with all 11 operational domains `BLOCKED_RESEARCH` in [the fidelity matrix](../evidence/fidelity-matrix.yaml); the [separate hybrid candidate](../evidence/hybrid-fidelity-matrix.yaml) also has 11 blocked domains.
 
 `CONFIRMED` means a stated first-party capability or a bounded redacted account probe; `UNAVAILABLE` means an observed denial or a documented absence for the proposed use; `UNKNOWN` means no adequate evidence. A reachable endpoint is not proof of complete field coverage, delivery timing, historical versions or use rights. Any decision produced on the proposed free real-time path must identify its actual sources and carry `NOT_SIP_EQUIVALENT`; no strategy decision path currently exists.

@@ -1,0 +1,466 @@
+{
+  "schema_version": 1,
+  "captured_on_los_angeles": "2026-10-15",
+  "scope": "BOUNDED_SCANNER_INPUT_ENGINEERING_EVIDENCE_ONLY",
+  "strategy_eligibility": "BLOCKED_RESEARCH",
+  "candidate_qualification_run": false,
+  "formal_paper_evaluation_started": false,
+  "orders_submitted": false,
+  "raw_archive_relative": "var/research/w205-input-audit/2026-10-15",
+  "raw_capture_metadata": {
+    "nasdaq": [
+      {
+        "name": "nasdaqlisted",
+        "url": "https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt",
+        "request_started_at": "2026-10-15T07:08:36.706642+00:00",
+        "received_at": "2026-10-15T07:08:37.519555+00:00",
+        "bytes": 349417,
+        "sha256": "1d3656d26cfddd35363ce8022d50cbb5342ae2b1cfebee74f3c3b168b0f0f808",
+        "rows_with_header_and_trailer": 5631,
+        "header": "Symbol|Security Name|Market Category|Test Issue|Financial Status|Round Lot Size|ETF|NextShares",
+        "trailer": "File Creation Time: 1015202603:03|||||||"
+      },
+      {
+        "name": "otherlisted",
+        "url": "https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt",
+        "request_started_at": "2026-10-15T07:08:37.521529+00:00",
+        "received_at": "2026-10-15T07:08:38.403773+00:00",
+        "bytes": 542251,
+        "sha256": "7f099cd61db347f2199251dfe45dc132ffc8c75bd68a91471c30e217e4265d3d",
+        "rows_with_header_and_trailer": 7662,
+        "header": "ACT Symbol|Security Name|Exchange|CQS Symbol|ETF|Round Lot Size|Test Issue|NASDAQ Symbol",
+        "trailer": "File Creation Time: 1015202603:03||||||"
+      }
+    ],
+    "alpaca": [
+      {
+        "name": "assets",
+        "url": "https://paper-api.alpaca.markets/v2/assets?status=active&asset_class=us_equity",
+        "request_started_at": "2026-10-15T07:11:03.086878+00:00",
+        "received_at": "2026-10-15T07:11:04.373878+00:00",
+        "bytes": 6495141,
+        "sha256": "569c043ce499d89f411de1ec4eebf5a2842de4659af3907023b78705fdfeecca",
+        "count": 14403
+      },
+      {
+        "name": "calendar",
+        "url": "https://paper-api.alpaca.markets/v2/calendar?start=2026-08-15&end=2026-10-14",
+        "request_started_at": "2026-10-15T07:11:04.460957+00:00",
+        "received_at": "2026-10-15T07:11:04.800246+00:00",
+        "bytes": 5419,
+        "sha256": "c14f3f047264b051d922104920e0eb4fe1dc7310e590739d293443757bd556f7",
+        "count": 42
+      },
+      {
+        "name": "bars",
+        "url": "https://data.alpaca.markets/v2/stocks/bars?symbols=AAPL%2CQS&timeframe=1Day&start=2026-08-15T00%3A00%3A00Z&end=2026-10-14T23%3A59%3A59Z&feed=iex&adjustment=raw&asof=2026-10-14&limit=10000",
+        "request_started_at": "2026-10-15T07:11:04.809760+00:00",
+        "received_at": "2026-10-15T07:11:05.281845+00:00",
+        "bytes": 8919,
+        "sha256": "6b7c07d39e650425d0c2e0b1dc672d83ba84e8bca58e9a6da28fd28579ec8ea5",
+        "per_symbol_count": {
+          "AAPL": 42,
+          "QS": 42
+        },
+        "next_page_token": null
+      },
+      {
+        "name": "snapshots",
+        "url": "https://data.alpaca.markets/v2/stocks/snapshots?symbols=AAPL%2CQS&feed=iex",
+        "request_started_at": "2026-10-15T07:11:05.282189+00:00",
+        "received_at": "2026-10-15T07:11:05.761981+00:00",
+        "bytes": 1193,
+        "sha256": "0fd534418da6aca8501a93029570c6b5f0055dc24cfeb762cdaa6d159f2b9ab1",
+        "symbols": [
+          "AAPL",
+          "QS"
+        ]
+      }
+    ],
+    "eodhd_public_demo": {
+      "request_started_at": "2026-10-15T07:19:45.522107+00:00",
+      "received_at": "2026-10-15T07:19:45.699657+00:00",
+      "endpoint": "https://eodhd.com/api/us-quote-delayed",
+      "credential_kind": "public_documented_demo",
+      "symbols_requested": [
+        "AAPL.US"
+      ],
+      "bytes": 206,
+      "sha256": "ee2021ddfae68a2e5af931769fd82b9bdfb617ebdda71c424b2bc0afc5cfa34d",
+      "top_level_type": "dict",
+      "top_level_keys": [
+        "data",
+        "links",
+        "meta"
+      ],
+      "meta": {
+        "count": 1
+      },
+      "data_type": "dict",
+      "per_symbol_schema": {
+        "AAPL.US": {
+          "symbol": {
+            "type": "str",
+            "nonnull": true
+          },
+          "marketCap": {
+            "type": "int",
+            "nonnull": true
+          },
+          "sharesOutstanding": {
+            "type": "int",
+            "nonnull": true
+          },
+          "sharesFloat": {
+            "type": "int",
+            "nonnull": true
+          },
+          "currency": {
+            "type": "str",
+            "nonnull": true
+          },
+          "timestamp": {
+            "type": "int",
+            "nonnull": true
+          }
+        }
+      }
+    }
+  },
+  "current_catalog_and_namespace_diagnostics": {
+    "probe_date_los_angeles": "2026-10-15",
+    "alpaca_active_assets": 14403,
+    "alpaca_tradable_flag_true": 13512,
+    "directory_diagnostics": {
+      "nasdaqlisted": {
+        "all_rows": 5629,
+        "non_test_rows": 5621,
+        "test_rows": 8,
+        "exact_text_comparisons": {
+          "Symbol": {
+            "distinct_nonempty_labels": 5621,
+            "literal_overlap_with_alpaca": 5618,
+            "literal_absent_from_alpaca": 3
+          }
+        }
+      },
+      "otherlisted": {
+        "all_rows": 7660,
+        "non_test_rows": 7631,
+        "test_rows": 29,
+        "exact_text_comparisons": {
+          "ACT Symbol": {
+            "distinct_nonempty_labels": 7631,
+            "literal_overlap_with_alpaca": 7166,
+            "literal_absent_from_alpaca": 465
+          },
+          "CQS Symbol": {
+            "distinct_nonempty_labels": 7631,
+            "literal_overlap_with_alpaca": 7227,
+            "literal_absent_from_alpaca": 404
+          },
+          "NASDAQ Symbol": {
+            "distinct_nonempty_labels": 7631,
+            "literal_overlap_with_alpaca": 7116,
+            "literal_absent_from_alpaca": 515
+          }
+        }
+      }
+    },
+    "historical_coverage_diagnostics": {
+      "AAPL": {
+        "returned_dates": 42,
+        "duplicate_dates": 0,
+        "expected_30_first": "2026-09-01",
+        "expected_30_last": "2026-10-13",
+        "missing_expected_dates": [],
+        "pagination_exhausted": true
+      },
+      "QS": {
+        "returned_dates": 42,
+        "duplicate_dates": 0,
+        "expected_30_first": "2026-09-01",
+        "expected_30_last": "2026-10-13",
+        "missing_expected_dates": [],
+        "pagination_exhausted": true
+      }
+    },
+    "interpretation": "literal text overlap only; no security identity mapping, full-market coverage, float or strategy acceptance",
+    "archive_scope": "local ignored raw market/reference data; credentials and account data absent"
+  },
+  "directory_parser_probe": {
+    "nasdaqlisted": {
+      "rows": 5629,
+      "sha256": "1d3656d26cfddd35363ce8022d50cbb5342ae2b1cfebee74f3c3b168b0f0f808",
+      "source_creation_label": "2026-10-15T03:03:00",
+      "source_timezone": "UNKNOWN",
+      "alias_collisions": [],
+      "scope": "SUPPLIED_DIRECTORY_BYTES_ONLY"
+    },
+    "otherlisted": {
+      "rows": 7660,
+      "sha256": "7f099cd61db347f2199251dfe45dc132ffc8c75bd68a91471c30e217e4265d3d",
+      "source_creation_label": "2026-10-15T03:03:00",
+      "source_timezone": "UNKNOWN",
+      "alias_collisions": [],
+      "scope": "SUPPLIED_DIRECTORY_BYTES_ONLY"
+    }
+  },
+  "dated_volume_probe": {
+    "AAPL": {
+      "expected_history_dates": [
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-08",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-14",
+        "2026-09-15",
+        "2026-09-16",
+        "2026-09-17",
+        "2026-09-18",
+        "2026-09-21",
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24",
+        "2026-09-25",
+        "2026-09-28",
+        "2026-09-29",
+        "2026-09-30",
+        "2026-10-01",
+        "2026-10-02",
+        "2026-10-05",
+        "2026-10-06",
+        "2026-10-07",
+        "2026-10-08",
+        "2026-10-09",
+        "2026-10-12",
+        "2026-10-13"
+      ],
+      "observed_history_count": 30,
+      "numerator_session_date": "2026-10-14",
+      "numerator_freshness": "OLDER_SESSION_NOT_LIVE_ELIGIBILITY",
+      "source_only_consistency": {
+        "consistent": false,
+        "reason_count": 30,
+        "reasons": [
+          "SESSION_COMPLETION_UNPROVEN:2026-09-01",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-02",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-03",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-04",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-08",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-09",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-10",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-11",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-14",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-15",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-16",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-17",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-18",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-21",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-22",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-23",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-24",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-25",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-28",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-29",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-30",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-01",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-02",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-05",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-06",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-07",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-08",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-09",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-12",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-13"
+        ],
+        "reason_kind": "SESSION_COMPLETION_UNPROVEN"
+      },
+      "declared_bucket_end_consistency": {
+        "consistent": true,
+        "reasons": [],
+        "completion_assumption": "NEXT_NEW_YORK_MIDNIGHT_BUCKET_END_NOT_PROVIDER_FINALITY",
+        "mean_daily_volume": "1206855.133333333333333333333",
+        "descriptive_ratio": "1.553068755504319850153790897",
+        "ratio_exact_fraction": "28114935/18102827"
+      },
+      "strategy_eligibility": "BLOCKED_RESEARCH",
+      "volume_contract": {
+        "source_id": "alpaca_iex",
+        "symbol": "AAPL",
+        "feed": "iex",
+        "adjustment": "raw",
+        "session_scope": "ALPACA_1DAY_ELIGIBLE_VOLUME_INCLUDES_EXTENDED"
+      },
+      "history_first_seen_at": "2026-10-15T07:11:05.281845+00:00",
+      "numerator_first_seen_at": "2026-10-15T07:11:05.761981+00:00",
+      "audit_processed_at": "2026-10-15T07:30:55.246410+00:00",
+      "decision_at": "2026-10-15T07:30:55.246410+00:00"
+    },
+    "QS": {
+      "expected_history_dates": [
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-08",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-14",
+        "2026-09-15",
+        "2026-09-16",
+        "2026-09-17",
+        "2026-09-18",
+        "2026-09-21",
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24",
+        "2026-09-25",
+        "2026-09-28",
+        "2026-09-29",
+        "2026-09-30",
+        "2026-10-01",
+        "2026-10-02",
+        "2026-10-05",
+        "2026-10-06",
+        "2026-10-07",
+        "2026-10-08",
+        "2026-10-09",
+        "2026-10-12",
+        "2026-10-13"
+      ],
+      "observed_history_count": 30,
+      "numerator_session_date": "2026-10-14",
+      "numerator_freshness": "OLDER_SESSION_NOT_LIVE_ELIGIBILITY",
+      "source_only_consistency": {
+        "consistent": false,
+        "reason_count": 30,
+        "reasons": [
+          "SESSION_COMPLETION_UNPROVEN:2026-09-01",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-02",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-03",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-04",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-08",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-09",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-10",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-11",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-14",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-15",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-16",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-17",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-18",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-21",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-22",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-23",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-24",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-25",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-28",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-29",
+          "SESSION_COMPLETION_UNPROVEN:2026-09-30",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-01",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-02",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-05",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-06",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-07",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-08",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-09",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-12",
+          "SESSION_COMPLETION_UNPROVEN:2026-10-13"
+        ],
+        "reason_kind": "SESSION_COMPLETION_UNPROVEN"
+      },
+      "declared_bucket_end_consistency": {
+        "consistent": true,
+        "reasons": [],
+        "completion_assumption": "NEXT_NEW_YORK_MIDNIGHT_BUCKET_END_NOT_PROVIDER_FINALITY",
+        "mean_daily_volume": "560687.5666666666666666666667",
+        "descriptive_ratio": "0.8716637019535597573146351798",
+        "ratio_exact_fraction": "14661930/16820627"
+      },
+      "strategy_eligibility": "BLOCKED_RESEARCH",
+      "volume_contract": {
+        "source_id": "alpaca_iex",
+        "symbol": "QS",
+        "feed": "iex",
+        "adjustment": "raw",
+        "session_scope": "ALPACA_1DAY_ELIGIBLE_VOLUME_INCLUDES_EXTENDED"
+      },
+      "history_first_seen_at": "2026-10-15T07:11:05.281845+00:00",
+      "numerator_first_seen_at": "2026-10-15T07:11:05.761981+00:00",
+      "audit_processed_at": "2026-10-15T07:30:55.246410+00:00",
+      "decision_at": "2026-10-15T07:30:55.246410+00:00"
+    }
+  },
+  "free_float_source_candidate": {
+    "provider": "EODHD",
+    "endpoint": "https://eodhd.com/api/us-quote-delayed",
+    "field": "sharesFloat",
+    "documented_free_plan": true,
+    "steady_state_ticker_calls_per_day": 20,
+    "cost_per_ticker": 1,
+    "actual_public_demo_schema_verified": true,
+    "actual_user_key_entitlement_verified": false,
+    "actual_small_cap_coverage_verified": false,
+    "float_effective_or_revision_time_known": false,
+    "snapshot_time_is_float_effective_time": false,
+    "local_first_seen_can_supply_forward_knowledge_clock": true,
+    "strategy_eligibility": "BLOCKED_RESEARCH"
+  },
+  "remaining_dependencies": [
+    "ACCEPTED_SOURCE_SCOPED_SCANNER_AND_STRATEGY_VERSION",
+    "VERIFIED_ACTUAL_FLOAT_PROVIDER_ACCESS_COVERAGE_AND_FRESHNESS",
+    "SYMBOL_IDENTITY_MAPPING_AND_DISCOVERY_ACCEPTANCE",
+    "SOURCE_SCOPED_RVOL_SESSION_AND_BASELINE_POLICY",
+    "DETERMINISTIC_CANDIDATE_QUALIFICATION_REPLAY"
+  ],
+  "validation": {
+    "raw_archive_hashes_and_lengths": "PASS",
+    "independent_input_module_and_core_probe_review": "APPROVED_BOUNDED_SCOPE",
+    "independent_eodhd_projection_code_review": "APPROVED_BOUNDED_SCOPE",
+    "new_module_targeted_tests": 103,
+    "scanner_related_tests_before_eodhd_addition": 102,
+    "full_suite": {
+      "passed": 251,
+      "warnings": 1,
+      "scope": "CURRENT_WORKSPACE_INCLUDES_UNRELATED_UNCOMMITTED_W3"
+    },
+    "final_evidence_readback": "PASS_INDEPENDENT_BOUNDED_SCOPE",
+    "ruff_four_new_files": "PASS",
+    "strict_mypy_four_new_files": "PASS",
+    "format_four_new_files": "PASS",
+    "independent_real_demo_journal_and_replay": "PASS",
+    "original_w205_g03_g04_accepted": false,
+    "reviewed_code_sha256": {
+      "src/alpaca_ross_bot/scanner_input_audit.py": "449999774fc436a22ebc284b1a165d355afb13e9b163b89dd22fcd3efc51c8a0",
+      "src/alpaca_ross_bot/eodhd_reference.py": "5d7d8ae6cda5600f82f46a4519436d742b45747c0efdb3267fec281b81f370dd",
+      "tests/test_scanner_input_audit.py": "5023864a272b01222f4d3e135ed7d14ab1ab8445a7e83c98e2533b8755503f11",
+      "tests/test_eodhd_reference.py": "3618fd327313b668bfb3ce4f613061211488024d46f2b27e8d7d0ab81a7b188e"
+    }
+  },
+  "eodhd_reference_projection_probe": {
+    "scope": "PUBLIC_DEMO_SCHEMA_AND_JOURNAL_ONLY",
+    "raw_sequence": 1,
+    "observation_sequences": [
+      2
+    ],
+    "processed_at": "2026-10-15T07:28:52.357656+00:00",
+    "available_at": "2026-10-15T07:28:52.357656+00:00",
+    "provider_snapshot_at": "2026-10-15T00:44:00+00:00",
+    "diagnostics": [],
+    "float_status": "SOURCE_VALUE_UNVERIFIED",
+    "trusted_float_shares": null,
+    "float_freshness": "UNVERIFIED",
+    "entitlement": "UNVERIFIED_FOR_ACTUAL_USER",
+    "float_effective_at": null,
+    "float_revision_at": null,
+    "repeated_projection": "DUPLICATE",
+    "later_extra_event_present": false,
+    "runtime_archive_relative": "var/research/w205-input-audit/2026-10-15/eodhd-demo/projection-audit",
+    "strategy_eligibility": "BLOCKED_RESEARCH"
+  }
+}

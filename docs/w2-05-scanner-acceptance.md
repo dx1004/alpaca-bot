@@ -3,6 +3,118 @@
 Review session: 2026-10-14 Los Angeles; authenticated probe date: 2026-10-15 UTC.
 Status: **engineering increment verified; full W2-05 remains BLOCKED_RESEARCH**.
 
+## Closure work — 2026-10-15 Los Angeles
+
+The user requested resolution of strategy specification, data eligibility and
+candidate/rejection acceptance. Work is split across quantitative/source research,
+trading-strategy interpretation, market-data engineering, development and
+independent validation. The original acceptance criteria remain in force.
+
+### Actual current inputs and deterministic checks
+
+The [dated probe record](../evidence/w2-05-input-audit-2026-10-15.json) binds raw
+captures by URL, receipt time and SHA-256. Raw market/reference responses are
+retained locally under the ignored research archive named in that record; no
+credential, account, position or order response is included.
+
+- The two official Nasdaq directory files parsed as 5,629 and 7,660 rows. Creation
+  labels are retained without assigning an undocumented timezone. Symbols and
+  each ACT/CQS/Nasdaq alias remain separate; no punctuation replacement is used.
+- A current Alpaca active-US-equity catalog contained 14,403 unique symbols.
+  This proves receipt of this broker catalog, not a complete US-listing universe.
+  Among 5,621 non-test Nasdaq labels, three did not occur literally in that
+  catalog. Other-listed literal differences vary by namespace. These are
+  reconciliation findings, not proven missing securities or accepted mappings.
+- Bounded IEX historical requests returned 42 daily bars each for AAPL and QS,
+  with exhausted pagination. Both contain the explicitly expected 30 sessions
+  from September 1 through October 13 for an October 14 numerator. The calendar
+  was separately obtained from Alpaca. This two-symbol sample is not a full
+  universe sweep, historical holdout or live candidate evaluation.
+- `scanner_input_audit.py` now checks dated daily observations, New York daily
+  event boundaries, separate completion/availability clocks, explicit expected
+  dates, same source/feed/scope/adjustment, pagination, zero denominators and a
+  clocked numerator. It reports stable findings instead of silently inserting
+  zeros or selecting the last available bars across unexplained missing dates.
+  The directory parser retains byte hashes, aliases, collisions and test flags.
+
+Alpaca daily volume includes eligible extended-hours trades. A daily-bar timestamp
+labels its New York bucket start; it does not prove completion or immutable
+finality. The source-only probe therefore reports completion unproven. A second
+check using explicitly declared next-midnight bucket ends passes **input-contract
+consistency only**; that assumption is not provider finality or Ross acceptance.
+The October 14 numerator was acquired on October 15, so it is expressly an older
+session observation, not fresh live RVOL. Source/event/availability times cannot
+be backdated to claim the inputs were known in a prior trading decision.
+
+### Free float and capitalization source: concrete candidate
+
+The user confirmed having no float-data account and requested continued free
+source research. The newly verified candidate is EODHD's
+[Live v2 reference fields](https://eodhd.com/financial-apis/live-v2-for-us-stocks-extended-quotes-2025):
+`sharesFloat` is separately documented from `sharesOutstanding`, and `marketCap`
+is another field. The [official plan comparison](https://eodhd.com/pricing)
+includes this endpoint in Free: 20 calls/day and 20 requests/minute, charged one
+call per ticker, even in a batch. The temporary welcome bonus is not a recurring
+capacity allowance. Paid Fundamentals is a separate endpoint and is not Free.
+
+A successful public-demo AAPL response returned non-null integer float,
+outstanding shares and capitalization plus USD currency and snapshot time.
+This closes the previous absence of a documented, concretely observed free-float
+field path. Demo access is limited to specified examples; no actual-user key,
+small-cap coverage, sustained capacity or float freshness has passed acceptance.
+Snapshot time is not float effective/revision time. Forward-only local first-seen
+and changed-payload retention can establish knowledge time, but cannot invent
+the provider's missing update semantics or a historical archive.
+
+`eodhd_reference.py` now captures supplied response bytes in the existing journal
+before parsing and independently projects only reference fields. It checks raw
+provenance/digests, duplicate JSON fields, count/identity mismatches, omitted
+symbols, field types and provider clocks. Missing float never falls back to
+outstanding shares or capitalization. Per-raw-sequence/symbol transactional
+projection is idempotent; later receipt of identical bytes is a new observation.
+Snapshot time, first-seen and processed availability remain separate. All derived
+values keep unknown float effective/revision time, unverified freshness and
+actual-user entitlement, a null trusted-float field and blocked eligibility.
+No network transport, token handling or strategy integration was added.
+
+The archived public demo was also projected through a real local journal:
+one reference observation, no schema diagnostics, duplicate projection suppressed,
+and no trusted float or accepted candidate. An independent temporary-journal
+check verified that replay cannot expose the derived event before processing.
+
+The [personal-use terms](https://eodhd.com/financial-apis/terms-conditions) permit
+private storage/analysis for qualifying nonprofessional use, subject to their
+restrictions. No account was created or terms accepted for the user. FMP's
+specific free small-cap float entitlement remains unverified. Alpha Vantage's
+current Overview is premium; Finnhub's inspected schema does not establish a
+free float field. None is substituted silently. A provider-backed float value
+cannot be replaced by shares outstanding, market capitalization or SEC dollar
+public float.
+
+### What still prevents the original acceptance
+
+| Required closure | Work now concrete | Remaining prerequisite |
+| --- | --- | --- |
+| Source-scoped strategy/scanner specification | The three Ross contexts remain parallel; numeric source statements and their qualitative exceptions are preserved. Martin's historical scans, newer interview and user-clarified entry rhythm remain separately attributed. | No single applicable $500/1x executable version or deterministic interpretation of the remaining discretionary choices has been accepted. Neither IEX convenience nor the new provider selects a version. |
+| Required data | Actual broker catalog, two-symbol dated IEX history and a public-demo float schema are verified. Explicit consistency failures now have deterministic reasons. | A free personal key must establish actual float/cap access for predeclared real candidates; then verify identity, coverage, update/freshness and daily capacity. Full discovery and source-scoped RVOL session/baseline acceptance remain separate. |
+| Candidate/rejection evidence | Input-quality rejection paths can be tested without inventing a strategy; raw inputs and dated diagnostics are retained. | No qualified-candidate/rejection replay for an accepted strategy has occurred. A missing input is unavailable, not a failed trading rule. G03/G04 remain open. |
+
+Next external prerequisite is an EODHD **free** personal key, obtained by the
+user. The reviewable next probe is limited to a predeclared small-cap sample and
+at most the documented ticker-call budget; preserve absent/null fields and
+rejections. No paid subscription, account creation, live-price replacement,
+automated selection of 20 favored symbols, or trading authority follows from
+this source discovery.
+
+Validation for this increment: 103 new-module targeted tests passed. The current
+workspace full suite passed 251 tests, with one existing upstream
+`websockets.legacy` deprecation warning. Ruff, strict mypy and formatting checks
+passed for the four new source/test files. Independent review verified both
+modules and recomputed the actual directory/catalog/history counts, hashes and
+exact rational ratios. It approved the bounded engineering scope, explicitly
+withholding W2-05/G03/G04 acceptance. Unrelated unfinished W3 changes were
+present during the workspace suite and remain outside this change set.
+
 ## Scope contract
 
 Implement source-backed scanner infrastructure and deterministic observations for

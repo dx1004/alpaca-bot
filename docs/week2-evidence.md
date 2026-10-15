@@ -1,5 +1,55 @@
 # Week 2 acceptance evidence
 
+## W2-05 closure work and free-float source (2026-10-15 Los Angeles)
+
+The [current closure record](w2-05-scanner-acceptance.md#closure-work--2026-10-15-los-angeles)
+and [machine-readable probe record](../evidence/w2-05-input-audit-2026-10-15.json)
+record actual Nasdaq directory bytes, Alpaca catalog/calendar data and bounded
+AAPL/QS IEX bars/snapshots. Raw inputs remain in a local ignored archive with
+hashes and receipt clocks; no credentials or account/order data were exported.
+14,403 active catalog symbols and two complete 30-date input samples are bounded
+observations, not full-market discovery, strategy or historical replay acceptance.
+
+`scanner_input_audit.py` adds pure directory and dated-volume consistency checks.
+The coordinator found and the developer fixed a zero-denominator pass, an
+unclocked numerator and missing daily-event/date binding before independent
+validation. Missing completion evidence remains a rejection. A separately labeled
+next-New-York-midnight assumption can pass consistency but cannot establish
+provider finality. An older numerator can pass declared-input consistency and
+is never described as a current-session freshness pass.
+
+Free-source follow-up found EODHD Live v2's documented free `sharesFloat` and
+`marketCap` fields. A real public-demo AAPL response verified their types and
+presence. The 20-ticker-calls/day plan, demo scope, missing float update clocks,
+actual-key prerequisite and personal-use conditions remain explicit. The user
+has no float-data account and requested free-only investigation; no account or
+subscription was created. This is a new actionable source candidate, not data
+eligibility or G03/G04 acceptance.
+
+Independent GPT-6.1 Sol Low source collection, public-only Cloud `gemma4:31b`
+proposals, coordinator source/probe checks and independent model validation
+remain distinct. Cloud's unsupported claim that demo data is necessarily static
+or synthetic was rejected. Its suggestion that missing data prevents all
+deterministic checks was narrowed: missing-input rejection is deterministic,
+while successful source/strategy qualification requires actual accepted evidence.
+No local capture or user attachment was sent to Cloud.
+
+`eodhd_reference.py` adds raw-before-parse journal capture and independent
+idempotent reference projection, with missing-symbol, null/type, provenance and
+clock diagnostics. No token/network transport or strategy integration is added.
+The actual archived public demo passed a real-journal projection and duplicate
+check. Independent validation also checked a separate temporary real journal and
+prospective replay before/after processing. Trusted float, actual-user entitlement,
+field freshness and strategy eligibility remain unaccepted.
+
+Validation: 103 targeted tests for the two new modules passed; the working-tree
+full suite passed 251 tests with one preexisting upstream deprecation warning.
+Ruff, strict mypy and formatting passed for the four new source/test files.
+Independent source/data/code validation approved this bounded engineering
+increment and recomputed raw hashes, counts, expected dates and exact ratios.
+It did not accept a full strategy or G03/G04. Unfinished W3 changes remain
+untouched and outside the scoped commit.
+
 ## QS timing and stop wording clarification (2026-10-14 Los Angeles)
 
 The user's supplied reading closes the **before-versus-after-open** ambiguity:
