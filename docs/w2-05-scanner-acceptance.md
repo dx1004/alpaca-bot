@@ -1,59 +1,57 @@
 # W2-05 scanner implementation and acceptance
 
-Review session: 2026-10-14 Los Angeles; authenticated probe date: 2026-10-15 UTC.
-Status: **independent IEX adaptation selected; original Ross/full strategy gates remain BLOCKED_RESEARCH**.
+Review date: 2026-10-15 Los Angeles.
+Status: **W2-05 accepted for the separately labeled independent research version;
+prospective runtime admission and G03/G04 release remain unqualified**.
 
-## Actual stream input check and remaining policy acceptance
+## Completion against the original task
 
-The [bounded live-input observation](../evidence/w2-05-live-input-observation-2026-10-15.json)
-verified an actual IEX subscription and raw trade/quote capture after repairing
-the client's rejection of documented automatic correction/cancel channels.
-Strict symbol/channel validation and durable disconnect gaps remain intact.
-This is local integrity/timing evidence, not accepted execution freshness or a
-full candidate-universe monitor. It makes no new demand for paid SIP or float.
+The original W2-05 contract in TODO.md (commit `10cbfae`, lines 111–113) requires
+an accepted version, verified scanner sources, version-specific features,
+deterministic candidate/rejection evidence and explicit IEX coverage limits.
+W3 owns entry/risk/protection/execution implementation and depends on W2-05;
+requiring those implementations here would create a circular dependency. This
+completion preserves every original scanner requirement and does not accept
+future runtime or order paths.
 
-The remaining full-strategy choices are now concrete in the
-[independent intraday proposal](no-leverage-pullback-research.md#decision-package-independent-intraday-adaptation-2026-10-15).
-They remain unaccepted and are not inherited from the accepted screen. Original
-W2-05 cannot close until a complete strategy version and its required input
-contract pass; the three bounded scanner deliverables below remain accepted.
-The [proposal review and exact arithmetic](../evidence/w2-05-hybrid-proposal-review-2026-10-15.json)
-record six corrected ambiguities and independent consistency checks. Synthetic
-funds/charges establish arithmetic only, not actual broker costs or affordability.
+The user accepted the complete dated policy as the pending-validation
+`HYBRID_500_IEX_INTRADAY_RESEARCH_V1`. Its
+[research acceptance record](../evidence/hybrid-500-iex-intraday-research-v1.json)
+binds all 13 unchanged policy rows and the unchanged
+`GENERAL_IEX_DAILY30_SCREEN_V1` contract. The two earlier Ross/hybrid comparison
+manifests remain candidates; they are not the newly selected research version.
+No independent adaptation is attributed as a trader's direct rule.
 
-## Full-task completion audit and enforced scanner freeze
+Replay now verifies the exact pinned research/scanner bytes and canonical policy
+section before opening the journal. Duplicate keys, version/authority changes,
+wrong scanner linkage and policy byte drift fail closed. Every outcome retains
+its contract/rule/source references and adds the governing research identity.
+`P02_SCANNER_ONLY` explicitly distinguishes evaluated scanner predicates from
+the other research rules. A parent-version checksum does not evaluate entry,
+risk, exits or profitability.
 
-The continuation objective is the original W2-05, not only the accepted offline
-adaptation. The [current release audit](../evidence/w2-05-release-audit-2026-10-15.json)
-checks its requirements separately. Full completion remains unproven: both
-authoritative Ross/hybrid strategy manifests are `CANDIDATE`, and the selected
-full strategy's execution-input eligibility is not accepted. Renaming a version
-`FROZEN` would not accept its blocked entry, stop, exit or risk rules. Missing
-preferred news/float and deferred SIP/Webull are not newly imposed vetoes.
+Actual recorded-input replay under that binding preserves every earlier
+numeric outcome and source reference; a repeat produces identical payload
+bytes. The [current completion audit](../evidence/w2-05-release-audit-2026-10-15.json)
+binds source hashes, independent review, isolated baseline tests and original
+prerequisite evidence. Earlier dated acceptance/proposal records remain
+historical snapshots at their recorded hashes, not current policy status.
 
-One actual completion gap is now closed: the scanner's accepted specification is
-enforced in code. `scanner_contract.py` accepts only the exact reviewed raw JSON
-digest, bounded strict UTF-8/unique-key input and the typed scanner-only identity.
-Callers cannot substitute another version or raise its authority. Every public
-screen result requires the contract digest, six specification rule IDs and
-input sequence references, including price failures, malformed input and missing
-observations. Rule IDs identify the active specification; they do not claim that
-every predicate was evaluated after an earlier mandatory price failure.
+## Prospective runtime boundary
 
-The replay loader binds common catalog/manifest/calendar references and each
-symbol's snapshot/history references after verifying their raw provenance.
-Missing-object results point to the audited catalog and manifest, whose batch
-references preserve the absence evidence. Pure-engine references remain caller
-declarations, not independently verified journal provenance. Actual replay
-verifies the journal chain before recording outputs. Contract drift aborts
-before a result is appended.
+The [actual stream observation](../evidence/w2-05-live-input-observation-2026-10-15.json)
+verified raw IEX capture after a source-backed acknowledgment repair. It did not
+accept execution freshness. The [prospective input qualification](../evidence/w2-05-prospective-input-qualification-2026-10-15.json)
+rechecks every archived snapshot page: receipt clocks and `dailyBar.t` do not
+prove when cumulative volume was last updated. The accepted 300-second runtime
+policy therefore remains unqualified. A recent trade/quote is not a documented
+volume watermark. No alternative volume path or threshold is silently adopted.
 
-This adds traceability without changing any earlier outcome, price/RVOL rule,
-ranking or preference role. The earlier dated acceptance record remains a
-historical snapshot at its commit; the current release audit binds the updated
-implementation and replay. Neither scanner freeze nor its tests accepts the
-parent task's full-strategy dependency or execution freshness. Those conditions
-must pass before W2-05 can be marked complete.
+W3/runtime work still needs qualified source/local clocks and conditions,
+bar/correction handling, monitor continuity, account/fees/reservations and
+protection/incident behavior. Unverified required live inputs block admission.
+Optional float/news and deferred SIP/Webull do not become new scanner vetoes.
+No executable release, formal paper evaluation or orders are authorized.
 
 ## Accepted independent screen — 2026-10-15
 
@@ -107,10 +105,10 @@ Calendar early closes describe regular hours, not the full NY daily bucket;
 means that query had no further page at retrieval, not immutable market truth.
 
 This component cannot authorize an entry, risk rule, order, formal paper study
-or G03/G04 release. Full W2-05 remains open where it requires an independently
-accepted executable strategy and qualified execution inputs. The three bounded
-scanner deliverables should be assessed using the new contract, not blocked by
-the still-unreconstructed Ross formula.
+or G03/G04 release. The completion audit above accepts the scanner features and
+recorded-input replay under the newly selected research version. Fresh runtime
+admission and the subsequent W3 implementation remain separate required work;
+no exact Ross formula reconstruction is claimed.
 
 ### Acceptance evidence
 
@@ -130,7 +128,7 @@ a match, an RVOL rejection, a price-only rejection and exact identity partitions
 All requests were read-only Alpaca GETs; EODHD usage was zero. No order endpoint,
 paid data, live-trading enablement or formal paper evaluation was involved.
 
-## Closure work — 2026-10-15 Los Angeles
+## Historical closure work before adaptation acceptance — 2026-10-15 Los Angeles
 
 ### Scanner contract review and remaining decisions
 

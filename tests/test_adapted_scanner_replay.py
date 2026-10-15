@@ -392,3 +392,39 @@ def test_source_nanoseconds_cannot_be_floored_into_earlier_availability(
 def test_alternate_timestamp_spellings_cannot_bypass_precision_guard(text: str) -> None:
     with pytest.raises(ValueError, match="UTC ISO"):
         runner().stamp(text)
+
+
+def test_research_binding_and_invalid_spec_prevents_append(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    directory = make_capture(tmp_path)
+    module = runner()
+    summary = module.replay_capture(directory, tmp_path)
+    assert summary["research_version_id"] == "HYBRID_500_IEX_INTRADAY_RESEARCH_V1"
+    assert summary["research_evaluation_scope"] == "P02_SCANNER_ONLY"
+    assert summary["order_authority"] is False
+    journal = Journal(directory / "journal.sqlite3", tmp_path)
+    pair = journal.read_event(summary["result_sequence"])
+    assert pair is not None
+    payload = json.loads(pair[1])
+    assert payload["research_evaluation_scope"] == "P02_SCANNER_ONLY"
+    assert all(
+        row["research_evaluation_scope"] == "P02_SCANNER_ONLY"
+        for row in payload["results"]
+    )
+    assert all(
+        row["research_spec_sha256"] == summary["research_spec_sha256"]
+        for row in payload["results"]
+    )
+    next_sequence = summary["result_sequence"] + 1
+    journal.close()
+
+    def reject(*args: object) -> None:
+        raise ValueError("research drift")
+
+    monkeypatch.setattr(module, "load_accepted_research_spec_file", reject)
+    with pytest.raises(ValueError, match="research drift"):
+        module.replay_capture(directory, tmp_path)
+    journal = Journal(directory / "journal.sqlite3", tmp_path)
+    assert journal.read_event(next_sequence) is None
+    journal.close()

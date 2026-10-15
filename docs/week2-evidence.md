@@ -1,5 +1,43 @@
 # Week 2 acceptance evidence
 
+## W2-05 accepted independent research version and completion (2026-10-15)
+
+The user accepted the complete dated independent policy for research only.
+[Research version V1](../evidence/hybrid-500-iex-intraday-research-v1.json) fixes
+the original 13 policy rows and links the unchanged accepted scanner contract.
+Strict research/specification/policy-byte verification occurs before replay can
+append a result. Every output carries the selected version and explicit
+`P02_SCANNER_ONLY` scope; entry/risk/exit rules are not evaluated by this replay.
+
+Actual replay of the preserved capture, then an exact repeat, produced identical
+new payloads. All original numerical outcomes and raw input references remained
+unchanged. Source references were checked once per distinct event, avoiding
+repeated decoding of the same large raw pages. The original capture remains
+unchanged; replay used the existing schema-3 copy and isolated W2 implementation.
+
+Independent review verified the original task boundary against TODO.md at commit
+`10cbfae`: scanner source/feature/replay acceptance belongs to W2-05, while W3
+implements entry/risk/protection/execution. The earlier release audit incorrectly
+made full execution-input acceptance a W2 prerequisite, creating a dependency
+cycle. The [current requirement-by-requirement audit](../evidence/w2-05-release-audit-2026-10-15.json)
+corrects that accounting without removing an original scanner requirement.
+The older sections below describe the state at those earlier increments.
+
+Current validation: 463 tests passed in the isolated W2 baseline plus accepted
+increments, including research binding; 54 narrow tests, scoped Ruff and strict
+mypy passed independently. A CRLF policy-byte normalization defect found during
+review was repaired and has a rejection regression. The existing upstream
+deprecation warning remains.
+
+The [prospective-input qualification](../evidence/w2-05-prospective-input-qualification-2026-10-15.json)
+still cannot verify the accepted 300-second cumulative-volume age from snapshot
+receipt or daily-bucket clocks. G03/G04 runtime release, trade/quote conditions,
+monitor continuity, fees/reserves, protection and execution remain unaccepted
+under their later owners. No fresh-runtime candidate, full-market fidelity,
+profitability, formal paper evaluation or order authority is claimed. No new
+authenticated market-data, account/order or EODHD API request was needed for this
+completion increment.
+
 ## W2-05 actual IEX input observation and full-policy proposal (2026-10-15)
 
 A bounded four-symbol, 90-second read-only IEX observation exposed a real

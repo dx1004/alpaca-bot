@@ -25,6 +25,7 @@ from alpaca_ross_bot.adapted_scanner import (
 from alpaca_ross_bot.events import EventEnvelope
 from alpaca_ross_bot.journal import Journal
 from alpaca_ross_bot.replay import ReplayMode, replay_at
+from alpaca_ross_bot.research_spec import load_accepted_research_spec_file
 from alpaca_ross_bot.scanner_contract import load_accepted_scanner_contract_file
 from alpaca_ross_bot.scanner_discovery_audit import audit_iex_asset_discovery
 from alpaca_ross_bot.scanner_input_audit import DatedDailyVolume, VolumeContract
@@ -164,6 +165,9 @@ def replay_capture(directory: Path, runtime_root: Path) -> dict[str, Any]:
     accepted_contract = load_accepted_scanner_contract_file(
         Path(__file__).resolve().parents[1]
         / "evidence/general-iex-daily30-screen-v1.json"
+    )
+    research_spec = load_accepted_research_spec_file(
+        Path(__file__).resolve().parents[1], accepted_contract
     )
     capture = strict_json((directory / "capture.json").read_bytes())
     if not isinstance(capture, dict) or capture.get("status") != "CAPTURE_COMPLETE":
@@ -416,6 +420,10 @@ def replay_capture(directory: Path, runtime_root: Path) -> dict[str, Any]:
         result_rows = []
         for result in results:
             row = asdict(result)
+            row["research_version_id"] = research_spec.version_id
+            row["research_spec_sha256"] = research_spec.sha256
+            row["research_rule_ids"] = research_spec.rule_ids
+            row["research_evaluation_scope"] = "P02_SCANNER_ONLY"
             row["percent_change"] = (
                 str(result.percent_change)
                 if result.percent_change is not None
@@ -426,6 +434,11 @@ def replay_capture(directory: Path, runtime_root: Path) -> dict[str, Any]:
         payload = json.dumps(
             {
                 "profile_id": PROFILE_ID,
+                "research_version_id": research_spec.version_id,
+                "research_spec_sha256": research_spec.sha256,
+                "research_rule_ids": research_spec.rule_ids,
+                "research_status": research_spec.status,
+                "research_evaluation_scope": "P02_SCANNER_ONLY",
                 "contract_sha256": accepted_contract.sha256,
                 "rule_ids": accepted_contract.rule_ids,
                 "decision_at": decision.isoformat(),
@@ -484,6 +497,11 @@ def replay_capture(directory: Path, runtime_root: Path) -> dict[str, Any]:
             raise ValueError("result availability replay failed")
         summary = {
             "profile_id": PROFILE_ID,
+            "research_version_id": research_spec.version_id,
+            "research_spec_sha256": research_spec.sha256,
+            "research_rule_ids": research_spec.rule_ids,
+            "research_status": research_spec.status,
+            "research_evaluation_scope": "P02_SCANNER_ONLY",
             "contract_sha256": accepted_contract.sha256,
             "rule_ids": accepted_contract.rule_ids,
             "decision_at": decision.isoformat(),

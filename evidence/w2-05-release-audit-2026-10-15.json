@@ -1,68 +1,48 @@
 {
   "actual_proof_binding": {
-    "all_outcomes_have_proof": true,
-    "alpaca_requests_this_increment": 0,
+    "all_outcomes_have_research_binding": true,
+    "alpaca_requests": 0,
     "archive": "var/research/w205-adapted-screen/2026-10-15/c7b0f08c10d64c47a39e2c374f0ea405-baseline-replay",
-    "contract_sha256": "5ce35ecf7e4869dfda490c5e54b0d17d35c47b4d29cd641ccf2d14f87d8bc88f",
     "distinct_input_refs_verified": 177,
-    "eodhd_requests_this_increment": 0,
-    "old_outcomes_unchanged": true,
+    "eodhd_requests": 0,
+    "first_research_result_sequence": 13807,
+    "formal_paper_evaluation": false,
+    "old_outcomes_and_original_input_refs_unchanged": true,
+    "order_authority": false,
     "outcome_count": 14398,
-    "repeated_proof_payload_identical": true,
+    "previous_result_sequence": 13806,
+    "repeated_payload_identical": true,
     "replay_at_result": 1,
     "replay_before_result": 0,
-    "result_sequence": 13806,
-    "result_sha256": "bf4c1dedb54d94666a46a2d2482b29bab395db827c753b6941a237d47e3c79b9",
+    "research_evaluation_scope": "P02_SCANNER_ONLY",
+    "research_spec_sha256": "acefeee493533686c2595fbc8347f0db0c03630c5bfdf1749ffa56c72b995c9a",
+    "research_version_id": "HYBRID_500_IEX_INTRADAY_RESEARCH_V1",
+    "result_sequence": 13808,
+    "result_sha256": "5abb1a0c3479059759ad524990a5b79138d4474771caca56a7d577029a9e6526",
+    "source_freshness": "NO_EXECUTION_TTL_ACCEPTANCE",
+    "sqlite_schema_version": 3,
     "status_counts": {
       "INPUT_UNAVAILABLE": 6981,
       "RULE_NOT_MET": 7386,
       "SCREEN_MATCH": 31
-    }
+    },
+    "verification_path": "var/research/w205-adapted-screen/2026-10-15/c7b0f08c10d64c47a39e2c374f0ea405-baseline-replay/research-binding-verification.json",
+    "verification_sha256": "0ee9e0fc5e4ec921b8978bd95913f20a86daf7b7f1e6fa746be030fc0cae51e6",
+    "verifier_script_path": "var/research/w205-adapted-screen/2026-10-15/c7b0f08c10d64c47a39e2c374f0ea405-baseline-replay/verify_research_binding.py",
+    "verifier_script_sha256": "d94dd2b59a788c5bc4c476e0e92369968d3b1d539ef0d531035a3c3809f1c4a9"
   },
-  "current_increment": {
-    "account_or_order_requests": 0,
-    "alpaca_rest_requests": 0,
-    "classification": "PROGRESS_NOT_FULL_COMPLETION",
-    "eodhd_requests": 0,
-    "full_strategy_proposal": {
-      "path": "docs/no-leverage-pullback-research.md",
-      "review_path": "evidence/w2-05-hybrid-proposal-review-2026-10-15.json",
-      "review_sha256": "f135fbb9e09c38150ed82eff2afe853d26a6727abfb41868d811e74851782173",
-      "sha256": "defcac655d252e4d9f512a13648b807fe9da53de3e2c343869d3341ca4db70fc",
-      "status": "PROPOSAL_NOT_ACCEPTED"
-    },
-    "no_policy_acceptance_inferred_from_continuation": true,
-    "read_only_iex_connections": 3,
-    "remaining_requirements": [
-      "Accept or amend the concrete full strategy policy; proposal is not a frozen executable version",
-      "Qualify the selected strategy required clocks, cumulative-volume freshness, trade/quote conditions and bar/correction handling",
-      "Verify required account/charges and execution prerequisites independently; no orders or formal paper evaluation authorized"
-    ],
-    "stream_observation_evidence": {
-      "path": "evidence/w2-05-live-input-observation-2026-10-15.json",
-      "sha256": "b6933a69eb0ff24ffca1ced14f8ff7ce134d6c3a1b032f9e38b50ac17bebd1e6"
-    },
-    "stream_patch_sha256": {
-      "src/alpaca_ross_bot/stream_protocol.py": "8dd85ea69691f3611f64f0185bcf94ccf81e471e89713be536426f07f32289a2",
-      "tests/test_stream_protocol.py": "dd2b24243c4e93d9ce7fa80ff8e4b5c2abfada1cecfba844e599505c66b56666"
-    },
-    "successful_90_second_observations": 1,
-    "validation": {
-      "current_workspace_stream_journal_tests_passed": 44,
-      "independent_observation_review": "APPROVE_INTEGRITY_AND_EXACT_CLOCK_MATH_ONLY",
-      "independent_proposal_review": "APPROVE_CONSISTENCY_ONLY",
-      "independent_stream_review": "APPROVE_SCOPED_REPAIR",
-      "isolated_full_tests_passed": 450,
-      "scoped_format": "PASS",
-      "scoped_ruff": "PASS",
-      "scoped_strict_mypy": "PASS",
-      "targeted_stream_tests_passed": 27
-    }
+  "authority": {
+    "coverage_label": "NOT_SIP_EQUIVALENT",
+    "executable_release": false,
+    "formal_paper_evaluation": false,
+    "full_market_coverage": false,
+    "g03_g04_global_release": false,
+    "live_trading": false,
+    "martin_replication_claim": false,
+    "order_authority": false,
+    "ross_replication_claim": false
   },
-  "date": "2026-10-15",
-  "formal_paper_evaluation": false,
-  "full_goal_status": "NOT_ACHIEVED",
-  "full_strategy_versions": [
+  "comparison_strategy_versions": [
     {
       "accepted_executable_strategy": false,
       "blocked_domains": [
@@ -108,59 +88,163 @@
       "version_id": "HYBRID_500_IEX_CANDIDATE_V1"
     }
   ],
-  "goal_must_remain_active": true,
-  "model_routing": {
-    "adopted": "Raw digest, schema uniqueness, version/scope checks",
-    "cloud": "gemma4:31b remote inference verified 2026-10-15T18:25:30.499Z",
-    "input_scope": "Public Python documentation URLs and a generic hypothetical JSON binding task only; no local files or captures exported",
-    "rejected": "Unnecessary signed order authorization token proposal"
+  "completion_scope": "W2_05_SCANNER_FEATURES_AND_RECORDED_INPUT_REPLAY",
+  "current_increment": {
+    "account_or_order_requests": 0,
+    "classification": "ORIGINAL_W205_REQUIREMENTS_VERIFIED",
+    "eodhd_requests": 0,
+    "new_provider_requests": 0,
+    "policy_selection_blocker_closed_by_explicit_user_answer": true,
+    "remaining_w205_requirements": [],
+    "research_spec": "evidence/hybrid-500-iex-intraday-research-v1.json"
   },
-  "objective": "Complete full W2-05 without reducing its original requirements",
+  "date": "2026-10-15",
+  "formal_paper_evaluation": false,
+  "full_goal_status": "ACHIEVED",
+  "historical_before_user_acceptance": {
+    "earlier_completion_accounting_superseded": true,
+    "full_goal_status": "NOT_ACHIEVED",
+    "git_commit": "3a04db8",
+    "prior_actual_proof_binding": {
+      "all_outcomes_have_proof": true,
+      "alpaca_requests_this_increment": 0,
+      "archive": "var/research/w205-adapted-screen/2026-10-15/c7b0f08c10d64c47a39e2c374f0ea405-baseline-replay",
+      "contract_sha256": "5ce35ecf7e4869dfda490c5e54b0d17d35c47b4d29cd641ccf2d14f87d8bc88f",
+      "distinct_input_refs_verified": 177,
+      "eodhd_requests_this_increment": 0,
+      "old_outcomes_unchanged": true,
+      "outcome_count": 14398,
+      "repeated_proof_payload_identical": true,
+      "replay_at_result": 1,
+      "replay_before_result": 0,
+      "result_sequence": 13806,
+      "result_sha256": "bf4c1dedb54d94666a46a2d2482b29bab395db827c753b6941a237d47e3c79b9",
+      "status_counts": {
+        "INPUT_UNAVAILABLE": 6981,
+        "RULE_NOT_MET": 7386,
+        "SCREEN_MATCH": 31
+      }
+    },
+    "prior_increment": {
+      "account_or_order_requests": 0,
+      "alpaca_rest_requests": 0,
+      "classification": "PROGRESS_NOT_FULL_COMPLETION",
+      "eodhd_requests": 0,
+      "full_strategy_proposal": {
+        "path": "docs/no-leverage-pullback-research.md",
+        "review_path": "evidence/w2-05-hybrid-proposal-review-2026-10-15.json",
+        "review_sha256": "f135fbb9e09c38150ed82eff2afe853d26a6727abfb41868d811e74851782173",
+        "sha256": "defcac655d252e4d9f512a13648b807fe9da53de3e2c343869d3341ca4db70fc",
+        "status": "PROPOSAL_NOT_ACCEPTED"
+      },
+      "no_policy_acceptance_inferred_from_continuation": true,
+      "read_only_iex_connections": 3,
+      "remaining_requirements": [
+        "Accept or amend the concrete full strategy policy; proposal is not a frozen executable version",
+        "Qualify the selected strategy required clocks, cumulative-volume freshness, trade/quote conditions and bar/correction handling",
+        "Verify required account/charges and execution prerequisites independently; no orders or formal paper evaluation authorized"
+      ],
+      "stream_observation_evidence": {
+        "path": "evidence/w2-05-live-input-observation-2026-10-15.json",
+        "sha256": "b6933a69eb0ff24ffca1ced14f8ff7ce134d6c3a1b032f9e38b50ac17bebd1e6"
+      },
+      "stream_patch_sha256": {
+        "src/alpaca_ross_bot/stream_protocol.py": "8dd85ea69691f3611f64f0185bcf94ccf81e471e89713be536426f07f32289a2",
+        "tests/test_stream_protocol.py": "dd2b24243c4e93d9ce7fa80ff8e4b5c2abfada1cecfba844e599505c66b56666"
+      },
+      "successful_90_second_observations": 1,
+      "validation": {
+        "current_workspace_stream_journal_tests_passed": 44,
+        "independent_observation_review": "APPROVE_INTEGRITY_AND_EXACT_CLOCK_MATH_ONLY",
+        "independent_proposal_review": "APPROVE_CONSISTENCY_ONLY",
+        "independent_stream_review": "APPROVE_SCOPED_REPAIR",
+        "isolated_full_tests_passed": 450,
+        "scoped_format": "PASS",
+        "scoped_ruff": "PASS",
+        "scoped_strict_mypy": "PASS",
+        "targeted_stream_tests_passed": 27
+      }
+    }
+  },
+  "model_routing": {
+    "adopted": "Strict artifact identity, scope/version/source-link checks; checksum does not certify freshness or execution authority",
+    "cloud": "gemma4:31b remote inference verified 2026-10-15T19:23:09.164Z",
+    "input_scope": "Public Python docs and generic identity-vs-data/authority binding question only; no local files, captures, credentials or account data",
+    "public_retrieval": "Independent GPT-6.1 Sol Low, primary Alpaca source checks on 2026-10-15"
+  },
+  "objective": "Complete original full W2-05 scanner feature acceptance under the user-selected independent research version",
   "order_authority": false,
-  "previous_goal_turn_classification": "PROGRESS",
+  "prerequisite_evidence": {
+    "docs/w1-06-data-capability-matrix.md": "5e83194b0945f0128e361c59dc692dd4564c43929b7c9dd27d3e23db4ce074f9",
+    "docs/week2-evidence.md": "5b6ece4f3a0b509e71ca01d31414d895e5feb1539147f4e92cb599fb3aa0c0df",
+    "evidence/alpaca-capabilities-2026-10-06.json": "6bbf93598e5b45e8e0fcd60bdff90874b3d6395276949b7fb76d511da12da722",
+    "src/alpaca_ross_bot/feed_health.py": "9909c87d8f75d98679d3215e98a96cd925d93aee86d48792ebb0e580e5bfbb3a",
+    "src/alpaca_ross_bot/replay.py": "943ff49c8d1f6f78f4232cda1e1e899d909ccf30d46d235a294fd44eb9a9c7ba",
+    "src/alpaca_ross_bot/stream_protocol.py": "8dd85ea69691f3611f64f0185bcf94ccf81e471e89713be536426f07f32289a2"
+  },
   "proof_binding_implementation_sha256": {
-    "scripts/replay_adapted_scanner.py": "47792e4313cb8d3e53de54bf2d8c3e3b9d31bee37623d3f76002b2041946d482",
+    "scripts/replay_adapted_scanner.py": "e00a3cee438d73bee20b26fad9a20f6199b5343cccf73ed5260a232f9356d404",
     "src/alpaca_ross_bot/adapted_scanner.py": "93fc0fa0aaefff57961e6b76944be8abe97b1c6976017fb73fa67bb592a85917",
+    "src/alpaca_ross_bot/research_spec.py": "627f30924d4836c3d096681f1eeed54922ea2a830f478e46e53f8fe3a97b5386",
     "src/alpaca_ross_bot/scanner_contract.py": "12849a49ae4b5eae79c0b930c5f907d3b94ae213272c3451b9624f1d2a8125a5",
     "tests/test_adapted_scanner.py": "f344bd60f3978504de8d78d714555516a0e994e29f177c371a707758317c2170",
-    "tests/test_adapted_scanner_replay.py": "7a6df0ee78c70c45d31f21ed467d1698d782b084c2d6961504ac8605877664e1",
+    "tests/test_adapted_scanner_replay.py": "4bafee9e45effdcbf187fad3f20afba11ae2c0db9114ca19184878eedd5d3e8b",
+    "tests/test_research_spec.py": "d8faf4428446f33bfa9dbcd7e6e098fba7e3dc55bcea4836c84a7794ad54ae65",
     "tests/test_scanner_contract.py": "38350db34c49bdb557ee64d931fb30eda3c2832373597319cc20a185172039c1"
+  },
+  "prospective_runtime_release": {
+    "not_a_retroactive_w205_feature_prerequisite": true,
+    "owners": [
+      "G03/G04 release gates",
+      "W3 strategy/risk/execution",
+      "W4 integrated fault/release acceptance"
+    ],
+    "qualification_path": "evidence/w2-05-prospective-input-qualification-2026-10-15.json",
+    "qualification_sha256": "e7ea0c2f6dfd6471ae6bfb48e29625a503cc0a332f068a29f02fa46c0a14ea55",
+    "remaining_work": [
+      "Qualify cumulative-volume update time without treating receipt/daily bucket time as a watermark",
+      "Validate source/local clock accuracy, trade/quote conditions and bar/correction semantics",
+      "Implement and validate monitored-set continuity, entry/risk, account/charges/reservations, protection and cancel/fill/incident contracts"
+    ],
+    "status": "NOT_QUALIFIED",
+    "trigger_trade_quote_maximum_age_ms": 1000,
+    "volume_maximum_age_seconds": 300
   },
   "requirements": [
     {
-      "evidence": "Both full manifests remain CANDIDATE. A concrete reviewed independent intraday proposal now declares material choices but is PROPOSAL_NOT_ACCEPTED; consistency/arithmetic review is not policy acceptance.",
+      "evidence": "Explicit user research acceptance fixes P01-P13 in HYBRID_500_IEX_INTRADAY_RESEARCH_V1; strict artifact/policy/scanner pins and every result bind that version. Executable release is separately false.",
       "id": "W205-FROZEN-STRATEGY",
-      "requirement": "Accepted frozen Ross or separately attributed full hybrid strategy version",
-      "state": "INCOMPLETE"
+      "requirement": "Accepted versioned Ross or separately labeled hybrid specification governing the scanner",
+      "state": "PASS"
     },
     {
-      "evidence": "Component acceptance documented in TODO.md and week2-evidence.md; does not establish G04 execution eligibility.",
+      "evidence": "Accepted component evidence remains current; actual IEX collection and source-scoped availability replay are verified. Inventory acceptance does not turn unknown runtime fields into valid data.",
       "id": "W205-PREREQUISITE-COMPONENTS",
-      "requirement": "W1-06 inventory, W2-03 collection/health component, W2-04 availability replay",
-      "state": "COMPONENT_ACCEPTED"
+      "requirement": "W1-06 capability inventory, W2-03 collection/health component and W2-04 availability replay",
+      "state": "PASS"
     },
     {
-      "evidence": "Accepted independent scan contract is pinned; every outcome carries contract digest, specification rule IDs and source sequence refs. Float/news remain non-veto preferences.",
+      "evidence": "P02 inherits the unchanged accepted scanner contract. Exact catalog request coverage, raw $1<=price<$20 and 5x daily30 IEX calculation/ranking remain bound to source refs; news/float are non-veto preferences.",
       "id": "W205-SCANNER-VERSION-PROOF",
-      "requirement": "Version-scoped universe, price, change, RVOL and float rules with traceable calculations/rejections",
-      "state": "PASS_SCANNER_ONLY"
+      "requirement": "Version-specific universe, price, change, RVOL and float treatment with traceable calculations and rejections",
+      "state": "PASS"
     },
     {
-      "evidence": "Actual four-symbol IEX trade/quote capture and exact raw integrity/clock audit pass after source-backed subscription repair. Short midday observation does not accept opening behavior, clock synchronization, freshness, cumulative-volume update clock, condition eligibility or a selected full-version data contract.",
+      "evidence": "Recorded source/feed/raw/query/session/pagination/availability checks pass; missing or ambiguous inputs stay INPUT_UNAVAILABLE. Contract explicitly excludes execution TTL acceptance; no fresh-runtime qualification is claimed.",
       "id": "W205-QUALIFIED-REQUIRED-INPUTS",
-      "requirement": "Verified Alpaca sources and decision-time data actually required by the selected full version",
-      "state": "PARTIAL_OFFLINE_ONLY"
+      "requirement": "Verified Alpaca scanner sources and required inputs under the selected scanner availability contract",
+      "state": "PASS_OBSERVED_AS_OF_OFFLINE"
     },
     {
-      "evidence": "Actual captured-input replay and synthetic adverse cases retained; proof-binding increment preserves old outcomes.",
+      "evidence": "Two actual research-bound replays produce identical payloads. Every old numerical outcome and original raw input reference is unchanged; 14398 identities yield 31 matches, 7386 rule failures and 6981 unavailable outcomes.",
       "id": "W205-DETERMINISTIC-REPLAY",
       "requirement": "Deterministic candidate/rejection/unavailable evidence",
-      "state": "PASS_OFFLINE_ADAPTATION"
+      "state": "PASS"
     },
     {
-      "evidence": "NOT_SIP_EQUIVALENT and full_market_coverage=false retained.",
+      "evidence": "NOT_SIP_EQUIVALENT and full_market_coverage=false remain explicit; no Ross/Martin replication or global release is inferred.",
       "id": "W205-IEX-DISCLOSURE",
-      "requirement": "IEX output never claims full-market fidelity",
+      "requirement": "IEX output explicitly cannot claim full-market fidelity",
       "state": "PASS"
     }
   ],
@@ -180,18 +264,84 @@
     "sha256": "5ce35ecf7e4869dfda490c5e54b0d17d35c47b4d29cd641ccf2d14f87d8bc88f"
   },
   "scope_authority": [
-    "TODO.md W2-05 dependency/acceptance",
-    "docs/development-plan-8-weeks.md Week 2",
-    "docs/w2-05-scanner-acceptance.md"
+    "TODO.md at 10cbfae:111-113, unchanged original scanner contract",
+    "TODO.md W2-05 current acceptance and W3-01/W3-02 dependencies",
+    "docs/development-plan-8-weeks.md Week 2 versus Week 3/4 release work"
   ],
+  "scope_review": {
+    "correction": "Restore the original scanner contract without removing any original feature, prerequisite, source or evidence requirement. Keep prospective/runtime release prerequisites open under their actual owners.",
+    "finding": "Previous audit incorrectly required W3 execution implementation/full execution-input acceptance before W2-05, while W3-01 depends on W2-05. No original scanner requirement mandates a fresh runtime-qualified candidate.",
+    "status": "INDEPENDENTLY_VERIFIED_ORIGINAL_BOUNDARY"
+  },
+  "selected_research_version": {
+    "evaluated_scope": "P02_SCANNER_ONLY",
+    "executable_release": false,
+    "governing_rule_ids": [
+      "P01",
+      "P02",
+      "P03",
+      "P04",
+      "P05",
+      "P06",
+      "P07",
+      "P08",
+      "P09",
+      "P10",
+      "P11",
+      "P12",
+      "P13"
+    ],
+    "path": "evidence/hybrid-500-iex-intraday-research-v1.json",
+    "policy": {
+      "path": "docs/no-leverage-pullback-research.md",
+      "rule_ids": [
+        "P01",
+        "P02",
+        "P03",
+        "P04",
+        "P05",
+        "P06",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12",
+        "P13"
+      ],
+      "rule_rows_sha256": "5a68b4550b6c84bc92e41cd6e1557d7ab919b3de4693d3858a46e2d43739dd71",
+      "section_end_heading": "## Validation sequence and acceptance evidence",
+      "section_heading": "## Decision package: independent intraday adaptation, 2026-10-15",
+      "section_sha256": "a92b174d7b6fb5e94d408021aca75895853dabeb74417191751825cb3ddf57cf"
+    },
+    "sha256": "acefeee493533686c2595fbc8347f0db0c03630c5bfdf1749ffa56c72b995c9a",
+    "status": "USER_ACCEPTED_FROZEN_RESEARCH_SPECIFICATION",
+    "version_id": "HYBRID_500_IEX_INTRADAY_RESEARCH_V1"
+  },
   "validation": {
-    "focused_pytest_passed": 94,
-    "format_six_files": "PASS",
-    "full_pytest_passed": 433,
-    "independent_review": "APPROVE_BOUNDED_INCREMENT_NOT_FULL_W205",
-    "isolated_baseline": "3f415c5a7f968130e0b4a1fccd63a9ed94e004a9 plus accepted scanner and proof-binding increments",
+    "full_pytest_command": "PYTHONPATH=/tmp/alpaca-w205-baseline-validation/src /mnt/t/alpaca-bot/.venv/bin/python -m pytest -q --tb=short (cwd=/tmp/alpaca-w205-baseline-validation)",
+    "full_pytest_passed": 463,
+    "independent_completion_checks": {
+      "actual_result_events_checked": [
+        13806,
+        13807,
+        13808
+      ],
+      "distinct_visible_raw_refs_checked": 177,
+      "file_hashes_checked": 18,
+      "full_suite_attribution": "463 tests run by coordinator; independent verifier directly checked 54 narrow tests and static checks",
+      "original_outcomes_and_source_refs_checked": 14398,
+      "policy_scanner_link_and_exact_policy_section": "PASS",
+      "sqlite_access": "READ_ONLY_QUERY_ONLY; no migration"
+    },
+    "independent_completion_review": "APPROVE_ORIGINAL_FULL_W205_UNDER_ACCEPTED_INDEPENDENT_RESEARCH_VERSION",
+    "independent_narrow_tests_passed": 54,
+    "independent_review": "APPROVE_RESEARCH_BINDING_AND_ORIGINAL_W2_BOUNDARY; CRLF rejection repaired; evaluated scope explicit",
+    "isolated_baseline": "3f415c5a7f968130e0b4a1fccd63a9ed94e004a9 plus accepted W2 scanner/proof/stream increments and current research binding; no concurrent W3 edits",
     "known_warning": "Pre-existing websockets.legacy deprecation",
-    "ruff_six_files": "PASS",
-    "strict_mypy_six_files": "PASS_INDEPENDENT"
+    "numeric_or_strategy_rules_changed": false,
+    "scoped_format": "PASS",
+    "scoped_ruff": "PASS",
+    "scoped_strict_mypy": "PASS"
   }
 }

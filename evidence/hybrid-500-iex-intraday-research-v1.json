@@ -1,0 +1,68 @@
+{
+  "acceptance_basis": {
+    "answer": "采用草案作为待验证的独立研究规格",
+    "question_scope": "Complete dated proposal including P01-P13; independent research specification requiring later data and execution qualification; no trading authority",
+    "type": "EXPLICIT_USER_DECISION"
+  },
+  "acceptance_boundary": {
+    "coverage_label": "NOT_SIP_EQUIVALENT",
+    "definitions_frozen_for_research": true,
+    "executable_release": false,
+    "execution_input_qualification": false,
+    "formal_paper_evaluation": false,
+    "full_market_coverage": false,
+    "live_trading": false,
+    "martin_replication_claim": false,
+    "orders": false,
+    "ross_replication_claim": false,
+    "scanner_evidence_scope": "OBSERVED_AS_OF_OFFLINE_SCREEN_AND_REPLAY"
+  },
+  "acceptance_timezone": "America/Los_Angeles",
+  "accepted_on": "2026-10-15",
+  "accepted_proposal_snapshot": {
+    "document_sha256": "defcac655d252e4d9f512a13648b807fe9da53de3e2c343869d3341ca4db70fc",
+    "git_commit": "3a04db8",
+    "path": "docs/no-leverage-pullback-research.md",
+    "review_path": "evidence/w2-05-hybrid-proposal-review-2026-10-15.json",
+    "rule_rows_sha256": "5a68b4550b6c84bc92e41cd6e1557d7ab919b3de4693d3858a46e2d43739dd71"
+  },
+  "classification": "USER_ACCEPTED_INDEPENDENT_ADAPTATION_NOT_TRADER_REPLICA",
+  "policy": {
+    "path": "docs/no-leverage-pullback-research.md",
+    "rule_ids": [
+      "P01",
+      "P02",
+      "P03",
+      "P04",
+      "P05",
+      "P06",
+      "P07",
+      "P08",
+      "P09",
+      "P10",
+      "P11",
+      "P12",
+      "P13"
+    ],
+    "rule_rows_sha256": "5a68b4550b6c84bc92e41cd6e1557d7ab919b3de4693d3858a46e2d43739dd71",
+    "section_end_heading": "## Validation sequence and acceptance evidence",
+    "section_heading": "## Decision package: independent intraday adaptation, 2026-10-15",
+    "section_sha256": "a92b174d7b6fb5e94d408021aca75895853dabeb74417191751825cb3ddf57cf"
+  },
+  "proposal_id": "HYBRID_500_IEX_INTRADAY_PROPOSAL_1",
+  "runtime_prerequisites": [
+    "Qualify 300-second snapshot/input freshness without using the daily bucket timestamp or receipt as a volume-update watermark",
+    "Validate source/local clocks and 1000ms trigger trade/quote bounds",
+    "Validate trade/quote conditions, bars, corrections and monitored-set continuity",
+    "Implement and verify entry, risk, account/charge/reservation, protection, cancel/fill and incident contracts under subsequent strategy/execution work"
+  ],
+  "scanner": {
+    "path": "evidence/general-iex-daily30-screen-v1.json",
+    "profile_id": "GENERAL_IEX_DAILY30_SCREEN_V1",
+    "rule_selection": "P02 inherits the unchanged accepted screen; price, change, RVOL, discovery and non-veto preferences are not retuned",
+    "sha256": "5ce35ecf7e4869dfda490c5e54b0d17d35c47b4d29cd641ccf2d14f87d8bc88f"
+  },
+  "schema_version": 1,
+  "status": "USER_ACCEPTED_FROZEN_RESEARCH_SPECIFICATION",
+  "version_id": "HYBRID_500_IEX_INTRADAY_RESEARCH_V1"
+}

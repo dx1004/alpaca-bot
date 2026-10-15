@@ -582,12 +582,16 @@ scanner thresholds, order path or acceptance checkbox was changed.
 
 ## Decision package: independent intraday adaptation, 2026-10-15
 
-**Status: PROPOSAL_NOT_ACCEPTED.** Working identifier
-`HYBRID_500_IEX_INTRADAY_PROPOSAL_1`. This is a concrete proposed operational
-design for review, not a frozen strategy, implemented signal engine or permission
-to trade. Its new numerical and behavioral choices below need explicit acceptance
-and independent data/execution validation. It does not reproduce either trader.
-The existing Ross and hybrid comparison manifests remain unchanged.
+**Status: USER_ACCEPTED_RESEARCH_SPECIFICATION, 2026-10-15.** Research version
+`HYBRID_500_IEX_INTRADAY_RESEARCH_V1`, accepted from working proposal
+`HYBRID_500_IEX_INTRADAY_PROPOSAL_1`. The user explicitly selected
+“采用草案作为待验证的独立研究规格”. The numerical and behavioral choices below
+are fixed for this research version; independent data and execution validation
+remain required. This is not an executable release, implemented signal engine
+or permission to trade, and it does not reproduce either trader. The existing
+Ross and hybrid comparison manifests remain unchanged. The
+[acceptance record](../evidence/hybrid-500-iex-intraday-research-v1.json) binds this
+section and the unchanged accepted scanner contract.
 
 This package reuses the completed source inventory rather than claiming another
 research closure. The current [Ross bull-flag article](https://www.warriortrading.com/bull-flag-trading/)
@@ -598,11 +602,11 @@ describes 0.5–1% account risk, not a fixed $500 intraday policy. M14/M15 above
 the user's timing clarification motivate the opening-hour/LOD study. These are
 motivations only: the fixed risk, exact EMA setup, universal LOD, no adds,
 full-position target, intraday liquidation and data thresholds here are
-**proposed adaptations**, not `ROSS_DIRECT` or `HYBRID_DIRECT` claims.
+**user-accepted independent adaptations**, not `ROSS_DIRECT` or `HYBRID_DIRECT` claims.
 
-### Proposed rules to accept or amend together
+### Accepted research rules, pending data and execution qualification
 
-| Rule ID | Fully declared proposal | Provenance / remaining acceptance |
+| Rule ID | Fixed research policy | Provenance / remaining qualification |
 | --- | --- | --- |
 | P01 — account stage | Long-only, whole shares, USD 500 initial reconciled equity, no borrowing, one open/reserved position at a time. Freeze equity `E0` from the verified pre-session account snapshot. No automatic strategy/leverage switch at a higher balance. | User account boundary plus proposed whole-share/concurrency policy. Broker buying power, funds, asset tradability and fee/hold inputs must be verified; no account values are assumed. |
 | P02 — selection | Reuse the unchanged accepted `GENERAL_IEX_DAILY30_SCREEN_V1` price/RVOL/ranking and non-veto float/news treatment. Scanner outcomes retain every catalog identity. | Already accepted scanner-only adaptation; does not accept this trading policy. |
@@ -637,21 +641,26 @@ view; they cannot create a retroactive entry or pretend missing trades are zero.
 
 ### What this package does and does not decide
 
-The coupled choices requiring review are: **intraday EMA/gap setup**, **fixed
+The coupled choices accepted for research are: **intraday EMA/gap setup**, **fixed
 0.5% risk with LOD**, **full-position 2R and session exit**, **1% daily/streak
-policy**, and **30-symbol monitor/age bounds**. The package supplies one concrete
-candidate for discussion without selecting it from P&L. Changing any of these
+policy**, and **30-symbol monitor/age bounds**. The package fixes one independent
+research candidate without selecting it from P&L. Changing any of these
 requires a new accepted specification and revalidation, not silent tuning.
 
-It is not ready to freeze while the source-condition policy, live input
+It is not ready for an executable freeze while the source-condition policy, live input
 qualification, fee/reserve/account facts, partial-fill protection and execution
 incident contract remain unverified. The observed REST `dailyBar.t` is a bucket
 clock, not proof of the volume's last update; a new response receipt does not
 silently close that freshness question. No historical holdout, profitability,
 paper evaluation or order authority follows from documentary or arithmetic
 checks. The original W2-05 requirements remain open until their actual evidence
-passes. This proposal may be rejected or amended without changing the accepted
-scanner, existing comparison candidates or any runtime behavior.
+passes. The table retains the reviewed proposal wording as the accepted research
+policy; its references to “proposed”, “review candidates” or “needs acceptance”
+are superseded by the dated user decision for research only. They do not claim
+independent data/execution acceptance. The original proposal consistency and
+arithmetic review remains a historical record at its original document digest.
+This research version does not change the scanner, comparison candidates or
+runtime behavior.
 
 The [current Alpaca aggregation FAQ](https://docs.alpaca.markets/us/docs/market-data-faq#how-are-bars-aggregated)
 specifies field-dependent tape/condition rules, not a strategy trigger whitelist.
