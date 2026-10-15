@@ -200,6 +200,8 @@ prices, anchor coordinates and statements such as "here" need visual alignment.
   depicted instrument/view, not unseen narration or source-time trade knowledge.
 - `USER_AUDIO_CHECK`: wording/time the user reports hearing in the original;
   do not relabel it as audio independently heard by the assistant.
+- `USER_CLARIFICATION`: the user's supplied reading or correction of a passage;
+  distinguish it from independently checked audio and from a proposed bot rule.
 - `TEACHER_FRAMEWORK`: a teacher's own public teaching, never proof of adoption.
 - `MARTIN_INFERRED`: a specific reconstruction with a source chain, contrary
   evidence and a falsification condition. Confidence describes the inference,
@@ -249,8 +251,8 @@ preferences, examples, remembered trades and stated exceptions distinct.
 | M11 / MARTIN_ASR, T 1:36:37–1:37:20 L301–314 | BE looks good daily, but late/slow intraday recovery is unsuitable for him; prefers a fast morning flush/recovery. | Separate strength preference from Hong Kong sleeping hours. Do not replace his timing with an assumed all-day US bot policy. |
 | M12 / MARTIN_ASR, T 1:37:20–1:40:39 L313–320 | Adjusts an anchor on the hourly chart to a reversal/high-related candle or actual intraday low to fit more reactions. | Exact adjustment search, candidate set, information cutoff and tie handling remain unknown. |
 | M13 / MARTIN_ASR, T 1:44:44 L331–332 | Distinguishes multi-day anchors from one/five-minute intraday anchors; changes view and then discovers a wrong year/date. | "Hourly/weekly" wording and shown coordinates need verification. This interrupted demonstration cannot validate an intraday trade. |
-| M14 / MARTIN_ASR, T 1:51:17 L379–380; later MARTIN_FRAME | In recalling QS, describes two tight/inside candles and corrects five-minute to **one-minute previous-bar-high breakout**, with possible slippage or late entry. Generalizes separately to a fast flush into rising hourly 9/21 EMA support and one/five/15-minute previous-bar-high triggers. Supplied frames confirm one- and five-minute views. | Remembered entry, general method and displayed views are different evidence. No supplied frame confirms 15 minutes. "Before market open" contradicts surrounding first-15/15–60-minute discussion; exact buckets remain unaccepted. Cursor times are not fills; intrabar versus completed-bar confirmation is unspecified. Previous-bar high is not automatically opening-range high. |
-| M15 / MARTIN_ASR, T 15:37–15:41 L22–29; 1:51:17 L379–380 | Usually day-low stop, sometimes entry/breakout-bar or previous-bar low if too wide; explicitly not a strict single rule. | Day low is provisional as known then, not final day's low. Missing selection priority/offset blocks sizing. A fixed pullback-low-only stop is unsupported. |
+| M14 / MARTIN_ASR, T 1:51:17 L379–380; later MARTIN_FRAME, USER_CLARIFICATION | In recalling QS, describes two tight/inside candles and corrects five-minute to **one-minute previous-bar-high breakout**, with possible slippage or late entry. Higher-timeframe context is a gap/pullback into rising hourly 9/21 EMAs. The user clarifies the usual entry rhythm: one-minute candles in the first 15 minutes **after** open, five-minute candles 15–60 minutes after open. The ASR also mentions 15-minute alternatives generally. | Remembered entry, usual method and displayed views are different evidence. No supplied frame confirms 15 minutes, and no mandatory 15-minute switch after minute 60 is established. Exact boundary handling remains unspecified. Candle-close confirmation is not stated; intrabar price-trigger entry is an inference from wording. Cursor times are not fills; previous-bar high is not automatically opening-range high. |
+| M15 / MARTIN_ASR, T 15:37–15:41 L22–29; 1:51:17 L379–380; USER_CLARIFICATION | Describes day-low stops in roughly 60–70% of cases and believes they generally have a higher win rate. When LOD is too far away or tighter risk is desired, may use breakout-bar or previous-bar low; explicitly no strict single location. The user additionally specifies choosing the stop before entry. | The frequency and win-rate belief are descriptive, not measured statistics or allocation rules. Tighter-stop sensitivity is the user's qualitative interpretation, not a measured comparison. Use lows known when the stop is chosen, never a future final LOD or unfinished bar's final low. Width threshold, offsets and deterministic selection remain unspecified. |
 | M16 / MARTIN_ASR, T 1:48:29 L367–368; 1:56:14–1:59:08 L382–395; 2:03:25 L400–401 | Criticizes extended/weak higher-timeframe entries in UPST, Circle and SOFI; small repeated losses remain possible. | Losing-trade explanations are retrospective, not proof a now-invented veto would have excluded them prospectively. No retry count is fixed. |
 | M17 / MARTIN_SLIDE; T 8:40 L13–14 | Describes about 0.5% average account risk with adjustments; stop below half ADR and 5% maximum; slide strikes through former 35% position limit. | Not a fixed $500 risk profile. Sizing descriptions and ASR arithmetic conflict elsewhere. ADR period, adjustments and maximum risk remain unaccepted. |
 | M18 / MARTIN_ASR, T 2:51:18–2:52:00 L499–512; 50:28 L163–164 | Profit exits are flexible; confirms typical first partial of 15–20%, with larger/smaller/no partial by context; prefers fewer trades in chop rather than simply taking profits at 1R. | No universal partial, target or EMA-exit precedence; do not import teacher's fractions/timing or treat 3R/5R as a single frozen target. |
@@ -329,10 +331,10 @@ The frames strengthen the qualitative interpretation of higher-timeframe context
 plus lower-timeframe entry analysis and confirm that both one/five-minute views
 were demonstrated. They do not prove when he switches intervals, whether a bar
 must close before entry, which stop alternative wins, or which AVWAP anchor was
-used. The chart context makes an after-open interpretation of M14 plausible;
-the before/after wording still requires a reported audio check. No further static
-frame is needed merely to establish these chart intervals. All strategy and
-paper gates remain unchanged.
+used. The user's subsequent clarification below resolves the after-open reading
+of M14; it does not turn these static frames into evidence of execution timing.
+No further static frame is needed merely to establish these chart intervals.
+All strategy and paper gates remain unchanged.
 
 Local synchronization update (`USER_AUDIO_CHECK`, 2026-10-14 Los Angeles): the
 user places the spoken phrase **"so the QS" at YouTube 1:55:45**, refining the
@@ -346,6 +348,33 @@ navigation anchor and 1:55:48–1:58:23 as the supplied chart-frame range. Other
 sentences and other chapters remain only approximately aligned. No timing or
 stop rule is accepted from this navigation correction.
 
+QS wording clarification (`USER_CLARIFICATION`, 2026-10-14 Los Angeles): the user
+clarifies that the passage describes **after-open** entry rhythm: normally
+one-minute previous-bar-high breakouts during the first 15 minutes, and normally
+five-minute previous-bar-high breakouts 15–60 minutes after open. Treat the ASR's
+before-open wording as superseded in this documentary reading. The supplied
+1:51:17–1:56:14 reference is T's speaker-segment range, not a revised YouTube
+anchor. No new audio access or exact per-sentence YouTube timing is claimed.
+
+The user explicitly separates the trigger from confirmation: the passage states
+no requirement for the signal candle to close. Entry as price reaches/breaks the prior
+bar's high is a plausible **MARTIN_INFERRED** reading, not an explicit intrabar
+rule or a claim about an exact fill, price source, order type or crossing offset.
+Usual interval choices do not specify mandatory switching, handling exactly
+minute 15/60, or what interval follows minute 60.
+
+For stops, retain a qualitative conditional choice: LOD is common (his rough
+60–70% estimate) and he believes it tends to produce a higher win rate, but the
+distance may be wider. Breakout-bar or previous-bar low are alternatives when
+LOD is too far away or tighter risk is wanted. The user's explanation that a
+tighter stop can be swept out more easily is an interpretation of the tradeoff,
+not an empirically verified performance claim. Choosing the stop before entry
+is recorded from the user's clarification; the cited QS paragraph does not
+independently identify that decision timestamp. A quantitative width criterion,
+tie-breaking priority and offset are still absent. Any future replay must use
+only lows observable when the stop was selected, including a then-current low
+if the relevant breakout candle has not finished.
+
 QS phrase-order map (documentary continuation, 2026-10-14 Los Angeles): the
 following **derived navigation estimates are not heard sentence timestamps**.
 For a rough seek guide only, distribute T L380's 739 whitespace-delimited words
@@ -354,14 +383,14 @@ then align word index 18 (zero-based, ASR's QS transition) to the user's
 1:55:45 anchor. For a phrase at word index `w`, the estimated seconds after
 that anchor are `297 * (w - 18) / 739`. Repetitions, pauses, corrections and
 uneven speech make this approximate; no measured error bound is available.
-The displayed times below are rounded seek positions, not trade/session times,
-and must not authenticate the contradictory before/after-open sentence.
+The displayed times below are rounded seek positions, not trade/session times.
+The after-open reading comes from the user's clarification, not interpolation.
 
 | Approximate YouTube navigation | Source sequence and defensible reading | Remaining boundary |
 | --- | --- | --- |
 | **1:55:45 — user checked** | QS topic transition within T L380. | Only this phrase has a user-reported audio time. |
 | About 1:56:00–1:56:30 — estimated | Gap/pullback into rising hourly 9/21 EMAs; remembered five-minute trigger corrected to one minute. Two tight/inside candles are his recollection, not independently labeled bars. | No exact signal candle, fill, trade date or gap definition established. |
-| About 1:56:30–1:57:30 — estimated | Sets aside the daily chart to explain fast-flush/recovery mechanics; previous-bar-high breakout, then discusses one/five/15-minute interval choices. | Setting aside daily context for an explanation does not establish a daily-context-free strategy. Time buckets and candle-close/intrabar policy remain unknown. |
+| About 1:56:30–1:57:30 — estimated | Sets aside the daily chart to explain fast-flush/recovery mechanics; previous-bar-high breakout, then discusses interval choices. The user clarifies the usual one-minute first-15 / five-minute 15–60 after-open rhythm. | Setting aside daily context for an explanation does not establish a daily-context-free strategy. Exact switch boundaries and candle-close/intrabar policy remain unspecified. |
 | About 1:58:00–1:59:30 — estimated | Day low is common; breakout-bar/previous-bar low are alternatives when risk is too wide or a tighter stop is desired. Explicitly discretionary. | The descriptive frequency is not a random allocation rule; no stop-selection priority, width threshold or offset is supplied. |
 | About 2:00:00 — estimated | Admits QS failed and the daily looked weak; explains an attempted bounce near daily 50 EMA/previous highs, with declining 21 EMA or a V-shaped recovery as possibilities. | These are recalled rationale/possibilities, not a required daily veto or fixed target. |
 | T 1:56:14 L382–383 — no new YouTube time assigned | Continues QS assessment before changing to Circle; still regards QS as acceptable, although not especially good. | Do not place Circle at the segment's first word or extrapolate this local word-rate fit to other segments. |
@@ -418,19 +447,25 @@ also does not establish an executable $500/1x long-only adaptation.
 
 The remaining visual work is bounded: align the base-high/non-extreme-anchor
 discussion (T 1:03:04 and 1:14:07–1:15:26), the hourly reanchor demonstration
-(T 1:37:20–1:41:59), and the QS timing/stop explanation (T 1:51:17) to source
-frames/audio. Approximate +4-minute YouTube navigation is not an exact timestamp
-request. No user screenshot is claimed to authenticate an unseen anchor.
+(T 1:37:20–1:41:59), and the QS signal-bar/stop choices (T 1:51:17) to source
+frames/audio. QS's usual after-open rhythm is now user-clarified; the remaining
+QS gap is execution/stop semantics, not before-versus-after open. The approximate
+four-minute trim supports navigation, not an exact timestamp request. No user
+screenshot is claimed to authenticate an unseen anchor.
 
 Research outcome: anchor families, deliberate exceptions, retained setup families,
 one explicitly retired sizing cap and a source-bounded candidate mechanism are
-now documented. Exact live anchor selection, entry-time buckets, stop/exit
-precedence, $500 risk and data qualification remain `BLOCKED_RESEARCH`.
+now documented. QS's usual after-open interval preferences are user-clarified.
+Exact live anchor selection, mechanical interval transitions and trigger
+confirmation, stop/exit precedence, $500 risk and data qualification remain
+`BLOCKED_RESEARCH`.
 
 A bounded follow-up tried to retrieve Martin's May X post mentioned in T 53:12.
 Three targeted searches did not locate a matching original post and direct
 profile access returned HTTP 403. No post text/timing or absence of the post is
-inferred. The entry-time wording therefore remains unresolved. A second,
+inferred. The entry-time wording remained unresolved at that retrieval stage;
+the subsequent QS user clarification above resolves its documentary reading,
+without establishing the missing post's contents. A second,
 complete public-teacher-only Cloud `gemma4:31b` critique supported the separation
 and knowledge-clock methodology; its output was checked against the sources.
 The earlier longer output was truncated and incorrectly grouped opening-range
@@ -490,8 +525,8 @@ limits. No currently implemented strategy computation was changed.
 | --- | --- | --- |
 | Anchor family and discretionary alternatives | Documentary family inventory established in M04–M12. | Need source frames for exact coordinates, when they became known, and any selection hierarchy. Fixed-extreme and reaction-fitted anchors remain separate hypotheses; no guessed reaction score. |
 | Indicator calculation | Some vendor-default and aggregation facts are established above. | Keep TradingView-style bar-source, Alpaca bar-VWAP aggregation and eligible-trade VWAP as different methods. Martin's exact method/configuration and cross-provider parity remain unverified. |
-| Entry confirmation | Newer ASR describes prior-bar-high; short-study confirms its own lower-timeframe alternatives. | Do not invert the short hourly rule into a Martin long rule. Need audio for the ASR time-bucket conflict and intrabar/completed-bar semantics. |
-| Stops | Multiple locations are documented in both materials; they are conditional choices. | Preserve day-low, breakout-bar-low and previous-bar-low as distinct long-side research variants. Their selection, offsets and precedence are not identified, and none is frozen. |
+| Entry confirmation | Newer ASR describes prior-bar-high; the user clarifies usually one minute in the first 15 minutes after open, five minutes during minutes 15–60. Short-study confirms its own lower-timeframe alternatives. | Do not invert the short hourly rule into a Martin long rule. Before/after interpretation is resolved by user clarification; exact interval transitions and intrabar/completed-bar semantics remain unspecified. Price-trigger entry is a labeled inference. |
+| Stops | Multiple locations are documented in both materials; the user's clarification specifies choosing the stop before entry. QS describes LOD as common, with narrower alternatives when width is excessive or tighter risk desired. | Preserve day-low, breakout-bar-low and previous-bar-low as distinct long-side research variants using then-known lows. The qualitative tradeoff is clearer; a quantitative selector, offsets and precedence remain unspecified, and none is frozen. |
 | Exits | An explicit short-study description is now available. | It is short/version-scoped. Newer long exits and their precedence remain unresolved; no automatic mirrored exit was adopted. |
 | Risk and $500 feasibility | Source quantities can be documented and arithmetic checked independently. | Variable risk and position-size control remain unspecified. A constant-risk candidate would be an explicit adaptation, not demonstrated Martin behavior. |
 | Full automatic qualification | No new market-data entitlement or field evidence was acquired. | IEX, float/universe, news and strategy release gates remain separate; no author reference closes them. |

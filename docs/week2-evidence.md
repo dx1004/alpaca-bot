@@ -1,5 +1,29 @@
 # Week 2 acceptance evidence
 
+## QS timing and stop wording clarification (2026-10-14 Los Angeles)
+
+The user's supplied reading closes the **before-versus-after-open** ambiguity:
+normally one-minute previous-bar-high entries in the first 15 minutes after open,
+then normally five-minute entries during minutes 15–60. The
+[QS clarification](no-leverage-pullback-research.md#case-and-counterexample-inventory)
+records this as `USER_CLARIFICATION`; it is not assistant-authenticated audio.
+The 1:51:17–1:56:14 reference remains transcript time, while the user-checked
+YouTube topic anchor remains 1:55:45.
+
+Intrabar price-trigger entry is explicitly a wording-based inference; no
+signal-candle-close requirement is stated. LOD's rough 60–70% frequency and
+higher-win-rate belief are attributed descriptions, not measured statistics.
+The user clarifies the width/tighter-risk tradeoff and choosing a stop before
+entry. Only then-known lows may be used in a future reconstruction; exact switch
+boundaries, a quantitative stop selector and execution details remain unresolved.
+M14/M15, the seek guide, remaining-work paragraph and closure table were updated
+together so the resolved timing interpretation is not retained as an open gap.
+No runtime rule, risk setting or acceptance checkbox changed.
+Validation passed: all 20 proposition IDs, clarification provenance, removal of
+superseded ambiguity wording, inference/stop boundaries, unchanged transcript
+digest, navigation anchors, local links/fragments and `git diff --check`.
+This documentation-only correction did not require a new runtime or pytest run.
+
 ## QS chart evidence follow-up (2026-10-14 Los Angeles)
 
 The [case inventory](no-leverage-pullback-research.md#case-and-counterexample-inventory)
@@ -7,8 +31,9 @@ now records supplied QS daily/hourly/one-minute/five-minute frames and their
 player navigation range. M14 explicitly distinguishes ASR's mention of a
 15-minute interval from the intervals actually shown. One-minute and five-minute
 cursor dates differ; no synchronized same-trade sample or actual fill is claimed.
-The 1.39% annotation is not promoted into a stop policy. Audio wording, exact
-interval switching, bar confirmation and stop precedence remain unverified.
+The 1.39% annotation is not promoted into a stop policy. At that stage audio
+wording, exact interval switching, bar confirmation and stop precedence remained
+unverified; the later user clarification above resolves the after-open reading.
 The user subsequently confirmed hearing "so the QS" at video 1:55:45. This
 replaces the rough 1:55:00 navigation estimate, with explicit `USER_AUDIO_CHECK`
 provenance. It maps inside the transcript segment starting 1:51:17, not exactly
