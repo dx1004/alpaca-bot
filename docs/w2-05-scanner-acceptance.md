@@ -99,6 +99,13 @@ the submicrosecond replay issue; the correction received a second review approva
 
 ## Validation
 
+Supplemental-author follow-up: the user supplied a concrete Martin Luk video.
+Verified firsthand dated scanner replies now appear in the
+[supplemental research record](no-leverage-pullback-research.md#martin-luk-supplemental-source-review-2026-10-14).
+This resolves the author's identity and adds candidate-source settings; it does
+not close the table's data or operational-rule gaps. Original video metadata was
+read, but its caption response was empty, so no spoken video rule is accepted.
+
 Targeted scanner tests, deterministic replay, full pytest, Ruff, strict mypy,
 formatting and scoped diff checks are recorded with final counts in
 [Week 2 evidence](week2-evidence.md). Live validation proves only two small

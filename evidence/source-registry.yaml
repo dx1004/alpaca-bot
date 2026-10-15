@@ -1,5 +1,33 @@
 schema_version: 1
 sources:
+  - source_id: MARTIN_LUK_GUEST_2025
+    kind: OTHER_TRADER_FIRST_PARTY
+    title: Martin Luk guest contribution, edited by Kyna Kosling, 2024 lessons and scanning workflow
+    url: https://tradingresourcehub.substack.com/p/martin-luk-283-usic-2024-key-lessons
+    published_on: '2025-02-01'
+    accessed_on: '2026-10-14'
+    version_ids: [HYBRID_500_IEX_CANDIDATE_V1]
+  - source_id: MARTIN_LUK_SCAN_REPLY_2025
+    kind: OTHER_TRADER_FIRST_PARTY
+    title: Martin Luk own edited February 2 reply, three separate scanner settings
+    url: https://tradingresourcehub.substack.com/p/martin-luk-283-usic-2024-key-lessons/comments
+    published_on: '2025-02-02'
+    accessed_on: '2026-10-14'
+    version_ids: [HYBRID_500_IEX_CANDIDATE_V1]
+  - source_id: MARTIN_LUK_VIDEO_2026
+    kind: OTHER
+    title: User-supplied Martin Luk TraderLion interview video, speech not yet authenticated
+    url: https://www.youtube.com/watch?v=VKNEJA5r8zw
+    published_on: null
+    accessed_on: '2026-10-14'
+    version_ids: [HYBRID_500_IEX_CANDIDATE_V1]
+  - source_id: MARTIN_LUK_EPISODE_NOTES_2026
+    kind: OTHER
+    title: TraderLion publisher episode description for Martin Luk interview, not a speech transcript
+    url: https://podcasts.apple.com/us/podcast/969-return-in-1-year-the-winning-pullback-strategy/id1586336923?i=1000747508894
+    published_on: '2026-01-31'
+    accessed_on: '2026-10-14'
+    version_ids: [HYBRID_500_IEX_CANDIDATE_V1]
   - source_id: HUMBLED_DIP_2026
     kind: OTHER_TRADER_FIRST_PARTY
     title: Shay Humbled Trader small-account daily-support dip article

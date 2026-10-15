@@ -1,5 +1,10 @@
 # $500 / 1× pullback research and validation track
 
+> 2026-10-14 update: the Martin Luk source review below extends this research
+> inventory. Earlier credential and milestone status statements in this initial
+> planning document are historical; the [W1 closeout](week1-closeout-2026-10-06.md)
+> and [current W2-05 acceptance](w2-05-scanner-acceptance.md) govern current gates.
+
 Status: `RESEARCH_ONLY`, 2026-09-30. This records the user's preference to study free public material from Ross Cameron and other traders. The objective is the best evidence-bounded reconstruction of the likely historical Chapter 8 pullback content without access to the member lesson, not proof of an exact copy. It does not authorize a purchase, a strategy order, or live trading. The existing Ross fidelity matrix remains the Ross baseline; a rule drawn from another trader must be labeled as a separate hybrid candidate, never `ROSS_DIRECT` or represented as member-only teaching.
 
 ## Identify the setup by name and source version
@@ -72,6 +77,75 @@ For zero-subscription replay, [Alpaca Basic](https://docs.alpaca.markets/us/docs
 Broker adaptation: [Alpaca's support answer](https://alpaca.markets/support/alpaca-cash-accounts) says accounts below $2,000 use limited margin: proceeds from sales may be reused before settlement, although [borrowing leverage remains unavailable below $2,000](https://docs.alpaca.markets/us/docs/margin-and-short-selling). Its [current non-leverage margin FAQ](https://docs.alpaca.markets/us/docs/understanding-the-new-intraday-margin-rule) says the former PDT trade-count restriction has been removed, subject to equity and intraday risk checks. Ross's cash-account scarcity is therefore context for his stock-selection discipline, not an automatic one-trade-per-day Alpaca constraint. The actual paper account's buying power and restrictions still require a read-only probe.
 
 User-confirmed capital boundary: below $2,000, keep this $500-origin stage at no borrowed leverage. At or above $2,000, a separate Ross leveraged version is acceptable for research and later paper evaluation, subject to source/version linkage and actual Alpaca account eligibility; crossing the threshold does not switch the bot automatically. The [2025 Ross $2,000 challenge](https://support.warriortrading.com/support/solutions/articles/19000168902-small-account-challenges-at-warrior-trading) began at CMEG with 6x available and later reset to $2,000 without leverage. The $2,000 Webull cash-account context in the article above is a different example. [Alpaca's account fields](https://docs.alpaca.markets/us/docs/account-plans) list 1x, 2x and 4x, while its [margin rules](https://docs.alpaca.markets/us/docs/margin-and-short-selling) set the $2,000 equity prerequisite and say 4x intraday may be allowed. None of these establishes a transferable 6x Ross execution profile for Alpaca.
+
+## Martin Luk supplemental source review (2026-10-14)
+
+The user identified [this video](https://www.youtube.com/watch?v=VKNEJA5r8zw).
+Its original page metadata confirms the title and publisher **TraderLion**.
+[Publisher episode notes](https://podcasts.apple.com/us/podcast/969-return-in-1-year-the-winning-pullback-strategy/id1586336923?i=1000747508894)
+identify the guest as **Martin Luk**, with a January 31, 2026 podcast release.
+That podcast date does not independently establish the YouTube upload date.
+The supplied video concerns a pullback-focused approach; its spoken rules and
+timestamps have not been authenticated here.
+
+A bounded direct public-page diagnostic found an English caption track, but its
+published URL returned HTTP 200 with an empty body. The web-tool timed-text
+retrieval separately failed with a cache miss. Neither result proves captions
+do not exist. No access restriction was bypassed. Third-party AI transcripts,
+summaries and chapter lists are discovery leads only, not accepted speech.
+
+The [February 1, 2025 guest contribution](https://tradingresourcehub.substack.com/p/martin-luk-283-usic-2024-key-lessons)
+explicitly attributes its views to Martin, with writing/editing support by Kyna
+Kosling. It describes previous-day, premarket and weekend-leader scanning and
+EMA-aligned watchlists. ADR above 5% is a preference, not a mandatory filter.
+This supports a separately attributed research candidate; it does not identify a
+$500/1x Alpaca intraday implementation.
+
+### Dated scanner settings, kept separate
+
+Martin's own [February 2, 2025 reply](https://tradingresourcehub.substack.com/p/martin-luk-283-usic-2024-key-lessons/comments)
+provides these literal field settings. The reply is marked edited; its edit time
+and equivalence to the later video are unknown.
+
+| Research profile | Reported filters | Reported sorting |
+| --- | --- | --- |
+| `MARTIN_LUK_POTENT_REPLY_2025` | Market cap >100M; Volatility 1W >3.5%; Price >21EMA; Vol*Price >50M | Not stated |
+| `MARTIN_LUK_PREMARKET_REPLY_2025` | Market cap >100M; Avg volume 10D >500K; Vol*Price >50M | Pre-market Chg %, descending |
+| `MARTIN_LUK_LEADER_REPLY_2025` | Market cap >100M; Avg volume 10D >500K; Vol*Price 1W >300M | Perf 1M, descending |
+
+Vendor field formulae, currency, session cutoffs, EMA candle/initialization and
+calendar-versus-session windows remain unverified. Do not calculate weekly
+Vol*Price as a guessed aggregation or substitute IEX totals for consolidated
+metrics. Market capitalization is not share float; volatility is not RVOL.
+No explicit float, RVOL or news-validity criterion appears in this reply; omission
+cannot authorize removal of those rules from Ross or establish that Martin never
+uses them. These are three alternatives, not one merged scanner.
+
+### Consequence for W2-05
+
+Two firsthand source IDs are added to the existing **CANDIDATE** hybrid source
+inventory; the supplied video and publisher notes are separately registered as
+metadata/context, not accepted direct strategy statements. No fidelity rule,
+runtime parameter or candidate qualification has changed. Ross profiles remain
+separate. Source labels stay `OTHER_TRADER_FIRST_PARTY` / research analogy and can
+never become `ROSS_DIRECT`.
+
+The new material supplies useful dated scanner settings; it does not repair
+missing market-cap/history inputs, full-market discovery, point-in-time float,
+Ross RVOL semantics or an automated catalyst policy. Transfer from Martin's
+multi-day setup context to Ross intraday selection requires a source-scoped hybrid
+specification and evidence, not just matching the word pullback. No margin,
+shorting, overnight holding or $500 sizing behavior is imported.
+
+Independent GPT-6.1 Sol Low source retrieval was checked against the original
+guest contribution, Martin-attributed replies and publisher notes. A verified
+public-only Ollama Cloud `gemma4:31b` analysis supported retaining the literal
+settings separately and treating missing fields as unknown. W2-05 and all hybrid
+execution gates remain blocked; no claim of full-video review is made.
+
+Validation: the existing evidence-bundle tests passed (9 tests), including
+candidate status and other-trader/Ross attribution isolation. No runtime code,
+scanner thresholds, order path or acceptance checkbox was changed.
 
 ## Validation sequence and acceptance evidence
 
