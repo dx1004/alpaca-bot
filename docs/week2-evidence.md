@@ -13,9 +13,22 @@ The user subsequently confirmed hearing "so the QS" at video 1:55:45. This
 replaces the rough 1:55:00 navigation estimate, with explicit `USER_AUDIO_CHECK`
 provenance. It maps inside the transcript segment starting 1:51:17, not exactly
 to its first word, so a 4:28 global offset is not asserted.
+The continuation now separates QS's corrected one-minute remembered trigger
+from his general one/five/15-minute method, documents the daily-bounce rationale
+and his qualified acceptance of the losing trade, and adds an explicitly derived
+phrase-order seek guide. Its local word-rate interpolation uses the user anchor,
+739 words and a 297-second speaker segment; estimated positions are not audio
+timestamps, a constant offset or a measured error bound. Independent read-only
+source comparison covered the sequence; no local attachment went to Cloud.
 This is documentary evidence only, with no new executable behavior or acceptance
 checkbox. Local evidence-reference/link checks and the documentation diff check
 are the appropriate validation; no new runtime/replay pass is claimed.
+For the continuation, attachment digest/line references, all 20 proposition IDs,
+interpolation inputs/arithmetic, local links/fragments and `git diff --check`
+passed. The independent reader reproduced the timing arithmetic and found no
+substantive source correction. Its initially unavailable `python` alias affected
+only a helper invocation; rerunning that read-only check with the available
+`python3` succeeded without changing the environment. No new pytest was run.
 
 ## CRCL visual evidence follow-up (2026-10-15 UTC)
 

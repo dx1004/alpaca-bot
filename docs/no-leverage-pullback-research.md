@@ -249,7 +249,7 @@ preferences, examples, remembered trades and stated exceptions distinct.
 | M11 / MARTIN_ASR, T 1:36:37–1:37:20 L301–314 | BE looks good daily, but late/slow intraday recovery is unsuitable for him; prefers a fast morning flush/recovery. | Separate strength preference from Hong Kong sleeping hours. Do not replace his timing with an assumed all-day US bot policy. |
 | M12 / MARTIN_ASR, T 1:37:20–1:40:39 L313–320 | Adjusts an anchor on the hourly chart to a reversal/high-related candle or actual intraday low to fit more reactions. | Exact adjustment search, candidate set, information cutoff and tie handling remain unknown. |
 | M13 / MARTIN_ASR, T 1:44:44 L331–332 | Distinguishes multi-day anchors from one/five-minute intraday anchors; changes view and then discovers a wrong year/date. | "Hourly/weekly" wording and shown coordinates need verification. This interrupted demonstration cannot validate an intraday trade. |
-| M14 / MARTIN_ASR, T 1:51:17 L379–380; later MARTIN_FRAME | In QS, describes a fast pullback to support followed by breaking a previous bar's high on a lower timeframe. Supplied QS frames confirm one- and five-minute chart views. | One/five/15-minute choices exist in the ASR; no supplied frame confirms a 15-minute view. "Before market open" contradicts surrounding first-15/15–60-minute discussion; exact time buckets remain unaccepted. Displayed cursor times are not verified fill times. Trigger is not always opening-range high. |
+| M14 / MARTIN_ASR, T 1:51:17 L379–380; later MARTIN_FRAME | In recalling QS, describes two tight/inside candles and corrects five-minute to **one-minute previous-bar-high breakout**, with possible slippage or late entry. Generalizes separately to a fast flush into rising hourly 9/21 EMA support and one/five/15-minute previous-bar-high triggers. Supplied frames confirm one- and five-minute views. | Remembered entry, general method and displayed views are different evidence. No supplied frame confirms 15 minutes. "Before market open" contradicts surrounding first-15/15–60-minute discussion; exact buckets remain unaccepted. Cursor times are not fills; intrabar versus completed-bar confirmation is unspecified. Previous-bar high is not automatically opening-range high. |
 | M15 / MARTIN_ASR, T 15:37–15:41 L22–29; 1:51:17 L379–380 | Usually day-low stop, sometimes entry/breakout-bar or previous-bar low if too wide; explicitly not a strict single rule. | Day low is provisional as known then, not final day's low. Missing selection priority/offset blocks sizing. A fixed pullback-low-only stop is unsupported. |
 | M16 / MARTIN_ASR, T 1:48:29 L367–368; 1:56:14–1:59:08 L382–395; 2:03:25 L400–401 | Criticizes extended/weak higher-timeframe entries in UPST, Circle and SOFI; small repeated losses remain possible. | Losing-trade explanations are retrospective, not proof a now-invented veto would have excluded them prospectively. No retry count is fixed. |
 | M17 / MARTIN_SLIDE; T 8:40 L13–14 | Describes about 0.5% average account risk with adjustments; stop below half ADR and 5% maximum; slide strikes through former 35% position limit. | Not a fixed $500 risk profile. Sizing descriptions and ASR arithmetic conflict elsewhere. ADR period, adjustments and maximum risk remain unaccepted. |
@@ -295,7 +295,8 @@ proof of the depicted historical coordinates.
 | BE, 1:34:01–1:37:20 | Attractive daily configuration with unsuitable intraday timing. Need recovery timing and stated decision, not only the final daily candle. |
 | Hourly reanchor, 1:37:20–1:41:59 | ASR suggests OPEN, but symbol is visually unconfirmed. Need original/adjusted anchor coordinates and already observed reactions. |
 | Interrupted historical example, 1:41:59–1:47:47 | ASR symbol and year/date are confused. Exclude from coordinate/entry validation until clarified; no guessed ticker. |
-| UPST / QS / Circle (CRCL) / SOFI, 1:48:29–2:03:25 | Losing and retrospective criticism cases; test whether a proposed rule was knowable at entry. Supplied frames confirm Circle as CRCL; actual trade dates and exact speech/frame alignment remain unverified. |
+| QS, 1:51:17–1:56:14 L379–383 | Recalled one-minute trigger after five-minute self-correction; daily 50 EMA / previous-high bounce rationale, acknowledged loss and weak daily. He still calls it acceptable though not especially good. Do not turn its loss into a retrospective exclusion rule or its possible bounce objectives into a fixed exit policy. |
+| UPST / Circle (CRCL) / SOFI, 1:48:29–2:03:25 | Losing and retrospective criticism cases; test whether a proposed rule was knowable at entry. Supplied frames confirm Circle as CRCL; actual trade dates and exact speech/frame alignment remain unverified. |
 
 Visual follow-up (`MARTIN_FRAME`, user message with appshots captured
 2026-10-15 06:34:04–06:34:49 UTC): the supplied frames visibly identify
@@ -344,6 +345,35 @@ the transcript segment has not been measured. Use 1:55:45 as the local QS
 navigation anchor and 1:55:48–1:58:23 as the supplied chart-frame range. Other
 sentences and other chapters remain only approximately aligned. No timing or
 stop rule is accepted from this navigation correction.
+
+QS phrase-order map (documentary continuation, 2026-10-14 Los Angeles): the
+following **derived navigation estimates are not heard sentence timestamps**.
+For a rough seek guide only, distribute T L380's 739 whitespace-delimited words
+uniformly over the 297 seconds between speaker starts 1:51:17 and 1:56:14,
+then align word index 18 (zero-based, ASR's QS transition) to the user's
+1:55:45 anchor. For a phrase at word index `w`, the estimated seconds after
+that anchor are `297 * (w - 18) / 739`. Repetitions, pauses, corrections and
+uneven speech make this approximate; no measured error bound is available.
+The displayed times below are rounded seek positions, not trade/session times,
+and must not authenticate the contradictory before/after-open sentence.
+
+| Approximate YouTube navigation | Source sequence and defensible reading | Remaining boundary |
+| --- | --- | --- |
+| **1:55:45 — user checked** | QS topic transition within T L380. | Only this phrase has a user-reported audio time. |
+| About 1:56:00–1:56:30 — estimated | Gap/pullback into rising hourly 9/21 EMAs; remembered five-minute trigger corrected to one minute. Two tight/inside candles are his recollection, not independently labeled bars. | No exact signal candle, fill, trade date or gap definition established. |
+| About 1:56:30–1:57:30 — estimated | Sets aside the daily chart to explain fast-flush/recovery mechanics; previous-bar-high breakout, then discusses one/five/15-minute interval choices. | Setting aside daily context for an explanation does not establish a daily-context-free strategy. Time buckets and candle-close/intrabar policy remain unknown. |
+| About 1:58:00–1:59:30 — estimated | Day low is common; breakout-bar/previous-bar low are alternatives when risk is too wide or a tighter stop is desired. Explicitly discretionary. | The descriptive frequency is not a random allocation rule; no stop-selection priority, width threshold or offset is supplied. |
+| About 2:00:00 — estimated | Admits QS failed and the daily looked weak; explains an attempted bounce near daily 50 EMA/previous highs, with declining 21 EMA or a V-shaped recovery as possibilities. | These are recalled rationale/possibilities, not a required daily veto or fixed target. |
+| T 1:56:14 L382–383 — no new YouTube time assigned | Continues QS assessment before changing to Circle; still regards QS as acceptable, although not especially good. | Do not place Circle at the segment's first word or extrapolate this local word-rate fit to other segments. |
+
+This separates four claims that must not collapse into one: the higher-timeframe
+support thesis, lower-timeframe trigger, discretionary protective-stop choice,
+and retrospective outcome. A previous-bar-high trigger can be described without
+claiming its bar must close; a selected stop cannot be reconstructed just from
+the 1.39% drawing. The July 30 five-minute and August 5 one-minute frames remain
+separate visual examples, not independently matched executions. Independent
+source reading checked this sequence against L380/L383; the coordinator checked
+the interpolation arithmetic. Neither constitutes audio or trade validation.
 
 #### Predeclared validation and required inputs
 
