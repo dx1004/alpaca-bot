@@ -29,6 +29,7 @@ class ProbeStatus(StrEnum):
     BLOCKED_CREDENTIALS = "BLOCKED_CREDENTIALS"
     NOT_RUN = "NOT_RUN"
     REACHABLE = "REACHABLE"
+    REACHABLE_SCHEMA_UNVERIFIED = "REACHABLE_SCHEMA_UNVERIFIED"
     FORBIDDEN = "FORBIDDEN"
     INSUFFICIENT_SUBSCRIPTION = "INSUFFICIENT_SUBSCRIPTION"
     UNAUTHORIZED = "UNAUTHORIZED"
@@ -253,6 +254,16 @@ def _checks(
             f"{data}/v1beta1/news?symbols=AAPL&limit=1",
             frozenset({"news"}),
         ),
+        (
+            "screener_most_actives_sip",
+            f"{data}/v1beta1/screener/stocks/most-actives?by=volume&top=1",
+            frozenset(),
+        ),
+        (
+            "screener_movers_sip",
+            f"{data}/v1beta1/screener/stocks/movers?top=1",
+            frozenset(),
+        ),
     )
 
 
@@ -263,9 +274,16 @@ def probe_rest(
     *,
     connect: bool = False,
     fetch: Fetch = _fetch,
+    only_checks: frozenset[str] | None = None,
 ) -> CapabilityReport:
     """Return only capability status; never expose account values or credentials."""
-    plan = _checks(config, as_of)
+    all_checks = _checks(config, as_of)
+    known_names = {name for name, _, _ in all_checks}
+    if only_checks is not None and not only_checks <= known_names:
+        raise ValueError("requested capability check name is unknown")
+    plan = tuple(
+        check for check in all_checks if only_checks is None or check[0] in only_checks
+    )
     paper_endpoint_validated = config.trading_base_url == PAPER_TRADING_URL
     try:
         credentials: PaperCredentials = config.resolve_credentials(environment)
@@ -294,6 +312,8 @@ def probe_rest(
             result = ProbeResult(name, ProbeStatus.FORBIDDEN, None)
         elif status_code == 429:
             result = ProbeResult(name, ProbeStatus.RATE_LIMITED, None)
+        elif status_code == 400:
+            result = ProbeResult(name, ProbeStatus.MALFORMED, False)
         elif status_code != 200:
             result = ProbeResult(name, ProbeStatus.UNAVAILABLE, None)
         elif len(body) > _MAX_BODY:
@@ -304,16 +324,22 @@ def probe_rest(
             except (json.JSONDecodeError, UnicodeDecodeError):
                 result = ProbeResult(name, ProbeStatus.MALFORMED, False)
             else:
-                shape_ok = (
-                    isinstance(decoded, list)
-                    if name == "market_calendar"
-                    else isinstance(decoded, dict) and required_fields <= decoded.keys()
-                )
-                result = ProbeResult(
-                    name,
-                    ProbeStatus.REACHABLE if shape_ok else ProbeStatus.MALFORMED,
-                    shape_ok,
-                )
+                if name.startswith("screener_"):
+                    result = ProbeResult(
+                        name, ProbeStatus.REACHABLE_SCHEMA_UNVERIFIED, None
+                    )
+                else:
+                    shape_ok = (
+                        isinstance(decoded, list)
+                        if name == "market_calendar"
+                        else isinstance(decoded, dict)
+                        and required_fields <= decoded.keys()
+                    )
+                    result = ProbeResult(
+                        name,
+                        ProbeStatus.REACHABLE if shape_ok else ProbeStatus.MALFORMED,
+                        shape_ok,
+                    )
         checks.append(result)
     return CapabilityReport(
         as_of,

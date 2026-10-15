@@ -1,5 +1,60 @@
 # Week 2 acceptance evidence
 
+## W2-05 team follow-up — limited SIP ranking capture/replay (2026-10-14)
+
+The implementation and unresolved acceptance dependencies are recorded in
+[W2-05 scanner acceptance](w2-05-scanner-acceptance.md). Independent quant/news
+and market-data primary-source retrieval, a verified public-only Cloud
+`gemma4:31b` development proposal and coordinator source validation informed this
+increment. The collector now captures exact bounded responses from the two
+SIP-derived ranking endpoints; an independent journal-backed projector validates
+the official `alpaca-py` v0.44.0 response contract, preserves provider ordering,
+keeps source computation and local availability clocks separate and inserts a
+limited-scope observation idempotently. It cannot qualify a strategy candidate,
+generate premarket ranks, supply float, mix SIP volumes with IEX RVOL or establish
+full-market scanner coverage.
+
+Authenticated live schema validation used only two GETs with `top=1` in an
+ephemeral local journal (probe date 2026-10-15 UTC). One most-actives row and two
+mover rows passed the parser; raw payloads and the temporary journal were deleted.
+Only redacted outcome/counts are recorded here. No account/order API, data purchase,
+live trading or formal paper evaluation was used. Earlier generic probe statuses
+remain historical; the pinned SDK and new field-level check resolve the narrow
+response-schema research gap, not G03/G04 or W2-05's full acceptance.
+
+Independent developer review identified future-provider-time leakage when a
+one-nanosecond future timestamp was floored in the event envelope. The corrected
+projector rejects such derived records, retains the raw response and audits the
+rejection. Actual replay tests cover +1 ns, +1 second, delayed processing and
+idempotency; a second independent review approved that correction. A read-only
+worker's unavailable bare `python` command was isolated to that invocation;
+resuming its original file inspection with `rtk read` succeeded. No global
+installation or environment setting changed; project checks use `uv run` Python.
+
+Final validation in the current working tree, using locked/offline dependencies:
+
+```text
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest -q
+  -> 148 passed; one upstream websockets.legacy deprecation warning
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline pytest tests/test_replay.py tests/test_scanner_rankings.py -q
+  -> 21 passed
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline ruff check src tests scripts
+  -> passed
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline mypy --strict src tests
+  -> passed, 46 source files
+rtk proxy env UV_CACHE_DIR=/mnt/t/alpaca-bot/var/uv-cache uv run --locked --offline ruff format --check src tests scripts
+  -> passed, 48 files
+rtk git diff --check
+  -> passed
+```
+
+W2-05 remains blocked on its original strategy/data dependencies. The unchanged
+three source profiles do not resolve their RVOL, continuation, regime and
+account-stage ambiguities; no verified point-in-time float source or complete
+Ross discovery evidence was established. Synthetic tests and these two small
+responses do not substitute for those inputs. Existing W3 changes were preserved;
+the full-suite check does not grant W3 or paper release acceptance.
+
 ## W2-05 through W2-08 gate review (2026-10-13)
 
 Week 1 dependency gate check: W1-05, W2-01, W2-02 and W2-04 are accepted, and W2-03's local transport/feed-health increment is checked in TODO. The Week 1 strategy and data gates are **not** accepted: both Ross and hybrid candidates remain research-only, G03/G04 remain open, and the current data matrix does not establish full-market SIP, point-in-time float, historical universe or IEX discovery eligibility. Therefore W2-05's current scanner path is blocked; no IEX-only full-market scanner or substitute thresholds were added. W2-05a remains deferred by the user.
@@ -119,6 +174,14 @@ For news, the [2025 toolkit](https://cdn.warriortrading.com/warriortrading.com/a
 Accordingly the W2-05 price/change/RVOL observations remain measurements only; the W2-06 age bands and news-to-market event linkage remain descriptive only. Neither child can move to strategy eligibility from these sources. A public-only Ollama Cloud `gemma4:31b` review concurred that a complete $500/1× IEX scanner is unsupported; its suggestion that Warrior ranking weights were unspecified was rejected because the official scanner page specifies the top-100 gap ranking. No model output supplied a trading rule.
 
 The bounded REST recovery path also captures historical Alpaca News pages. A source-attribution review found those records used the market-data `source_id` despite being journaled on the separate `alpaca_news` feed. News pages now use `source_id=alpaca_news`; the REST recovery contract test asserts both source and feed. This corrects provenance labeling only and does not establish entitlement, completeness, revision semantics, or news eligibility. Targeted verification: `pytest tests/test_rest_recovery.py -q` (4 passed), Ruff and strict mypy on the changed module/test, and `git diff --check` passed.
+
+#### 2026-10-14 — read-only Alpaca SIP screener entitlement probe
+
+The existing capability probe now includes Alpaca's official SIP-based `most-actives` and `movers` endpoints and supports `--sip-screeners-only`. That option selects exactly those two authenticated GETs and skips account, stock quote/trade, news and WebSocket checks. A valid JSON HTTP 200 is reported as `REACHABLE_SCHEMA_UNVERIFIED`, because Alpaca's public references do not document the response schema. It does not set `sip_equivalence_verified`, establish full-market scanner coverage, or qualify a Ross/hybrid candidate. HTTP 401/403/rate-limit/other responses remain separate statuses.
+
+Alpaca documents `most-actives` as real-time SIP-ranked by volume or trade count (up to 100 results) and `movers` as real-time SIP-based (up to 50 gainers and 50 losers). The references do not specify Basic-plan entitlement for these endpoints. The movers page says that before the regular-session reset it returns the previous market day's results; it therefore cannot be treated as a premarket gap scanner. See Alpaca's [most-actives reference](https://docs.alpaca.markets/us/reference/mostactives-1) and [movers reference](https://docs.alpaca.markets/us/v1.4.2/reference/movers-1), reviewed 2026-10-14.
+
+The account-scoped, narrowly configured probe returned `REACHABLE_SCHEMA_UNVERIFIED` for both endpoints using the locally stored paper credentials. This confirms the authenticated GETs returned valid JSON, but the probe intentionally discarded the response bodies; ranking records and response schema were not reviewed or retained. It establishes access to these two limited SIP-derived rankings only, not live SIP trade/quote/stream entitlement. `W2-05` remains blocked; no TODO acceptance checkbox changed. No account endpoint, order, purchase, or formal paper evaluation was used. Validation: `tests/test_capabilities.py` (7 passed), deterministic replay (4 passed), full suite (131 passed with one upstream deprecation warning), Ruff, strict mypy on 44 source files, format check on 46 files, and `git diff --check` passed. The existing AI news shadow evaluator already extracts source-linked factual spans and event types in an isolated, non-authoritative event; this follow-up made no change to news eligibility or AI authority.
 
 ## W2-01 — Event envelope and clocks (2026-10-05)
 

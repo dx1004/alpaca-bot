@@ -23,6 +23,14 @@ def main() -> None:
         help="Send read-only requests to the configured Alpaca paper/data endpoints",
     )
     parser.add_argument(
+        "--sip-screeners-only",
+        action="store_true",
+        help=(
+            "Check only Alpaca's two SIP-based screener endpoints; "
+            "skip account, feed, and news checks"
+        ),
+    )
+    parser.add_argument(
         "--credentials-file",
         type=Path,
         help="Local mode-0600 paper credential file from the setup script",
@@ -35,15 +43,26 @@ def main() -> None:
         else os.environ
     )
     report = probe_rest(
-        config, environment, datetime.now(UTC).date(), connect=args.connect
+        config,
+        environment,
+        datetime.now(UTC).date(),
+        connect=args.connect,
+        only_checks=(
+            frozenset({"screener_most_actives_sip", "screener_movers_sip"})
+            if args.sip_screeners_only
+            else None
+        ),
     )
-    stream_checks = probe_streams(config, environment, connect=args.connect)
+    stream_checks = (
+        ()
+        if args.sip_screeners_only
+        else probe_streams(config, environment, connect=args.connect)
+    )
     report = replace(
         report,
         stream_checks=stream_checks,
-        websocket_access_verified=all(
-            check.status is ProbeStatus.REACHABLE for check in stream_checks
-        ),
+        websocket_access_verified=bool(stream_checks)
+        and all(check.status is ProbeStatus.REACHABLE for check in stream_checks),
     )
     print(json.dumps(report.as_dict(), sort_keys=True))
 

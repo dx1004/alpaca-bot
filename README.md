@@ -39,3 +39,10 @@ Use `--replace` on the first command only when intentionally replacing a
 previously saved paper pair. The second command performs read-only account,
 data and WebSocket capability checks; it does not place orders. Keep the
 credential file on this machine and never paste its contents into chat.
+
+To check only access to Alpaca's SIP-based market-ranker endpoints, use
+`--sip-screeners-only --connect` with the same credential file. This sends
+only two read-only GET requests and skips account, quote/trade, news, and
+WebSocket checks. A successful response is reported as
+`REACHABLE_SCHEMA_UNVERIFIED`; it does not establish complete market scanning,
+Ross fidelity, or `sip_equivalence_verified`.

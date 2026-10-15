@@ -13,6 +13,15 @@ from urllib.parse import urlencode
 from alpaca_ross_bot.config import PaperCredentials
 from alpaca_ross_bot.http_transport import bounded_alpaca_get
 from alpaca_ross_bot.journal import Journal
+from alpaca_ross_bot.scanner_rankings import (
+    SCREENER_FEED,
+    RankingBy,
+    RankingKind,
+    RankingObservationError,
+    RankingObservationResult,
+    journal_sip_ranking_observation,
+    ranking_request,
+)
 
 if TYPE_CHECKING:
     from alpaca_ross_bot.scanner_snapshot import SnapshotObservationResult
@@ -91,6 +100,32 @@ class AlpacaScannerData:
         self._max_response_bytes = max_response_bytes
         self._fetch = fetch or bounded_alpaca_get
         self._clock = clock or (lambda: datetime.now(UTC))
+
+    def collect_sip_rankings(
+        self, kind: RankingKind, *, top: int, by: RankingBy | None = None
+    ) -> RankingObservationResult:
+        """Capture a limited SIP-derived list independently of IEX features."""
+        url, query = ranking_request(kind, top=top, by=by)
+        _, received_at, sequence = self._request_and_journal(
+            url,
+            feed=SCREENER_FEED,
+            event_kind="SIP_SCREENER_RAW_RESPONSE",
+            metadata={"ranking_kind": kind, "top": top, "by": by, "query": query},
+        )
+        try:
+            return journal_sip_ranking_observation(
+                self._journal,
+                source_response_sequence=sequence,
+                processed_at=self._now_after(received_at),
+            )
+        except RankingObservationError:
+            self._reject_response(
+                sequence,
+                received_at,
+                "ranking schema or provenance invalid",
+                feed=SCREENER_FEED,
+            )
+            raise
 
     def collect_active_equity_assets(self) -> AssetDirectorySnapshot:
         """Capture Alpaca's current active equity asset catalog as evidence."""

@@ -35,6 +35,24 @@ def test_absent_credentials_block_all_requests() -> None:
     assert not report.subscription_limits_verified
 
 
+def test_screener_only_probe_skips_other_capabilities_without_credentials() -> None:
+    config = PaperConfig.from_mapping(PAPER_VALUES)
+    report = probe_rest(
+        config,
+        {},
+        date(2026, 9, 28),
+        connect=True,
+        only_checks=frozenset({"screener_most_actives_sip", "screener_movers_sip"}),
+    )
+    assert [check.name for check in report.checks] == [
+        "screener_most_actives_sip",
+        "screener_movers_sip",
+    ]
+    assert all(
+        check.status is ProbeStatus.BLOCKED_CREDENTIALS for check in report.checks
+    )
+
+
 def test_read_only_plan_and_report_redaction() -> None:
     config = PaperConfig.from_mapping(PAPER_VALUES)
     visited: list[str] = []
@@ -70,7 +88,7 @@ def test_read_only_plan_and_report_redaction() -> None:
         connect=True,
         fetch=fake_fetch,
     )
-    assert len(visited) == 9
+    assert len(visited) == 11
     assert all(
         url.startswith((config.trading_base_url, config.market_data_base_url))
         for url in visited
@@ -82,9 +100,55 @@ def test_read_only_plan_and_report_redaction() -> None:
         ).status
         is ProbeStatus.FORBIDDEN
     )
+    assert all(
+        check.status is ProbeStatus.REACHABLE_SCHEMA_UNVERIFIED
+        and check.required_fields_present is None
+        for check in report.checks
+        if check.name.startswith("screener_")
+    )
+    assert not report.sip_equivalence_verified
     assert "secret" not in str(report.as_dict())
     assert "500" not in str(report.as_dict())
     assert report.as_dict()["paper_trading_endpoint_validated"] is True
+    assert not report.sip_equivalence_verified
+
+
+def test_sip_screener_probe_reports_forbidden_without_claiming_schema() -> None:
+    config = PaperConfig.from_mapping(PAPER_VALUES)
+
+    def fake_fetch(url: str, headers: object) -> tuple[int, bytes]:
+        if "/screener/" in url:
+            return 403, b""
+        if url.endswith("/v2/account"):
+            return (
+                200,
+                b'{"status":"ACTIVE","currency":"USD","cash":"500","equity":"500","buying_power":"500","multiplier":"1"}',
+            )
+        if "/v2/calendar?" in url:
+            return 200, b"[]"
+        if "/v2/assets/" in url:
+            return 200, b'{"symbol":"AAPL","status":"active","tradable":true}'
+        if "/v2/clock" in url:
+            return (
+                200,
+                b'{"timestamp":"x","is_open":false,"next_open":"x","next_close":"x"}',
+            )
+        if "/news?" in url:
+            return 200, b'{"news":[]}'
+        if "/trades/" in url:
+            return 200, b'{"trades":{}}'
+        return 200, b'{"quotes":{}}'
+
+    report = probe_rest(
+        config,
+        {"ALPACA_PAPER_KEY_ID": "key", "ALPACA_PAPER_SECRET_KEY": "secret"},
+        date(2026, 9, 28),
+        connect=True,
+        fetch=fake_fetch,
+    )
+    screeners = [check for check in report.checks if check.name.startswith("screener_")]
+    assert len(screeners) == 2
+    assert all(check.status is ProbeStatus.FORBIDDEN for check in screeners)
     assert not report.sip_equivalence_verified
 
 
