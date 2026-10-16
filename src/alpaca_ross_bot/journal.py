@@ -445,6 +445,34 @@ class Journal:
             dedupe_namespace="incident_evidence",
         )
 
+    def apply_strategy_risk_event(
+        self,
+        *,
+        account_ref: str,
+        state_key: str,
+        dedupe_key: str,
+        event_kind: str,
+        payload: bytes,
+        received_at: datetime,
+        reduce: Callable[[object | None, bool, int], object],
+        prepare_payload: Callable[[bytes], bytes] | None = None,
+    ) -> EventEnvelope | None:
+        """Atomically own daily risk without mixing order/incident evidence."""
+        return self._apply_private_event(
+            account_ref=account_ref,
+            state_key=state_key,
+            dedupe_key=dedupe_key,
+            event_kind=event_kind,
+            payload=payload,
+            received_at=received_at,
+            reduce=reduce,
+            identity_payload=None,
+            prepare_payload=prepare_payload,
+            namespace="strategy_risk",
+            source_id="ALPACA_STRATEGY_RISK",
+            dedupe_namespace="strategy_risk_evidence",
+        )
+
     def _apply_private_event(
         self,
         *,
@@ -560,11 +588,17 @@ class Journal:
     def read_incident_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
         return self._read_private_events("ALPACA_INCIDENT", None)
 
+    def read_strategy_risk_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        return self._read_private_events("ALPACA_STRATEGY_RISK", None)
+
     def read_order_evidence_cache(self, account_ref: str) -> dict[str, object]:
         return self._read_evidence_cache("order_evidence", account_ref)
 
     def read_incident_evidence_cache(self, account_ref: str) -> dict[str, object]:
         return self._read_evidence_cache("incident_evidence", account_ref)
+
+    def read_strategy_risk_evidence_cache(self, account_ref: str) -> dict[str, object]:
+        return self._read_evidence_cache("strategy_risk_evidence", account_ref)
 
     def _read_evidence_cache(
         self, namespace: str, account_ref: str

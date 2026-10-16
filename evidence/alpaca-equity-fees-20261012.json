@@ -1,0 +1,15 @@
+{
+  "policy_id": "ALPACA_ORDINARY_RETAIL_NMS_FEES_20261012",
+  "source_url": "https://files.alpaca.markets/disclosures/library/BrokFeeSched.pdf",
+  "document_sha256": "814767d3dbd44d89bfbf5448eb5eac85a894740bf1974db2294aae448a6fed94",
+  "document_revision": "2026-10-12",
+  "checked_on": "2026-10-16",
+  "effective_date": "NOT_SEPARATELY_STATED",
+  "scope": "ordinary retail US NMS equities, standard routing; excludes Elite Smart Router, partner and non-retail arrangements",
+  "sec_sell_value_rate": "0.0000206",
+  "taf_sell_share_rate": "0",
+  "cat_both_sides_share_rate": "0.000003",
+  "rounding": "SEPARATE_FEE_TYPE_DAILY_ACCOUNT_TOTAL_CEIL_CENT",
+  "paper_regulatory_fees_simulated": false,
+  "runtime_authority": false
+}

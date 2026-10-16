@@ -527,3 +527,127 @@ raw-stream trigger eligibility. These sources do not turn historical bars into
 point-in-time inputs or promise the user's 1000ms research bounds. Actual source
 qualification and runtime ownership remain open; original W3-01/W3-02 are not
 checked complete, and W3-06/07/08 or formal paper are not unblocked.
+
+## W3-01/W3-02 — Actual input capture and durable risk increment (2026-10-16)
+
+User request: complete actual market/trade-condition, account/fee input and
+operational daily-risk ownership qualification. This increment completes the
+bounded collection, exact fee calculations and offline persistence checks;
+**actual executable acceptance remains blocked** by the specific gates below.
+No broker order, cancel, account reset, data purchase or formal paper evaluation
+occurred. The Ross baseline remains separate from the hybrid research version.
+
+### Actual evidence, not synthetic readiness
+
+`scripts/qualify_risk_inputs.py --connect --stream-seconds 10` used the existing
+paper credentials locally, GET-only account/configuration/position/open-order/
+activity/calendar endpoints and a finite IEX SPY stream. Raw bodies, request
+clocks, source identities and hashes are retained in a new owner-only WSL
+`~/.local/state/alpaca-bot/risk-input-qualification-20261016/journal.sqlite3`.
+It did not reuse the order-engineering journal. Summaries omit account IDs,
+balances, credential values and raw account bodies. `PRAGMA integrity_check`
+and immutable event read/hash verification passed.
+
+Initial capture ended 18:53:51 UTC. Independent review found an integration
+defect: producer requested `nested=true` while the flat-order inspector required
+`nested=false`. This was corrected, covered by the collector integration test,
+and a new capture was appended, preserving the first capture. Corrected capture
+ended **18:58:40 UTC**, account event 331, calendar 330, condition metadata
+332–337. Its one activity page is an observation, not completeness proof.
+
+- Actual equity does **not** equal the user's USD 500 target. Exact account
+  values stay private. No reset or artificial substitution of 500 occurred.
+- Capture is after the session open. It cannot create today's pre-session E0;
+  the collector deliberately freezes no baseline, even on a pre-open run.
+- Pending-transfer fields and day-trading buying power were absent. Missing
+  fields stay unknown, not zero. Day-trading buying power is not inferred to
+  grant leverage or made a strategy requirement. The restrictive flat 1x
+  available-funds profile remains `UNQUALIFIED`; settlement is `UNKNOWN`.
+- Cash-flow/charge completeness, reservations, bid marks and activity-page
+  completeness are not established by a GET response or an empty positions list.
+  Actual ledger inputs are therefore not promoted to `RiskAccount`/`RiskLedger`.
+- Corrected SPY sample has 1,046 observations: 1,025 quotes and 21 trades. All
+  measured ages met the one-second research bounds at collection time. This is
+  not a provider-clock or latency guarantee, strategy sample, or SIP parity.
+  Closing the finite observer requires continuity recovery before any reuse.
+
+The initial checker rejected the 21 trades because it stripped a condition code.
+Actual official metadata at
+`https://data.alpaca.markets/v2/stocks/meta/conditions/trade?tape=A` and `tape=B`
+maps exact **U+0020** to **Regular Sale**. Symbol/exchange validation must remain
+strict, but condition codes must preserve this legitimate byte. This schema
+correction does not accept a strategy trigger whitelist. Unknown/unmapped
+conditions and corrections remain explicit; runtime eligibility stays false.
+
+### Fee source and calculation
+
+The canonical [Alpaca brokerage fee schedule](https://files.alpaca.markets/disclosures/library/BrokFeeSched.pdf)
+is revised **2026-10-12**. Its revision is not asserted to be a separately stated
+effective date. The exact source PDF hash and verified policy are bound in
+`evidence/alpaca-equity-fees-20261012.json`; policy-byte changes fail verification.
+For the documented ordinary retail NMS stock scope: ordinary commissions are
+zero; SEC sells use 0.0000206 of executed value; TAF is zero; CAT uses 0.000003 per
+executed equivalent NMS share on both sides. Each fee type is aggregated daily
+per account and independently rounded upward to a cent. Do not import the older
+support page's per-order rounding or other account/option/router fee profiles.
+
+`equity_fees.py` uses exact fractions, duplicate/conflicting-fill detection and
+separate daily ceilings. Prospective leg bounds conservatively bound incremental
+daily fees; they are not an actual broker per-order minimum. A stop-price fee
+calculation does not bound every possible exit price or guarantee a stop fill.
+Neither a policy hash nor this calculator establishes actual account tariff
+applicability or `FeeBounds.verified`.
+
+[Alpaca paper documentation](https://docs.alpaca.markets/us/docs/paper-trading)
+states paper omits regulatory fees and several live execution effects. User
+choice of conservative source-based paper risk charges versus platform-actual
+paper charges is pending; raw broker and modelled fee ledgers must remain
+separate. No choice has been silently made.
+
+### Durable owner and honest authority boundary
+
+`risk_journal.py` owns one account/version projection via Journal's serialized
+transaction and immutable event/rebuild checks. It preserves daily E0 identity,
+loss streak/latch, completed roundtrip identities and a single held slot across
+restart. Only matching reconciled terminal evidence can retire a held slot;
+changed duplicate outcomes, stale clocks and corrupted caches fail closed.
+Referenced events must exist, hash-verify and be visible before the decision
+clock, both before resolving inputs and during replay.
+
+Independent review reproduced an important initial gap: injected resolver facts
+could yield a positive offline size even with nonexistent references. References
+are now checked, and the resolver is expressly **OFFLINE_FIXTURE_ONLY**, including
+persisted qualification and public `runtime_qualified=False` with explicit
+`ACTUAL_RISK_INPUT_QUALIFIER_UNAVAILABLE` reason. Source presence alone does not
+prove account semantics. No injected callback is an actual input acceptance
+adapter; constructing the owner without one refuses observe/reserve. A concrete,
+source-qualified operational account/fee/reconciliation resolver remains open.
+
+### Remaining acceptance, without lowering the original gates
+
+1. Resolve the paper fee-policy choice and actual account tariff applicability.
+2. Obtain the user's intended dedicated USD 500 paper account configuration
+   without destructive reset by implication; qualify its available funds from
+   evidence, including handling omitted fields without inventing values.
+3. Acquire a genuine pre-session E0 for a future session, bind it to account and
+   official calendar, and implement/accept the actual source-derived ledger and
+   reconciliation resolver. Intraday snapshots cannot backfill it.
+4. Accept source-specific clock, trade-condition and quote-condition semantics
+   for the hybrid version; IEX remains `NOT_SIP_EQUIVALENT`. Schema correctness
+   and descriptive names do not authorize trade selection.
+5. Actual fill/protection and stop-to-target handoff qualification remain separate
+   W3-06/07 gates. No broker-writing experiment was used to bypass them.
+
+Validation: full offline regression **1,128 passed** (one existing upstream
+websockets deprecation); Ruff/format and strict mypy passed for the new scope
+(98 source/test/script files). Subsequent condition-code regression/replay and
+final independent findings disposition are recorded below. W3-01/W3-02 remain
+`[!]`; no full acceptance or paper/order authority is claimed.
+
+Final disposition: independent review passed all three corrections within the
+stated offline scope, running **129 targeted tests**. Coordinator targeted checks
+also passed 129 tests, Ruff/format and strict mypy. A read-only replay of the
+preserved corrected capture (no new network sample) confirms **all 1,025 quotes
+and 21 trades pass the corrected structure checks**. The original collection
+summary is preserved rather than rewritten. This does not retroactively accept
+provider-clock origin, condition-selection policy or runtime qualification.
