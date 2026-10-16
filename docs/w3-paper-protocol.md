@@ -199,6 +199,14 @@ Expected outputs, variant fixtures and assertion IDs must be frozen from the
 accepted W3 contracts. Synthetic passes cannot stand in for W3-07 actual API
 evidence, and actual engineering orders never count as natural strategy cases.
 
+The [October 16 fixture binding](../evidence/w3-engineering-fixture-binding-20261016.json)
+now maps all six groups to nine existing test functions and their exact source
+hashes. The current related regression passed 121 tests. This is a draft
+engineering evidence index, not the final release freeze: synthetic acceptance
+flags do not prove production acceptance, the release build must be bound and
+retested, and actual W3-07 API evidence remains absent. The review assignments,
+oracle, executable versions and other registration fields above remain open.
+
 ## 6. Monitoring, incident and restart rules
 
 Daily monitoring is read-only except actions explicitly permitted by the frozen

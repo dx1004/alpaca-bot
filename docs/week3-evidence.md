@@ -1042,3 +1042,17 @@ or unresolved; paper observations cannot be promoted into undocumented broker
 guarantees. W3 acceptance and the user's continuous-protection requirement are
 unchanged. Vendor clarification is necessary only for guarantees still missing
 after the supported public contract and bounded observations are evaluated.
+
+### Current W3-06/W3-08 evidence binding
+
+The related incident, private journal, entry cancellation, historical ownership
+reader and joined risk-input regression passed **121 tests** on the current
+worktree. `evidence/w3-engineering-fixture-binding-20261016.json` binds nine
+existing test functions, their source hashes and all six mandatory fault groups;
+the protocol now references this draft binding. Functions were resolved using
+the Python AST before recording references. The binding explicitly excludes
+actual broker acceptance, release freeze and runtime authority. It does not
+freeze missing reviewer identities or substitute synthetic policy flags for
+W3-02/W3-06 acceptance. W3-07 still has no actual order-cycle evidence. The
+protection contract, safe dispatch/cleanup implementation and full prerequisite
+acceptance remain open; none is replaced with a weaker policy.

@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "status": "DRAFT_FIXTURE_BINDING_NOT_RELEASE_FREEZE",
+  "as_of": "2026-10-16",
+  "runtime_authorized": false,
+  "groups": [
+    {
+      "group": "lost_response",
+      "cases": [
+        {
+          "node_id": "tests/test_incident_state.py::test_unknown_outcomes_preserve_protection_without_retry_or_finality",
+          "file_sha256": "0645347f1600195d64fb26eb0c23f1cd40a629f934aaf53391ba8fdd6b72f759",
+          "line": 137
+        }
+      ],
+      "evidence_scope": "OFFLINE_SYNTHETIC",
+      "actual_broker_scenario_accepted": false
+    },
+    {
+      "group": "disconnect",
+      "cases": [
+        {
+          "node_id": "tests/test_incident_state.py::test_disconnect_requires_verified_recovery_and_preserves_existing_stop",
+          "file_sha256": "0645347f1600195d64fb26eb0c23f1cd40a629f934aaf53391ba8fdd6b72f759",
+          "line": 156
+        }
+      ],
+      "evidence_scope": "OFFLINE_SYNTHETIC",
+      "actual_broker_scenario_accepted": false
+    },
+    {
+      "group": "persistence_failure",
+      "cases": [
+        {
+          "node_id": "tests/test_incident_state.py::test_disk_failure_fact_never_clears_obligations_or_admits_exposure",
+          "file_sha256": "0645347f1600195d64fb26eb0c23f1cd40a629f934aaf53391ba8fdd6b72f759",
+          "line": 179
+        },
+        {
+          "node_id": "tests/test_incident_journal.py::test_storage_failure_rolls_back_raw_projection_and_deduplication",
+          "file_sha256": "b67e9fae6299bf61a72b457b317c860c4057c99b1f2c03c8af9c1824b1885537",
+          "line": 142
+        },
+        {
+          "node_id": "tests/test_paper_order_cancel.py::test_cancel_marker_write_failure_prevents_delete",
+          "file_sha256": "038130fc3521ecd1cb7b1265ce1fafd00ce548697e0034402df67d2c96b0c069",
+          "line": 308
+        }
+      ],
+      "evidence_scope": "OFFLINE_SYNTHETIC",
+      "actual_broker_scenario_accepted": false
+    },
+    {
+      "group": "cancel_fill_race",
+      "cases": [
+        {
+          "node_id": "tests/test_incident_state.py::test_cancel_fill_race_owns_racing_fills_and_requires_more_protection",
+          "file_sha256": "0645347f1600195d64fb26eb0c23f1cd40a629f934aaf53391ba8fdd6b72f759",
+          "line": 192
+        }
+      ],
+      "evidence_scope": "OFFLINE_SYNTHETIC",
+      "actual_broker_scenario_accepted": false
+    },
+    {
+      "group": "partial_fill_restart",
+      "cases": [
+        {
+          "node_id": "tests/test_incident_state.py::test_partial_fill_crash_rebuild_retains_quantity_and_cancel_obligations",
+          "file_sha256": "0645347f1600195d64fb26eb0c23f1cd40a629f934aaf53391ba8fdd6b72f759",
+          "line": 214
+        },
+        {
+          "node_id": "tests/test_incident_journal.py::test_restart_preserves_fills_protection_and_requires_recovery",
+          "file_sha256": "b67e9fae6299bf61a72b457b317c860c4057c99b1f2c03c8af9c1824b1885537",
+          "line": 93
+        }
+      ],
+      "evidence_scope": "OFFLINE_SYNTHETIC",
+      "actual_broker_scenario_accepted": false
+    },
+    {
+      "group": "double_exit",
+      "cases": [
+        {
+          "node_id": "tests/test_incident_state.py::test_both_exits_filling_detects_reverse_without_auto_liquidation",
+          "file_sha256": "0645347f1600195d64fb26eb0c23f1cd40a629f934aaf53391ba8fdd6b72f759",
+          "line": 241
+        }
+      ],
+      "evidence_scope": "OFFLINE_SYNTHETIC",
+      "actual_broker_scenario_accepted": false
+    }
+  ],
+  "validation": {
+    "command": "rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-w306-current tests/test_incident_state.py tests/test_incident_journal.py tests/test_paper_order_cancel.py tests/test_order_read_evidence.py tests/test_risk_input_evidence.py",
+    "passed": 121,
+    "exit_code": 0
+  },
+  "limitations": [
+    "Hashes bind current test source, not an accepted runtime release.",
+    "Fixture acceptance flags in tests are synthetic inputs, not production acceptance.",
+    "No paper order was submitted; no formal sample or review assignment is frozen."
+  ]
+}
