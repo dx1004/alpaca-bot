@@ -676,3 +676,19 @@ under “Key Differences Between Paper Trading API vs Live Trading API.” This
 does not establish the user's current remaining slots. The user has been asked to
 check the supported dialog, without sending credentials through chat. W3-08 now
 records the confirmed separation policy and this precise provisioning gap.
+
+User confirmation received 2026-10-16: the new-account dialog allowed USD 500
+and the dedicated account has been created. This resolves the user-side UI and
+creation question, not authenticated broker verification. Its distinct identity,
+actual balance, account capabilities, positions/open orders and account-specific
+credentials remain to be verified locally through GET-only capture in a new
+private journal. Preserve the old account and credential file; do not silently
+reuse the earlier capture as evidence for the new account.
+
+Credential preparation: `scripts/configure_paper_credentials.py` now accepts
+an explicit `--output` path, preserves existing files unless `--replace` is
+explicit, and refuses a getpass fallback that cannot guarantee hidden input.
+Use a distinct owner-only WSL file for the dedicated account; no new secret
+has been supplied, loaded or saved by this change. The old default file remains
+untouched. Verification covered the existing credential storage tests (2 pass),
+the CLI help, Ruff/format and strict mypy; broker verification remains pending.

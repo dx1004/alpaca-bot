@@ -69,7 +69,10 @@ that new account. No deletion of the existing account is required by these
 instructions. The current creation dialog's USD 500 field/minimum and the
 user's remaining account capacity are not verified; legacy reset/balance
 wording does not prove a current arbitrary-balance creation control. The actual
-dedicated account remains unverified. Do not implement separation
+dedicated account remains unverified through authenticated API evidence. The
+user subsequently confirmed on 2026-10-16 that the dialog allowed USD 500 and
+the dedicated account was created; independent GET-only account verification
+is still required. Do not implement separation
 by resetting the existing account, substituting a local virtual balance, or
 merely renaming a state directory. Bind the dedicated account's own verified
 identity and credentials to its protected state; reject credentials bound to a
