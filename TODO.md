@@ -176,7 +176,7 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 - [-] **W3-08 [P0] Pre-register four-week paper protocol**
   Depends: an accepted executable Ross or separately labeled hybrid version, W2-08, W3-02. Freeze window, minimum natural events/candidates, engineering scenarios, fidelity holdout and restart rules.  
   Accept: no threshold can be changed from observed paper P&L.
-  Draft 2026-10-15: the user selected engineering reliability and strategy-rule fidelity as primary objectives; P&L is descriptive only. [Four-week protocol](docs/w3-paper-protocol.md) declares the proposed window, complete census, structural natural-coverage minima, prospective independent holdout, six separate fault groups and fixed failure/inconclusive/restart rules. It is not preregistered for launch: accepted executable/risk/data/incident versions, actual freeze fields/calendar/account baseline and reviewer assignments are still missing. No formal window has started.
+  Draft 2026-10-15: the user selected engineering reliability and strategy-rule fidelity as primary objectives; P&L is descriptive only. [Four-week protocol](docs/w3-paper-protocol.md) declares the proposed window, complete census, structural natural-coverage minima, prospective independent holdout, six separate fault groups and fixed failure/inconclusive/restart rules. It is not preregistered for launch: accepted executable/risk/data/incident versions, final freeze fields, broker-confirmed calendar/account baseline and reviewer assignments are still missing (the source-checked expected calendar is draft only). No formal window has started.
 
 ## Week 4 — Integration, audit, and release freeze
 

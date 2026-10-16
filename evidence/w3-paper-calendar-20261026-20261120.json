@@ -1,0 +1,196 @@
+{
+  "status": "DRAFT_EXPECTED_CALENDAR_NOT_LAUNCH_ACCEPTED",
+  "window_id": "PROPOSED_20261026_20261120",
+  "checked_on": "2026-10-16",
+  "exchange_timezone": "America/New_York",
+  "expected_session_count": 20,
+  "scheduled_closures_in_window": [],
+  "scheduled_early_closes_in_window": [],
+  "sources": [
+    {
+      "url": "https://www.nyse.com/trade/hours-calendars",
+      "scope": "2026 published equity holiday exceptions and core hours"
+    },
+    {
+      "url": "https://www.nyse.com/publicdocs/nyse/ICE_NYSE_2026_Yearly_Trading_Calendar.pdf",
+      "scope": "2026 annual exchange calendar"
+    },
+    {
+      "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
+      "scope": "2026 published US equity holiday exceptions and regular hours"
+    },
+    {
+      "url": "https://www.nist.gov/pml/time-and-frequency-division/popular-links/daylight-saving-time-dst",
+      "scope": "2026-11-01 DST transition; updated 2026-02-09"
+    }
+  ],
+  "derivation": "Explicit four scheduled session weeks after checking exchange holiday and early-close exceptions; UTC instants calculated with Python zoneinfo, not a runtime weekday-only calendar.",
+  "launch_authorized": false,
+  "limitations": [
+    "Future exchange notices and emergency closures remain possible.",
+    "Revalidate broker calendar, clock and actual session state before launch; bind the accepted calendar digest in the final release manifest.",
+    "If prerequisites miss the proposed start, preregister a new complete four-week window."
+  ],
+  "sessions": [
+    {
+      "date": "2026-10-26",
+      "open_local": "2026-10-26T09:30:00-04:00",
+      "close_local": "2026-10-26T16:00:00-04:00",
+      "open_utc": "2026-10-26T13:30:00+00:00",
+      "close_utc": "2026-10-26T20:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-10-27",
+      "open_local": "2026-10-27T09:30:00-04:00",
+      "close_local": "2026-10-27T16:00:00-04:00",
+      "open_utc": "2026-10-27T13:30:00+00:00",
+      "close_utc": "2026-10-27T20:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-10-28",
+      "open_local": "2026-10-28T09:30:00-04:00",
+      "close_local": "2026-10-28T16:00:00-04:00",
+      "open_utc": "2026-10-28T13:30:00+00:00",
+      "close_utc": "2026-10-28T20:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-10-29",
+      "open_local": "2026-10-29T09:30:00-04:00",
+      "close_local": "2026-10-29T16:00:00-04:00",
+      "open_utc": "2026-10-29T13:30:00+00:00",
+      "close_utc": "2026-10-29T20:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-10-30",
+      "open_local": "2026-10-30T09:30:00-04:00",
+      "close_local": "2026-10-30T16:00:00-04:00",
+      "open_utc": "2026-10-30T13:30:00+00:00",
+      "close_utc": "2026-10-30T20:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-02",
+      "open_local": "2026-11-02T09:30:00-05:00",
+      "close_local": "2026-11-02T16:00:00-05:00",
+      "open_utc": "2026-11-02T14:30:00+00:00",
+      "close_utc": "2026-11-02T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-03",
+      "open_local": "2026-11-03T09:30:00-05:00",
+      "close_local": "2026-11-03T16:00:00-05:00",
+      "open_utc": "2026-11-03T14:30:00+00:00",
+      "close_utc": "2026-11-03T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-04",
+      "open_local": "2026-11-04T09:30:00-05:00",
+      "close_local": "2026-11-04T16:00:00-05:00",
+      "open_utc": "2026-11-04T14:30:00+00:00",
+      "close_utc": "2026-11-04T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-05",
+      "open_local": "2026-11-05T09:30:00-05:00",
+      "close_local": "2026-11-05T16:00:00-05:00",
+      "open_utc": "2026-11-05T14:30:00+00:00",
+      "close_utc": "2026-11-05T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-06",
+      "open_local": "2026-11-06T09:30:00-05:00",
+      "close_local": "2026-11-06T16:00:00-05:00",
+      "open_utc": "2026-11-06T14:30:00+00:00",
+      "close_utc": "2026-11-06T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-09",
+      "open_local": "2026-11-09T09:30:00-05:00",
+      "close_local": "2026-11-09T16:00:00-05:00",
+      "open_utc": "2026-11-09T14:30:00+00:00",
+      "close_utc": "2026-11-09T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-10",
+      "open_local": "2026-11-10T09:30:00-05:00",
+      "close_local": "2026-11-10T16:00:00-05:00",
+      "open_utc": "2026-11-10T14:30:00+00:00",
+      "close_utc": "2026-11-10T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-11",
+      "open_local": "2026-11-11T09:30:00-05:00",
+      "close_local": "2026-11-11T16:00:00-05:00",
+      "open_utc": "2026-11-11T14:30:00+00:00",
+      "close_utc": "2026-11-11T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-12",
+      "open_local": "2026-11-12T09:30:00-05:00",
+      "close_local": "2026-11-12T16:00:00-05:00",
+      "open_utc": "2026-11-12T14:30:00+00:00",
+      "close_utc": "2026-11-12T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-13",
+      "open_local": "2026-11-13T09:30:00-05:00",
+      "close_local": "2026-11-13T16:00:00-05:00",
+      "open_utc": "2026-11-13T14:30:00+00:00",
+      "close_utc": "2026-11-13T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-16",
+      "open_local": "2026-11-16T09:30:00-05:00",
+      "close_local": "2026-11-16T16:00:00-05:00",
+      "open_utc": "2026-11-16T14:30:00+00:00",
+      "close_utc": "2026-11-16T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-17",
+      "open_local": "2026-11-17T09:30:00-05:00",
+      "close_local": "2026-11-17T16:00:00-05:00",
+      "open_utc": "2026-11-17T14:30:00+00:00",
+      "close_utc": "2026-11-17T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-18",
+      "open_local": "2026-11-18T09:30:00-05:00",
+      "close_local": "2026-11-18T16:00:00-05:00",
+      "open_utc": "2026-11-18T14:30:00+00:00",
+      "close_utc": "2026-11-18T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-19",
+      "open_local": "2026-11-19T09:30:00-05:00",
+      "close_local": "2026-11-19T16:00:00-05:00",
+      "open_utc": "2026-11-19T14:30:00+00:00",
+      "close_utc": "2026-11-19T21:00:00+00:00",
+      "scheduled_early_close": false
+    },
+    {
+      "date": "2026-11-20",
+      "open_local": "2026-11-20T09:30:00-05:00",
+      "close_local": "2026-11-20T16:00:00-05:00",
+      "open_utc": "2026-11-20T14:30:00+00:00",
+      "close_utc": "2026-11-20T21:00:00+00:00",
+      "scheduled_early_close": false
+    }
+  ]
+}

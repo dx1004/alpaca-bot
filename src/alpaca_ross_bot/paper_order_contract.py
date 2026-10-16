@@ -103,7 +103,7 @@ def validate_saved_request(raw: str) -> dict[str, object]:
     """Accept only the explicitly supported simple-equity engineering shape."""
     intent = decode_broker_json(raw)
     required = {"client_order_id", "symbol", "qty", "side", "type", "time_in_force"}
-    optional = {"limit_price", "order_class", "extended_hours"}
+    optional = {"limit_price", "stop_price", "order_class", "extended_hours"}
     if (
         not isinstance(intent, dict)
         or not required <= set(intent)
@@ -116,7 +116,8 @@ def validate_saved_request(raw: str) -> dict[str, object]:
             for field in ("client_order_id", "symbol")
         )
         or intent["side"] not in ("buy", "sell")
-        or intent["type"] not in ("market", "limit")
+        or intent["type"] not in ("market", "limit", "stop")
+        or (intent["type"] == "stop" and intent["side"] != "sell")
         or intent["time_in_force"] != "day"
         or intent.get("order_class", "simple") != "simple"
         or intent.get("extended_hours", False) is not False
@@ -127,7 +128,18 @@ def validate_saved_request(raw: str) -> dict[str, object]:
         if _number(intent.get("limit_price")) <= 0:
             raise PaperContractError("engineering limit price must be positive")
     elif "limit_price" in intent:
-        raise PaperContractError("market request cannot specify limit price")
+        raise PaperContractError(f"{intent['type']} request cannot specify limit price")
+    if intent["type"] == "stop":
+        price = _number(intent.get("stop_price"))
+        if price <= 0:
+            raise PaperContractError("engineering stop price must be positive")
+        price_tuple = price.as_tuple()
+        permitted_places = 2 if price >= 1 else 4
+        excess_places = -int(price_tuple.exponent) - permitted_places
+        if excess_places > 0 and any(price_tuple.digits[-excess_places:]):
+            raise PaperContractError("engineering stop price is outside its tick grid")
+    elif "stop_price" in intent:
+        raise PaperContractError("non-stop request cannot specify stop price")
     return intent
 
 

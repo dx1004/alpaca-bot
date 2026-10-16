@@ -346,3 +346,78 @@ The sandboxed async executor-shutdown ENV_FAULT recurred during independent
 verification; the affected run was stopped with exit 130. Static/synchronous
 checks remained safe, approved full execution completed, and no application or
 global-environment workaround was applied. Global sandbox repair is not claimed.
+
+
+### Protection continuity decision and stop contract follow-up (2026-10-16)
+
+The user chose **retain continuous protection and continue verifying Alpaca's
+supported handoff**. A cancel-confirm-submit gap is therefore not an accepted
+adaptation. This decision resolves the research-route preference, not the
+broker capability or W3-06 dependency. No order, cancellation, paid data, live
+trading or formal paper is authorized by this follow-up or the heartbeat.
+
+Public source review still does not establish an atomic standalone-stop-to-OCO
+conversion, concurrent target installation against stop-reserved inventory, or
+atomic stop-quantity growth with racing entry fills. Alpaca's own forum reply
+on [2025-08-15](https://forum.alpaca.markets/t/updating-profit-and-stoploss/11641)
+says complex-order quantity cannot be amended; its
+[2021-06-24/25 explanation](https://forum.alpaca.markets/t/unable-to-close-positions/6024)
+describes sell-quantity reservations and waiting for cancellation confirmation.
+These older replies supplement current API documentation; neither proves a
+current atomic mechanism absent. The minimal unresolved broker questions are:
+
+1. Which retail Trading API endpoint/fields attach a final target to an existing
+   working stop while that original stop remains executable throughout?
+2. What documented atomic boundary increases protection for late entry fills,
+   and prevents overselling if the stop and additional entry fill concurrently?
+3. What exact rejection, timeout, replacement and recovery states preserve the
+   same protection and owned-quantity invariants?
+
+No support message was sent and no broker experiment was run. Further retrieval
+in the independent worker stopped on a 401/token-expired ENV_FAULT. Coordinator
+read-only retrieval subsequently succeeded for these already identified public
+URLs; this verifies that tool path only, not repair of the worker's credentials
+or completion of the remaining OpenAPI/SDK investigation.
+
+The simple engineering contract now represents standalone SELL STOP/DAY, with
+finite positive numbers, exact stop-price response identity and the documented
+numeric grid (two decimal places at/above one dollar, four below; numeric
+trailing zeros accepted without Decimal-context rounding). Unsupported buy-stop,
+complex/replacement and inferred elected-type changes stay rejected. This
+shared validator also expands the shapes representable by the existing explicit
+engineering POST interface; it is not a runtime protection verifier or automatic
+dispatch authority. Both entry-cancel layers still independently reject sell
+stops. A dedicated regression uses a fully valid stop request/response and
+asserts rejection without HTTP, cancel marker or altered observation evidence.
+
+The [expected calendar](../evidence/w3-paper-calendar-20261026-20261120.json)
+enumerates 20 proposed sessions with zoneinfo-derived UTC instants across DST.
+It remains draft and requires final manifest binding and broker clock/calendar
+review. W3-08 still lacks executable/risk/data/incident acceptance, account
+baseline and independent-review freeze fields; W3-06/W3-07 remain incomplete.
+
+Final verification of this follow-up: independent source/adjacent-path review
+found no actionable stop-contract defect, then separately checked the valid-stop
+cancellation regression and unchanged incomplete launch gates. The full synthetic
+suite passed **853 tests**, with only the existing upstream websockets deprecation;
+full Ruff check/format and strict mypy passed (77 source files). Calendar checks
+verified all 20 local/UTC round trips, 6.5-hour scheduled lengths and the DST
+transition. `git diff --check` passed. The full suite used the already verified
+tool-approved execution path; no sandbox async repair or real broker cycle is
+claimed. Exact final commands were:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-w3-stop-final`
+- `rtk proxy .venv/bin/ruff check --no-cache src tests scripts/reconcile_paper_orders.py`
+- `rtk proxy .venv/bin/ruff format --check --no-cache src tests scripts/reconcile_paper_orders.py`
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/mypy --strict --cache-dir /tmp/alpaca-w3-stop-mypy src tests scripts/reconcile_paper_orders.py`
+
+Retrieval environment packet:
+
+```text
+status: ENV_FAULT
+category: independent_worker_tool_authentication_expired
+evidence: worker reported HTTP 401 token_expired during further public retrieval
+affected_scope: worker's remaining OpenAPI/SDK handoff investigation
+safe_to_continue: local checks and coordinator read-only review of identified public URLs, subsequently verified successful
+recommended_action: revalidate worker authentication before resuming that retrieval stage; do not infer atomic protection semantics
+```

@@ -8,7 +8,11 @@ import pytest
 
 from alpaca_ross_bot.config import PaperConfig, PaperCredentials, SecretValue
 from alpaca_ross_bot.journal import Journal, JournalError, OrderHttpObservation
-from alpaca_ross_bot.paper_order_contract import paper_account_ref
+from alpaca_ross_bot.paper_order_contract import (
+    paper_account_ref,
+    validate_order_snapshot,
+    validate_saved_request,
+)
 from alpaca_ross_bot.paper_order_http import (
     PaperHttpResponse,
     PaperOrderHttp,
@@ -427,4 +431,23 @@ def test_delete_observation_requires_prior_cancel_marker(tmp_path: Path) -> None
         )
     assert journal.read_order_http_observations("entry-1") == before
     assert exchange.calls == []
+    journal.close()
+
+
+def test_valid_sell_stop_is_refused_by_both_entry_cancel_layers(tmp_path: Path) -> None:
+    value = json.loads(_request(side="sell", type="stop", stop_price="1"))
+    value.pop("limit_price")
+    body = json.dumps(value, sort_keys=True, separators=(",", ":"))
+    assert validate_saved_request(body)["type"] == "stop"
+    assert validate_order_snapshot(body, _order(body)).quantity == 2
+    journal, http, exchange = _setup(tmp_path, request=body)
+    journal.record_paper_account_verification(ACCOUNT_REF, ACCOUNT_BODY, NOW)
+    before = journal.read_order_http_observations("entry-1")
+    with pytest.raises(PaperOrderHttpError):
+        http.cancel_engineering_entry_once(journal, "entry-1", NOW)
+    with pytest.raises(JournalError):
+        journal.mark_order_cancel_attempt("entry-1", BROKER_ID, NOW)
+    assert exchange.calls == []
+    assert not journal.has_order_cancel_attempt("entry-1")
+    assert journal.read_order_http_observations("entry-1") == before
     journal.close()

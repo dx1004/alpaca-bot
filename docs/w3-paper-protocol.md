@@ -32,6 +32,18 @@ neither profit nor a profitability threshold can make this study pass.
   The census describes observed coverage, not all-market discovery. Neither
   Webull nor paid SIP may be introduced during this window.
 
+
+The proposed window now has a source-checked
+[expected calendar artifact](../evidence/w3-paper-calendar-20261026-20261120.json):
+20 scheduled full regular sessions, checked 2026-10-16 against NYSE/Nasdaq
+exceptions. New York hours are 09:30–16:00; UTC hours are 13:30–20:00 on
+October 26–30 and 14:30–21:00 on November 2–20, following the November 1
+DST transition. November 11 remains a scheduled equity session. This is a
+draft expected calendar, not the final release freeze or a promise against
+emergency closure. Revalidate broker calendar/clock and exchange notices before
+launch, then bind the final calendar digest; a missed start still requires a
+new complete four-week preregistration.
+
 The freeze record must bind SHA-256 digests or immutable version identifiers for:
 the protocol; executable strategy and risk specifications; source/rule registry
 and attribution labels; accepted candidate manifest; enabled paths and disabled
