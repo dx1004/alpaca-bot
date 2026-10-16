@@ -128,6 +128,7 @@ class OrderReconciler:
         account_ref: str,
         *,
         clock: Callable[[], datetime] | None = None,
+        record_start: bool = True,
     ) -> None:
         self.journal = journal
         self.account_ref = account_ref
@@ -137,7 +138,61 @@ class OrderReconciler:
             raise JournalError("reconciliation account is not bound")
         if not self.verify_rebuild():
             raise JournalError("lifecycle projection does not match durable evidence")
-        self._record({"kind": "START"}, self.clock(), key="start:" + str(uuid4()))
+        if type(record_start) is not bool:
+            raise ValueError("record_start must be bool")
+        if record_start:
+            self._record({"kind": "START"}, self.clock(), key="start:" + str(uuid4()))
+
+    @classmethod
+    def read_evidence_at(
+        cls, journal: Journal, account_ref: str, decision_at: datetime
+    ) -> tuple[dict[str, object], tuple[int, ...]]:
+        """Rebuild only the visible immutable prefix, without a START mutation.
+
+        This is observation provenance, never a submission or recovery grant.
+        Current cache integrity is checked separately from point-in-time replay.
+        """
+        if type(decision_at) is not datetime or decision_at.utcoffset() != timedelta(0):
+            raise ValueError("UTC lifecycle observation clock required")
+        reader = cls(
+            journal, account_ref, clock=lambda: decision_at, record_start=False
+        )
+        projected: object | None = None
+        seen: dict[str, str] = {}
+        refs: list[int] = []
+        unavailable_prefix = False
+        for event, payload in journal.read_order_events():
+            if not event.visible_at(decision_at):
+                unavailable_prefix = True
+                continue
+            if unavailable_prefix or event.external_clock_conflict:
+                raise JournalError("lifecycle evidence prefix is unavailable")
+            item = decode_broker_json(payload)
+            if (
+                not isinstance(item, dict)
+                or item.get("account_ref") != account_ref
+                or event.feed != "paper"
+                or event.event_kind != item.get("kind")
+            ):
+                raise JournalError("lifecycle evidence identity differs")
+            if item["kind"] == "BASELINE":
+                basis = journal.read_event(int(str(item["evidence_sequence"])))
+                if (
+                    basis is None
+                    or not basis[0].visible_at(event.available_at)
+                    or basis[0].external_clock_conflict
+                ):
+                    raise JournalError("lifecycle baseline source is unavailable")
+                refs.append(basis[0].sequence)
+            key, fingerprint = str(item["dedupe_key"]), str(item["identity_hash"])
+            conflict = key in seen and seen[key] != fingerprint
+            seen.setdefault(key, fingerprint)
+            projected = reader._reduce(
+                projected, item, event.system_first_seen_at, conflict, event.sequence
+            )
+            refs.append(event.sequence)
+        state = reader._initial() if projected is None else reader._state(projected)
+        return state, tuple(dict.fromkeys(refs))
 
     def view(self) -> dict[str, object]:
         raw = self.journal.read_state(self.state_key)

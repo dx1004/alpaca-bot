@@ -869,3 +869,127 @@ recommended_action: preserve source routing; do not infer why capacity recovered
 Original W3 acceptance remains open. Full funds/flow/charge and owned nonflat
 reconciliation, qualified bid marks, risk reservations, data conditions/clocks
 and protection continuity cannot be inferred from this flat-account audit.
+
+## Reported funds, ownership and bid inputs — 2026-10-16
+
+The new `risk_ownership.py`, `risk_marks.py` and `risk_input_evidence.py`
+qualify immutable source observations, not executable strategy or runtime risk
+authority. Historical lifecycle inspection does not append a START event or
+consume future evidence. Every selected capture, quote and metadata reference
+is checked against its journal hash and availability time.
+
+For an actually reported 1× account, the derived conservative reported notional
+cap is `min(cash, available buying_power)`. This is an engineering bound, not
+an Alpaca formula, settled-cash proof or promise of future availability. Open
+broker buy reservations already affect available buying power and are not
+subtracted twice. Unrepresented local intents or unexplained pending cashflows
+veto qualification; absent optional transfer fields remain unknown. NMBP is
+not silently substituted as a user-selected settled-only policy. Sources:
+[account fields](https://docs.alpaca.markets/us/docs/account-plans),
+[order buying-power checks](https://docs.alpaca.markets/us/docs/orders-at-alpaca),
+[settlement distinction](https://alpaca.markets/support/why-do-i-get-an-error-of-insufficient-balance-when-my-cash-balance-holds-the-requested-amount).
+
+Nonflat ownership requires source-bound lifecycle reconciliation and matching
+local intents, broker orders and cumulative fills. Valuation uses the latest
+visible eligible regular IEX bid plus authenticated condition metadata; broker
+`current_price` is not a bid. The profile uses provider-reported event clocks,
+not proven exchange-origin clock accuracy. IEX remains `NOT_SIP_EQUIVALENT`;
+this does not establish executable liquidity, NBBO or entry-data eligibility.
+Sources: [position marks](https://docs.alpaca.markets/us/docs/working-with-positions),
+[trade updates](https://docs.alpaca.markets/us/docs/websocket-streaming),
+[stock stream](https://docs.alpaca.markets/us/docs/real-time-stock-pricing-data).
+
+Actual dedicated-account capture at **21:51:48 UTC / 14:51:48 Los Angeles**
+persisted account event 1305 and reported-input assessment 1315 in the existing
+private journal. Available funds, ownership and bid valuation all qualified;
+positions and valued positions were zero, so valuation is exactly zero without
+inventing a quote. Hash/SQLite integrity passed and the USD 500 target matched.
+The finite stream returned zero records after regular hours: no fresh live bid
+is claimed. Separately, actual preserved quote 1302 with metadata 670 passes the
+new bid verifier at its original **19:51:09.449237 UTC** decision cutoff. This
+is a historical diagnostic witness; nonflat position integration is tested with
+synthetic fixtures, not claimed as actual broker experience.
+
+Unknown transfers, non-atomic snapshots, pre-session E0, full accounting,
+runtime reservations, protection and executable release remain separate gates.
+The older strict account/full-ledger assessment therefore still reports its
+own unqualified status. The new observer result does not override it. No broker
+write or formal paper evaluation occurred. The October 19 E0 schedule is unchanged.
+
+Full regression: **1,282 tests passed**, one existing upstream websockets
+deprecation. Independent scoped review passed **75 tests**, with no remaining
+material findings. Ruff check passed, format checked 110 files, strict mypy
+passed 112 files. Commands:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-risk-ready-full tests
+rtk proxy .venv/bin/ruff check src tests scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/ruff format --check src tests scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-risk-ready-final-mypy src tests scripts/qualify_risk_inputs.py scripts/configure_paper_credentials.py scripts/reconcile_paper_orders.py
+```
+
+Independent GPT-6.1 Sol Low retrieved primary sources. A public-URL-only Cloud
+critique returned `gemma4:31b` successfully; conclusions were checked against
+the original sources. No private account or local document was exported.
+
+## Published protection conflict and vendor question — 2026-10-16
+
+**Failed gate:** Alpaca's [user-protection table](https://docs.alpaca.markets/us/docs/user-protection)
+explicitly rejects a new stop sell while a limit buy remains open, including
+paper. This conflicts with protecting the first partial fill using a standalone
+stop while the remaining entry stays working. Bracket exits activate only when
+the entry fills completely; they do not establish the required partial-fill
+coverage. No rejection was experimentally provoked and no protection bypass
+is proposed.
+
+The current [PATCH contract](https://docs.alpaca.markets/us/reference/patchorderbyorderid-1)
+has eight properties, including `advanced_instructions` and `notional`; the
+pinned SDK's smaller request model is not the exhaustive REST contract. Neither
+PATCH nor its advanced routing fields documents adoption of an existing stop
+into OCO. The [October 8 retail grouping update](https://docs.alpaca.markets/us/changelog/2026-10-08-order-group-db02af7)
+adds response identifiers, not documented membership mutation. The official
+schema pinned to October 12 commit `2a973a046607c42742bf141184b71f1990fa1809`
+does contain `group_id/group_role` on Order and OrderLeg; an older cached copy
+must not be used to claim these fields are absent. Source SHA256, exact pointers
+and property inventories are recorded in
+`evidence/alpaca-retail-protection-contract-20261016.json` and were reverified
+against immutable public bytes. Missing documentation does not prove no
+undocumented capability exists; it cannot establish the required guarantee.
+
+Position-close documentation also does not establish atomic coordination with
+an existing stop. Cancel-before-close is not an accepted continuity-preserving
+substitute. W3-06 remains blocked pending an authoritative supported contract.
+
+### Ready-to-submit support request (not sent)
+
+Official [support request](https://alpaca.markets/support/request) links to the
+contact form. No verified support email or broker reply is claimed. This draft
+contains no credentials, account identifiers or private account observations.
+
+**Subject: Retail Trading API: partial-fill stop coverage and atomic exit handoff**
+
+Please clarify the currently supported US retail Trading API contract, separately
+for paper and live:
+
+1. A LIMIT BUY for 100 shares has filled 40, with 60 still working. Your wash-trade
+   table says an independent STOP SELL is rejected while a LIMIT BUY is open.
+   Is there a supported server-side mechanism that activates protection for each
+   partial fill? Please provide endpoint, payload and event/quantity guarantees.
+2. After entry is terminal, an accepted standalone STOP SELL protects the actual
+   long quantity. Can a take-profit be added while retaining the existing stop,
+   without a cancel gap, duplicate reservation or excess-exit race? Is there an
+   atomic adoption/conversion operation? Please specify request fields, partial
+   fill/replace behavior and rejection recovery. Response group identifiers alone
+   do not establish such an operation.
+3. At session close, is there a supported atomic close operation coordinated with
+   that working stop, including stop-fill races and preventing a reverse position?
+   Does `position_intent=sell_to_close` enforce this server-side, or only classify
+   the request?
+4. If any guarantee is unsupported, please explicitly identify it and the supported
+   alternative. We are not requesting a wash-protection bypass or guaranteed stop
+   execution price. Please link current authoritative documentation or a versioned
+   technical contract.
+
+Sending the form requires separate user authorization and contact information;
+none has been submitted. An answer must be reviewed before implementation or
+acceptance. Neither this packet nor the reported-input pass enables orders.

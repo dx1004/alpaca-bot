@@ -21,7 +21,9 @@ from alpaca_ross_bot.market_input_checks import assess_market_record
 from alpaca_ross_bot.paper_order_contract import paper_account_ref
 from alpaca_ross_bot.risk_account_inputs import inspect_account_inputs
 from alpaca_ross_bot.risk_baseline import freeze_baseline
+from alpaca_ross_bot.risk_input_evidence import inspect_risk_inputs
 from alpaca_ross_bot.risk_ledger_audit import audit_risk_ledger
+from alpaca_ross_bot.risk_ownership import qualify_ownership
 
 
 def get_record(url: str, headers: dict[str, str]) -> dict[str, object]:
@@ -142,6 +144,14 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
             max_age=timedelta(seconds=60),
         )
         money = dict(facts.money)
+        ownership = qualify_ownership(
+            journal,
+            event.sequence,
+            account_ref=account_ref,
+            decision_at=datetime.now(UTC),
+            session_open=opened,
+            max_age=timedelta(seconds=60),
+        )
         baseline_frozen = False
         baseline_status = "NOT_REQUESTED"
         if getattr(args, "freeze_baseline", False):
@@ -205,6 +215,7 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
         }
         names: dict[tuple[str, str], dict[str, str]] = {}
         metadata_refs = []
+        metadata_sequences: dict[tuple[str, str], int] = {}
         for kind in ("trade", "quote"):
             for tape in ("A", "B", "C"):
                 url = (
@@ -231,6 +242,7 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
                     processed_at=datetime.now(UTC),
                 )
                 metadata_refs.append(item.sequence)
+                metadata_sequences[kind, tape] = item.sequence
         stream = make_observable_stream(
             config,
             environment,
@@ -241,13 +253,15 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
             journal=journal,
         )
         await stream.open()
-        await stream.subscribe(
-            {"trades": ("SPY",), "quotes": ("SPY",), "bars": ("SPY",)}
+        symbols = tuple(
+            sorted({"SPY", *(s for s, _ in ownership.owned_long_positions)})
         )
+        await stream.subscribe({"trades": symbols, "quotes": symbols, "bars": symbols})
         subscribed = stream.subscribed
         deadline = asyncio.get_running_loop().time() + args.stream_seconds
         assessed = fresh = valid = 0
         codes: set[tuple[str, str, str]] = set()
+        latest_quotes: dict[str, tuple[int, int, str]] = {}
         while asyncio.get_running_loop().time() < deadline:
             left = deadline - asyncio.get_running_loop().time()
             try:
@@ -274,8 +288,51 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
                 assessed += 1
                 valid += int(checked.schema_valid)
                 fresh += int(checked.measured_fresh)
+                if value.get("T") == "q" and type(value.get("S")) is str:
+                    latest_quotes[value["S"]] = (
+                        stored[0].sequence,
+                        index,
+                        value.get("z", ""),
+                    )
                 for code, name in checked.conditions:
                     codes.add((kind, code, name or "UNMAPPED"))
+        mark_refs = tuple(
+            (
+                symbol,
+                latest_quotes[symbol][0],
+                latest_quotes[symbol][1],
+                metadata_sequences["quote", latest_quotes[symbol][2]],
+            )
+            for symbol, _ in ownership.owned_long_positions
+            if symbol in latest_quotes
+            and ("quote", latest_quotes[symbol][2]) in metadata_sequences
+        )
+        risk_at = datetime.now(UTC)
+        risk_inputs = inspect_risk_inputs(
+            journal,
+            event.sequence,
+            account_ref=account_ref,
+            decision_at=risk_at,
+            session_open=opened,
+            max_age=timedelta(seconds=60),
+            mark_refs=mark_refs,
+            max_metadata_age=timedelta(seconds=60),
+        )
+        risk_event = journal.append_next(
+            source_id="ALPACA_RISK_INPUTS",
+            feed="paper",
+            event_kind="REPORTED_INPUT_ASSESSMENT",
+            payload=json.dumps(
+                {"account_ref": account_ref, "assessment": asdict(risk_inputs)},
+                default=str,
+                sort_keys=True,
+            ).encode(),
+            system_first_seen_at=risk_at,
+            processed_at=datetime.now(UTC),
+        )
+        report["risk_inputs"] = risk_inputs.public_summary() | {
+            "assessment_sequence": risk_event.sequence,
+        }
         await stream.close()
         report["market"] = {
             "feed": "iex",

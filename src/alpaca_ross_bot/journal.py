@@ -595,6 +595,12 @@ class Journal:
     def read_strategy_risk_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
         return self._read_private_events("ALPACA_STRATEGY_RISK", None)
 
+    def read_market_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        return self._read_private_events("alpaca_market_data", None)
+
+    def read_market_metadata_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        return self._read_private_events("ALPACA_MARKET_METADATA", None)
+
     def read_risk_baseline_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
         events = self._read_private_events("ALPACA_RISK_BASELINE", None)
         if any(

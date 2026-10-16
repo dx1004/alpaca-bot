@@ -1,0 +1,53 @@
+{
+  "absence_of_documentation_is_not_proof_of_no_undocumented_capability": true,
+  "advanced_instruction_properties": [
+    "algorithm",
+    "destination",
+    "display_qty",
+    "end_time",
+    "max_percentage",
+    "start_time"
+  ],
+  "as_of": "2026-10-16",
+  "contract_status": "BLOCKED_VENDOR_CONFIRMATION",
+  "documented_limit_buy_plus_new_stop_sell": "REJECTED_INCLUDING_PAPER",
+  "patch_properties": [
+    "advanced_instructions",
+    "client_order_id",
+    "limit_price",
+    "notional",
+    "qty",
+    "stop_price",
+    "time_in_force",
+    "trail"
+  ],
+  "references": [
+    "https://docs.alpaca.markets/us/docs/user-protection",
+    "https://docs.alpaca.markets/us/reference/patchorderbyorderid-1",
+    "https://docs.alpaca.markets/us/changelog/2026-10-08-order-group-db02af7",
+    "https://alpaca.markets/support/request"
+  ],
+  "response_grouping_fields": {
+    "Order": [
+      "group_id",
+      "group_role"
+    ],
+    "OrderLeg": [
+      "group_id",
+      "group_role"
+    ]
+  },
+  "runtime_authorized": false,
+  "schema_exposes_existing_stop_adoption_field": false,
+  "schema_pointers": [
+    "/components/schemas/PatchOrderRequest/properties",
+    "/components/schemas/AdvancedInstructions/properties",
+    "/components/schemas/Order/properties",
+    "/components/schemas/OrderLeg/properties"
+  ],
+  "scope": "US_RETAIL_TRADING_API",
+  "source_commit": "2a973a046607c42742bf141184b71f1990fa1809",
+  "source_commit_date": "2026-10-12T10:38:06Z",
+  "source_document_sha256": "e67cf32d58cd5f918c593925e966bf737eff1e0f03f15c7c0ba467368eaa6d42",
+  "source_url": "https://raw.githubusercontent.com/alpacahq/alpaca-mcp-server/2a973a046607c42742bf141184b71f1990fa1809/src/alpaca_mcp_server/specs/trading-api.json"
+}

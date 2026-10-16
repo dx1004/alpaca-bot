@@ -226,6 +226,10 @@ def test_capture_private_account_and_stream_with_redacted_summary(
     assert report["market"]["assessed_records"] == 1
     assert report["market"]["runtime_eligible"] is False
     assert report["private_integrity_verified"] is True
+    assert report["risk_inputs"]["reported_inputs_qualified"] is True
+    assert report["risk_inputs"]["bid_valuation_qualified"] is True
+    assert report["risk_inputs"]["valued_position_count"] == 0
+    assert report["risk_inputs"]["runtime_authorized"] is False
     assert report["account"]["activity_pages"] == (2 if short_first_page else 1)
     assert len(freeze_calls) == int(freeze_requested)
     assert report["ledger"]["baseline_status"] == (
