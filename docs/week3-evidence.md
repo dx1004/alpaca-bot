@@ -742,3 +742,130 @@ adapter under this convention, including execution completeness, charge matching
 and reservation retirement. The missing pre-session E0, funds/flow inputs,
 data/condition/clock and continuous-protection gates remain unchanged. Neither
 an accepted fee convention nor the USD 500 identity check closes W3-06/07/08.
+
+## Actual posted ledger and pre-session E0 mechanism (2026-10-16)
+
+User request: complete actual ledger integration and risk acceptance. The
+source-bound GET ledger inspection, cash-audit adapter and genuine E0 mechanism
+are implemented and tested. **Full operational risk acceptance is not achieved**:
+current-funds qualification, owned nonflat inventory/marks/reservations and
+protection remain open, and no genuine pre-session E0 exists for today. A
+callback returning verified flags is not used to close these gates.
+
+### Implemented contracts and evidence
+
+- `posted_ledger.py` consumes immutable account-bound HTTP captures, retains
+  exact posted buy/sell cash and signed non-trade amounts, and separates original
+  FEE posts from the user-selected modelled regulatory costs. Actual execution
+  `qty`, not `cum_qty`, drives cash/fees; arithmetic uses exact fractions and
+  reviewed daily fee-type ceilings. Changed activity IDs, future timestamps,
+  inexact numbers and broken cursor chains fail. Unknown classifications remain
+  unknown rather than zero. Unfiltered all-activity pagination requires an
+  explicit terminal empty response; a short page or page cap is not exhaustion.
+- `risk_baseline.py` reads the official calendar and actual pre-open account
+  source records. A flat positive equity observation is separate from available
+  funds qualification, so missing transfer fields are not invented. Creation
+  rechecks timing and absence of local intents under the SQLite write lock.
+  One account/session key cannot be replaced with new references or equity.
+- A second immutable durability receipt proves that the first baseline
+  transaction had already committed when the actual local clock was observed
+  before the official open. Delayed inspection/commit, crash without receipt,
+  changed projections and receipt/source hash conflicts fail closed. A missing
+  receipt cannot be retrospectively certified after open. Receipt qualification
+  begins at its actual `available_at`; historical consumers cannot use proof
+  received later, even when the original candidate was pre-open.
+- `risk_ledger_audit.py` joins actual captures, calendar, baseline and receipt
+  hashes. It checks preserved baseline activity IDs, exact posted cash deltas,
+  cash/quantity agreement for a flat book, late baseline fills and unknown costs.
+  Original broker fees and modelled fee deltas remain separate. Foreign fills,
+  short prefixes, nonflat inventory and unresolved ownership are explicit
+  failures/unqualified paths. The audit is **not** a complete nonflat operational
+  risk resolver and does not make `RiskJournal`'s fixture seam authoritative.
+- `qualify_risk_inputs.py` now saves the complete ledger assessment privately
+  and emits only a redacted summary. Optional `--freeze-baseline` cannot invent
+  an intraday E0. Closing its finite IEX observation still requires continuity
+  recovery; all runtime/order authorization remains false.
+
+Independent GPT-6.1 Sol Low retrieval and coordinator review checked
+[activity fields and paging](https://docs.alpaca.markets/us/docs/account-activities),
+[current query semantics](https://docs.alpaca.markets/us/reference/getaccountactivities-2)
+and [account field definitions](https://docs.alpaca.markets/us/docs/account-plans).
+Creation filters are not execution/settlement filters. An empty terminal page
+only exhausts the currently returned result; no atomic snapshot, maximum late
+posting delay or finality watermark was established. Net-amount dates cannot
+silently assign intraday attribution. Public-only Ollama Cloud analysis returned
+`model=gemma4:31b`, `success=true`; its generic completeness checklist was checked
+against these sources, not treated as operational authority. No private source
+or account data was exported.
+
+### Independent findings and validation
+
+Fresh independent review found and verified fixes for three material issues:
+pre-open validation followed by a post-open commit; discarded nanosecond
+remainders in a baseline comparison; and historical use of a future receipt.
+Final independent review passed **79 tests** within this scope. Coordinator
+full offline regression passed **1,213 tests**, with one existing upstream
+websockets deprecation. Ruff check/format, strict mypy (**105 files**, including
+the affected scripts) and diff checks passed. Tests cover restart/tamper,
+cursor exhaustion, duplicates, unknown NTA, fee separation, DST/half-days,
+source/account conflicts, delayed commit and two-phase crash recovery.
+
+Commands, from `/mnt/t/alpaca-bot`:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-ledger-full tests
+rtk proxy .venv/bin/ruff check src tests scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/ruff format --check src tests scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-ledger-final-mypy src tests scripts/qualify_risk_inputs.py scripts/configure_paper_credentials.py scripts/reconcile_paper_orders.py
+```
+
+The full async suite used approved execution outside the previously confirmed
+sandbox executor-shutdown fault; no application workaround was added.
+
+### Actual dedicated-account audit
+
+The new implementation completed a finite GET/IEX capture at **19:51:09 UTC /
+12:51:09 America/Los_Angeles**. In the existing dedicated-account private journal,
+official calendar event 663 and account event 664 feed assessment 665. Hash and
+SQLite integrity checks passed. Actual observed activity/fill/position/open-order
+counts are all zero; no NTA is observed, modelled regulatory fees are zero, and
+the target-equity check still matches USD 500. There are zero local order intents,
+baseline candidates and durability receipts. The requested intraday freeze
+correctly reports `BASELINE_QUALIFICATION_FAILED`, `PRESESSION_E0_MISSING` and
+`cash_matches=null`; zero events are not permission to substitute a baseline.
+No broker write, reset, cancellation or formal paper run occurred.
+
+### Next actual evidence window
+
+The captured broker calendar lists October 19 as a session. The existing W3
+Codex heartbeat `alpaca-bot-w3-strategy-risk-execution` was updated, not duplicated,
+to a one-time **2026-10-19 06:20 America/Los_Angeles / 13:20 UTC** capture, ten
+minutes before the documented regular open. Saved schedule readback preserves
+the explicit UTC start and same target chat. Its prompt requires a fresh clock,
+official calendar, dedicated credentials and protected state; it attempts the
+already checked collector only between 06:15 and 06:25 Los Angeles time. A missed
+window is `NOT_CAPTURED`, never a backfilled E0. Existing E0 evidence must be
+verified rather than replaced. On completion or a missed window it deletes this
+one-time automation. A successful capture is only a prerequisite, not risk/order
+or formal-paper authority. Existing W4 scheduling is unchanged.
+
+[Official scheduled-task documentation](https://learn.chatgpt.com/docs/automations?surface=app)
+requires the computer powered on, desktop app running and project available for
+local execution. Wake-from-sleep and missed-run catch-up were not established;
+neither is promised. Notify only on completion, failed gates or required action.
+
+Resolved bounded research allocation fault:
+
+```text
+status: ENV_FAULT (resolved for the affected research stage)
+category: subagent_allocation
+evidence: one research follow-up reported agent thread limit reached; a later
+  follow-up completed primary-source retrieval after active work changed
+affected_scope: scheduled-task public-source retrieval
+safe_to_continue: deterministic code/tests were independent; retrieval later verified
+recommended_action: preserve source routing; do not infer why capacity recovered
+```
+
+Original W3 acceptance remains open. Full funds/flow/charge and owned nonflat
+reconciliation, qualified bid marks, risk reservations, data conditions/clocks
+and protection continuity cannot be inferred from this flat-account audit.

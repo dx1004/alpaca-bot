@@ -61,8 +61,13 @@ def test_get_record_retains_raw_body_and_only_uses_bounded_get(
     assert calls == ["https://paper-api.alpaca.markets/v2/account"]
 
 
+@pytest.mark.parametrize("short_first_page", [False, True])
+@pytest.mark.parametrize("freeze_requested", [False, True])
 def test_capture_private_account_and_stream_with_redacted_summary(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    short_first_page: bool,
+    freeze_requested: bool,
 ) -> None:
     module = collector()
     private = tmp_path / "private"
@@ -90,6 +95,8 @@ def test_capture_private_account_and_stream_with_redacted_summary(
             config.api_secret_key_env: "fake-test-secret",
         }
 
+    activity_paths: list[str] = []
+
     def get_record(url: str, _headers: dict[str, str]) -> dict[str, object]:
         at = datetime.now(UTC).isoformat()
         path = url.removeprefix("https://paper-api.alpaca.markets")
@@ -110,6 +117,19 @@ def test_capture_private_account_and_stream_with_redacted_summary(
             ]
         elif path == "/v2/account/configurations":
             body = {}
+        elif path.startswith("/v2/account/activities?"):
+            activity_paths.append(path)
+            if short_first_page and len(activity_paths) == 1:
+                body = [
+                    {
+                        "id": "synthetic-page-last",
+                        "activity_type": "CSD",
+                        "net_amount": "500",
+                        "date": at[:10],
+                    }
+                ]
+            if len(activity_paths) == 2:
+                assert "page_token=synthetic-page-last" in path
         return {
             "method": "GET",
             "path": path,
@@ -185,11 +205,19 @@ def test_capture_private_account_and_stream_with_redacted_summary(
     monkeypatch.setattr(module, "get_record", get_record)
     monkeypatch.setattr(module, "bounded_alpaca_get", metadata)
     monkeypatch.setattr(module, "make_observable_stream", make_stream)
+    freeze_calls: list[object] = []
+
+    def refuse_baseline(*args: object, **kwargs: object) -> None:
+        freeze_calls.append(kwargs)
+        raise ValueError("baseline qualification failed")
+
+    monkeypatch.setattr(module, "freeze_baseline", refuse_baseline)
     args = Namespace(
         config=ROOT / "config/paper.example.toml",
         credentials_file=tmp_path / "nonexistent",
         runtime_root=private,
         stream_seconds=1,
+        freeze_baseline=freeze_requested,
     )
     report = asyncio.run(module.capture(args))
     assert report["broker_writes_performed"] is False
@@ -198,6 +226,11 @@ def test_capture_private_account_and_stream_with_redacted_summary(
     assert report["market"]["assessed_records"] == 1
     assert report["market"]["runtime_eligible"] is False
     assert report["private_integrity_verified"] is True
+    assert report["account"]["activity_pages"] == (2 if short_first_page else 1)
+    assert len(freeze_calls) == int(freeze_requested)
+    assert report["ledger"]["baseline_status"] == (
+        "BASELINE_QUALIFICATION_FAILED" if freeze_requested else "NOT_REQUESTED"
+    )
     public = json.dumps(report)
     assert str(account["id"]) not in public
     assert "fake-test-secret" not in public and "fake-test-key" not in public

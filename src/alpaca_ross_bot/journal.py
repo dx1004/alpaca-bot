@@ -277,6 +277,7 @@ class Journal:
         processed_at: datetime,
         source_event_at: datetime | None = None,
         provider_received_at: datetime | None = None,
+        prepare_under_lock: Callable[[], tuple[bytes, object, datetime]] | None = None,
     ) -> EventEnvelope | None:
         """Atomically append once per state key; return None after a prior insert."""
         if not state_key.strip():
@@ -289,6 +290,9 @@ class Journal:
             if exists is not None:
                 self._db.rollback()
                 return None
+            if prepare_under_lock is not None:
+                payload, state_value, prepared_at = prepare_under_lock()
+                system_first_seen_at = processed_at = prepared_at
             sequence = self._db.execute(
                 "SELECT COALESCE(MAX(sequence), 0) + 1 FROM events"
             ).fetchone()[0]
@@ -590,6 +594,26 @@ class Journal:
 
     def read_strategy_risk_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
         return self._read_private_events("ALPACA_STRATEGY_RISK", None)
+
+    def read_risk_baseline_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        events = self._read_private_events("ALPACA_RISK_BASELINE", None)
+        if any(
+            event.feed != "paper" or event.event_kind != "PRESESSION_E0"
+            for event, _ in events
+        ):
+            raise JournalError("invalid risk baseline event metadata")
+        return events
+
+    def read_risk_baseline_receipt_events(
+        self,
+    ) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        events = self._read_private_events("ALPACA_RISK_BASELINE_RECEIPT", None)
+        if any(
+            event.feed != "paper" or event.event_kind != "E0_DURABILITY_OBSERVED"
+            for event, _ in events
+        ):
+            raise JournalError("invalid risk baseline receipt metadata")
+        return events
 
     def read_order_evidence_cache(self, account_ref: str) -> dict[str, object]:
         return self._read_evidence_cache("order_evidence", account_ref)

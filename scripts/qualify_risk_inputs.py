@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import json
 import sqlite3
+from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,8 @@ from alpaca_ross_bot.local_credentials import load_paper_credentials
 from alpaca_ross_bot.market_input_checks import assess_market_record
 from alpaca_ross_bot.paper_order_contract import paper_account_ref
 from alpaca_ross_bot.risk_account_inputs import inspect_account_inputs
+from alpaca_ross_bot.risk_baseline import freeze_baseline
+from alpaca_ross_bot.risk_ledger_audit import audit_risk_ledger
 
 
 def get_record(url: str, headers: dict[str, str]) -> dict[str, object]:
@@ -109,7 +112,7 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
             if not isinstance(page, list):
                 raise ValueError("activity page is not an array")
             activity_pages += 1
-            if len(page) < 100:
+            if not page:
                 break
             next_token = page[-1].get("id")
             if not isinstance(next_token, str) or next_token == token:
@@ -139,6 +142,55 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
             max_age=timedelta(seconds=60),
         )
         money = dict(facts.money)
+        baseline_frozen = False
+        baseline_status = "NOT_REQUESTED"
+        if getattr(args, "freeze_baseline", False):
+            try:
+                freeze_baseline(
+                    journal,
+                    account_ref=account_ref,
+                    account_sequence=event.sequence,
+                    calendar_sequence=calendar_event.sequence,
+                    session_day=day,
+                    max_age=timedelta(seconds=60),
+                )
+                baseline_frozen = True
+                baseline_status = "SOURCE_BOUND_PRESESSION_E0"
+            except ValueError:
+                baseline_status = "BASELINE_QUALIFICATION_FAILED"
+        assessed_at = datetime.now(UTC)
+        ledger_audit = audit_risk_ledger(
+            journal,
+            event.sequence,
+            calendar_event.sequence,
+            account_ref=account_ref,
+            decision_at=assessed_at,
+            max_age=timedelta(seconds=60),
+            fee_policy=Path(__file__).resolve().parents[1]
+            / "evidence/alpaca-equity-fees-20261012.json",
+        )
+        audit_event = journal.append_next(
+            source_id="ALPACA_RISK_LEDGER",
+            feed="paper",
+            event_kind="LEDGER_ASSESSMENT",
+            payload=json.dumps(
+                {
+                    "account_ref": account_ref,
+                    "capture_sequence": event.sequence,
+                    "calendar_sequence": calendar_event.sequence,
+                    "assessment": asdict(ledger_audit),
+                    "baseline_status": baseline_status,
+                },
+                default=str,
+                sort_keys=True,
+            ).encode(),
+            system_first_seen_at=assessed_at,
+            processed_at=datetime.now(UTC),
+        )
+        report["ledger"] = ledger_audit.public_summary() | {
+            "assessment_sequence": audit_event.sequence,
+            "baseline_status": baseline_status,
+        }
         report["account"] = {
             "capture_sequence": event.sequence,
             "calendar_sequence": calendar_event.sequence,
@@ -149,7 +201,7 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
             "settlement_status": facts.settlement_status,
             "reason_codes": list(facts.reasons),
             "activity_pages": activity_pages,
-            "pre_session_baseline_frozen": False,
+            "pre_session_baseline_frozen": baseline_frozen,
         }
         names: dict[tuple[str, str], dict[str, str]] = {}
         metadata_refs = []
@@ -265,6 +317,11 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--connect", action="store_true")
+    parser.add_argument(
+        "--freeze-baseline",
+        action="store_true",
+        help="Freeze only a qualified source-bound pre-session E0; never backfill it",
+    )
     parser.add_argument(
         "--config", type=Path, default=Path("config/paper.example.toml")
     )
