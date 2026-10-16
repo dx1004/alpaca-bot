@@ -421,3 +421,30 @@ affected_scope: worker's remaining OpenAPI/SDK handoff investigation
 safe_to_continue: local checks and coordinator read-only review of identified public URLs, subsequently verified successful
 recommended_action: revalidate worker authentication before resuming that retrieval stage; do not infer atomic protection semantics
 ```
+
+
+### Bounded OpenAPI and pinned SDK verification (2026-10-16)
+
+A fresh independent GPT-6.1 Sol Low public-only retrieval succeeded without the
+previous authentication failure. Coordinator source review verified the official
+[published Trading OpenAPI](https://raw.githubusercontent.com/alpacahq/alpaca-docs/master/oas/trading/openapi.yaml)
+`PatchOrderRequest` and the pinned
+[v0.44.0 replacement model](https://raw.githubusercontent.com/alpacahq/alpaca-py/v0.44.0/alpaca/trading/requests.py).
+Both describe six replacement fields without an order-group conversion or
+existing-stop attachment field. The repository OpenAPI is an older corroborating
+artifact, not a complete current-server contract: the current retail reference
+has additional IPO/advanced fields. Creation-model support for linked exits
+does not establish adoption of an already working stop. Documented sibling-stop
+quantity adjustment after partial take-profit execution likewise does not
+establish atomic protection of partial buy-entry fills.
+
+The original order may fill before a replacement reaches the venue; replacement
+HTTP success is not finality. No inspected contract establishes the required
+continuous-protection handoff. This is a bounded evidence gap, not an exhaustive
+absence claim or permission for a cancel-and-resubmit adaptation. Tagged SDK
+test retrieval encountered a generic web-tool Internal Error, so exhaustive
+test/maintainer-issue coverage is not claimed. The remaining exact broker
+questions above still require an authoritative answer before implementation
+acceptance. W3-01/W3-02 remain pending and the research acceptance manifest still
+has executable release disabled. No dependency, launch status or runtime code
+was changed; unchanged tests were not rerun for this documentation-only update.
