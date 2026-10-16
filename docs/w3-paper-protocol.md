@@ -66,13 +66,14 @@ its history; obtain a dedicated USD 500 paper account for this study. The
 checked 2026-10-16, supports creating an additional paper account using the
 dashboard account menu's **Open New Paper Account**, then generating keys for
 that new account. No deletion of the existing account is required by these
-instructions. The current creation dialog's USD 500 field/minimum and the
-user's remaining account capacity are not verified; legacy reset/balance
-wording does not prove a current arbitrary-balance creation control. The actual
-dedicated account remains unverified through authenticated API evidence. The
-user subsequently confirmed on 2026-10-16 that the dialog allowed USD 500 and
-the dedicated account was created; independent GET-only account verification
-is still required. Do not implement separation
+instructions. Documentation alone did not establish the current balance
+control or available slots. The user confirmed on 2026-10-16 that the dialog allowed USD 500 and
+the dedicated account was created. GET-only evidence captured at 19:31:34 UTC
+verified a distinct account, ACTIVE/USD flags clear, cash/equity USD 500 and
+empty positions/open orders; see the dedicated-account verification in
+[Week 3 evidence](week3-evidence.md). This intraday snapshot is not the final
+pre-session E0 or complete funds/fees/release qualification. Do not implement
+separation
 by resetting the existing account, substituting a local virtual balance, or
 merely renaming a state directory. Bind the dedicated account's own verified
 identity and credentials to its protected state; reject credentials bound to a

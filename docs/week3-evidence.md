@@ -692,3 +692,31 @@ Use a distinct owner-only WSL file for the dedicated account; no new secret
 has been supplied, loaded or saved by this change. The old default file remains
 untouched. Verification covered the existing credential storage tests (2 pass),
 the CLI help, Ruff/format and strict mypy; broker verification remains pending.
+
+### Dedicated USD 500 account — authenticated verification (2026-10-16)
+
+After the user confirmed secure credential setup, a finite GET-only capture
+completed at **19:31:34 UTC / 12:31:34 America/Los_Angeles**. Account/calendar
+events 2/1 and metadata events 3–8 are preserved in a separate owner-only
+`~/.local/state/alpaca-bot/risk-input-qualification-500-20261016/journal.sqlite3`.
+Opaque authenticated account bindings differ from the existing account. Actual
+GET responses show ACTIVE/USD, blocking flags clear, cash and equity both
+exactly USD 500, zero positions and zero open orders. No old credential file,
+account history or old journal was replaced. No order or account mutation was
+performed. The first invocation used an incorrect explicit home path and
+stopped at credential lookup; corrected home-relative lookup succeeded. This
+was a local invocation error, not a broker rejection or account fault.
+
+The finite IEX sample contained 1,494 records, all passing current trade/quote
+structure and measured-age checks; observed names include Regular Sale, Odd Lot
+Trade and Regular Market Maker Open. Metadata names do not authorize a trigger
+policy. This is diagnostic SPY coverage only, `NOT_SIP_EQUIVALENT`; clock origin
+and strategy condition qualification remain open. Closing the observer requires
+continuity recovery. SQLite integrity and all immutable source hashes passed.
+
+This closes the new account's identity, target cash/equity and observed-empty
+inventory checks. It does not close complete fund/charge/flow/reservation
+qualification: omitted transfer fields remain unknown. Capture was intraday,
+not a pre-session E0, and no baseline was frozen. Actual risk-input resolver,
+fee-policy choice, data/clock/condition acceptance and continuous protection
+handoff remain open. W3-01/02/06/07/08 are not promoted by this account check.
