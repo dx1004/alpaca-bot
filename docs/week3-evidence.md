@@ -626,8 +626,12 @@ source-qualified operational account/fee/reconciliation resolver remains open.
 ### Remaining acceptance, without lowering the original gates
 
 1. Resolve the paper fee-policy choice and actual account tariff applicability.
-2. Obtain the user's intended dedicated USD 500 paper account configuration
-   without destructive reset by implication; qualify its available funds from
+2. User decision confirmed 2026-10-16: preserve the existing paper account and
+   its history; use a dedicated USD 500 paper account. This selects the account
+   separation policy, not proof that an additional account has been created or
+   that Alpaca supports a particular provisioning method. Do not reset the
+   existing account or reuse its credentials for the new account by assumption.
+   Obtain and verify the dedicated account configuration; qualify funds from
    evidence, including handling omitted fields without inventing values.
 3. Acquire a genuine pre-session E0 for a future session, bind it to account and
    official calendar, and implement/accept the actual source-derived ledger and
