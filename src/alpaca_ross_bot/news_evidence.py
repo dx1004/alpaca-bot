@@ -58,11 +58,14 @@ def capture_news_frame(
     raw_envelope, recorded_payload = raw_event
     if (
         raw_envelope.event_kind != "RAW_FRAME"
+        or raw_envelope.source_id not in {"alpaca_news", "alpaca_market_data"}
         or raw_envelope.feed != "alpaca_news"
         or raw_envelope.system_first_seen_at != first_seen_at
         or recorded_payload != raw_payload
     ):
         raise NewsEvidenceError("raw news frame provenance does not match")
+    if processed_at < raw_envelope.available_at:
+        raise NewsEvidenceError("processing precedes raw frame availability")
     health_reasons = health.reasons(
         now=health_now,
         max_heartbeat_age=_seconds(max_heartbeat_age_seconds),

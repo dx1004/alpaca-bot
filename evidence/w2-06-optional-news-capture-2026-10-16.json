@@ -1,0 +1,163 @@
+{
+  "status": "ACTUAL_CAPTURE_REPLAY_VERIFIED",
+  "scope": "OPTIONAL_NON_VETO_RESEARCH_ONLY",
+  "capture_directory": "/mnt/t/alpaca-bot/var/research/w206-optional-news/8202cb2d-9620-4487-bf30-41b009fd2636",
+  "capture": {
+    "symbols": [
+      "AAPL"
+    ],
+    "start": "2026-10-15T16:14:00+00:00",
+    "end": "2026-10-16T16:14:00+00:00",
+    "max_pages": 3,
+    "page_size": 50,
+    "purpose": "TRANSPORT_SCHEMA_CONTROL_NOT_STRATEGY_CANDIDATE",
+    "continuity_proven": false,
+    "pagination_exhausted": true,
+    "page_count": 1,
+    "page_sequences": [
+      1
+    ],
+    "observation_sequences": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "capture_directory": "/mnt/t/alpaca-bot/var/research/w206-optional-news/8202cb2d-9620-4487-bf30-41b009fd2636"
+  },
+  "raw_and_projection_evidence": {
+    "1": {
+      "kind": "REST_RECOVERY_PAGE",
+      "sha256": "507ef2c19874df840a5f141bad5c56782a339e06806ec2fbbf43eaf2428f55de",
+      "available_at": "2026-10-16T16:14:43.686066+00:00"
+    },
+    "2": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "529a1ad39202df622db66fd5deabbb553ffa4d044a9356389f628024bfc1c2a8",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "3": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "17291a99e97035b7809ef06736da3ae250e529a9acbc325c4ab86cd8d1f1a803",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "4": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "e4491aecd435a2bc17404b2e46ce5192ccf4ad01f857f909eb095585c7812225",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "5": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "d7b23ea8b596ed1037eebd0d7c7dd9170d3c877f34e839ee3ec6eb2526f7bef7",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "6": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "c4f6be59c3c8fcab5eafdc68ef5e799f3912a9f75acdc4d2df0058f4cc0ee93d",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "7": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "5687257cf453ad9083355c21889e6e069f804343a4055ac2544bd82ed71e1198",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "8": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "85168907afcf3427414fb0b1d1af5814a7b1ab6c5cb98844597af82523bef0f2",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "9": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "49f4fcbd74188df16f6a3cb5dfc8fda3562edda5c4454e529d38d9c3f2ac075d",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "10": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "a28f8102df7f066178fdce22ec7d159f778adf6c97ee59c430bce3d2e504cb44",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "11": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "6495a5f705fb7a9db6fb1765a1bb2e1e80629f5bfe5d1b24f03cd8e7c91ba0eb",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "12": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "0652aedd708117854f7e1cc11385341954391f47e9db7b119a5316be3dac64c3",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "13": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "a980af6ff9a13523aff5fa97c2a370c74066b92631a7ae4d3f42be42884cd010",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "14": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "fd62adfed6676a71a9c91d597695a29e187ef2bfcbb9a6c7800df20e4813c57a",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "15": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "3168ce8a5d91432f1935ae4d75d114f60b7d6333e0eccedacb03dd0937edfd3f",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "16": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "ac6be6c218897f23663adef45311c5f373986a3fe63c3da69aa7c73e8f92e990",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    },
+    "17": {
+      "kind": "NEWS_REST_ARTICLE_OBSERVATION",
+      "sha256": "e9c21d527e86254a8fd2e7974a55cc79d51f16e0f10040a94ea55ca5013dccbc",
+      "available_at": "2026-10-16T16:14:43.716049+00:00"
+    }
+  },
+  "view_sequences": [
+    19,
+    20,
+    21,
+    22
+  ],
+  "repeated_payload_sha256": "bb4fc36e67494d51064af5c7567f6215c50660c87e18ff7a80582100d7bca00b",
+  "visible_records": 16,
+  "before_receipt_records": 0,
+  "missing_literal_symbol_records": 0,
+  "repeat_payload_identical": true,
+  "research_sha256": "acefeee493533686c2595fbc8347f0db0c03630c5bfdf1749ffa56c72b995c9a",
+  "scanner_sha256": "5ce35ecf7e4869dfda490c5e54b0d17d35c47b4d29cd641ccf2d14f87d8bc88f",
+  "continuity_proven": false,
+  "historical_visibility_proven": false,
+  "market_reaction_or_causality_qualified": false,
+  "order_authority": false,
+  "formal_paper_evaluation": false,
+  "implementation_sha256": {
+    "src/alpaca_ross_bot/news_preference.py": "cd69c035c5a2e5765dafa02d551964e7815acdbe6fd1c8ba4cc780ee5dde0048",
+    "src/alpaca_ross_bot/news_evidence.py": "a0d710e39d612b9830c17d9b867c6360bda1ce6ac17ee449396ab106afba8e8a",
+    "src/alpaca_ross_bot/news_rest_observation.py": "218aac7f674cfb4cc4c43657d7d4b0bfcccede68952fb5f687ab8e11f8652ba4",
+    "scripts/replay_optional_news.py": "6bc9f6a7666c81963bc54e539d0f2945f4a39f9cb031fe4f42110b81630e14e0",
+    "tests/test_news_preference.py": "5d7a7c5e12b2e0d6641d7cf2ddec2faa5617971c0e249df3351fef93c83a905b",
+    "tests/test_news_evidence.py": "185577ccc7d11f6d6824bfea3ab01aa95ded808b5d4b302169e9154a4cc593ac",
+    "tests/test_news_rest_observation.py": "744f572492b4fa2f52d949282ae7181490b7e6242e89a1a0cf37afd7d48ce15a"
+  },
+  "validation": {
+    "independent_news_tests_passed": 23,
+    "coordinator_news_replay_stream_rest_tests_passed": 61,
+    "ruff_check": "PASS",
+    "strict_mypy": "PASS_7_FILES",
+    "full_repository_suite": "INTERRUPTED_AFTER_PROGRESS_WITHOUT_COMPLETION_NOT_CLAIMED",
+    "w2_and_baseline_suite": "475_PASSED_1_DEPENDENCY_DEPRECATION_WARNING",
+    "w2_suite_selection": "all tests/test_*.py except filenames containing order, incident, trade_stream"
+  }
+}

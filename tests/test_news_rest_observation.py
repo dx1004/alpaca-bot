@@ -1,3 +1,4 @@
+import base64
 import json
 from datetime import timedelta
 from pathlib import Path
@@ -12,6 +13,32 @@ from alpaca_ross_bot.news_rest_observation import (
 )
 from alpaca_ross_bot.replay import ReplayMode, replay_at
 from alpaca_ross_bot.rest_recovery import AlpacaRestRecovery
+
+
+def test_processing_cannot_precede_parent_availability(tmp_path: Path) -> None:
+    from datetime import UTC, datetime
+
+    at = datetime(2026, 10, 13, 16, tzinfo=UTC)
+    journal = Journal(tmp_path / "j.sqlite3", tmp_path)
+    page = journal.append_next(
+        source_id="alpaca_news",
+        feed="alpaca_news",
+        event_kind="REST_RECOVERY_PAGE",
+        payload=json.dumps(
+            {
+                "kind": "news",
+                "raw_body_base64": base64.b64encode(b'{"news":[{"id":42}]}').decode(),
+            }
+        ).encode(),
+        system_first_seen_at=at,
+        processed_at=at + timedelta(seconds=2),
+    )
+    with pytest.raises(RestNewsObservationError, match="availability"):
+        capture_rest_news_page(
+            journal, page.sequence, processed_at=at + timedelta(seconds=1)
+        )
+    assert journal.read_event(2) is None
+    journal.close()
 
 
 class _Page:

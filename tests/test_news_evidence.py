@@ -16,6 +16,32 @@ from alpaca_ross_bot.stream_protocol import ReceivedFrame
 NOW = datetime(2026, 10, 13, 16, 0, tzinfo=UTC)
 
 
+def test_news_processing_cannot_precede_raw_availability(tmp_path: Path) -> None:
+    journal = Journal(tmp_path / "j.sqlite3", tmp_path)
+    raw = json.dumps([_article()])
+    parent = journal.append_next(
+        source_id="alpaca_news",
+        feed="alpaca_news",
+        event_kind="RAW_FRAME",
+        payload=raw.encode(),
+        system_first_seen_at=NOW,
+        processed_at=NOW + timedelta(seconds=2),
+    )
+    with pytest.raises(NewsEvidenceError, match="raw frame availability"):
+        capture_news_frame(
+            journal,
+            raw,
+            first_seen_at=NOW,
+            processed_at=NOW + timedelta(seconds=1),
+            health=_health(),
+            health_now=NOW + timedelta(seconds=1),
+            max_heartbeat_age_seconds=30,
+            raw_frame_sequence=parent.sequence,
+        )
+    assert journal.read_event(2) is None
+    journal.close()
+
+
 def _health(*, connected: bool = True) -> FeedHealth:
     return FeedHealth(
         kind=FeedKind.NEWS,

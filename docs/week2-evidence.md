@@ -1,5 +1,38 @@
 # Week 2 acceptance evidence
 
+## W2-06 optional-news research acceptance (2026-10-16)
+
+Completed for accepted `HYBRID_500_IEX_INTRADAY_RESEARCH_V1` P02 only.
+`news_preference.py` binds unchanged research/scanner digests before appending a
+supplied-evidence-only optional/non-veto view. It verifies raw WebSocket records
+or REST page indices/hashes, filters local decision-time availability, preserves
+recorded repeat/revision/source-health context and matches literal provider
+symbols. No news score, direction, freshness threshold or veto was added.
+
+Both collectors now reject processing before raw-parent availability. Repeats
+retain original first-seen state; revisions, conflicts and unhealthy sources stay
+unverified. REST retrieval remains separate from WebSocket deduplication history.
+Market context is snapshot association around receipt, not verified post-news
+reaction or causality. Missing supplied evidence never proves global absence.
+
+The [actual capture proof](../evidence/w2-06-optional-news-capture-2026-10-16.json)
+binds one bounded read-only AAPL query, one exhausted REST page and 16 observations.
+Raw content stays in ignored research storage. AAPL is a transport/schema control,
+not a strategy candidate, representative universe or unseen holdout. Repeated
+replay produced identical payload bytes; pre-receipt and unmatched literal-symbol
+controls exposed zero records/references. No EODHD quota was used.
+
+Independent review passed four focused suites (23 tests), with no actionable P0/P1
+finding. Seven changed Python files passed Ruff, formatting and strict mypy.
+Coordinator validation passed 61 news/replay/stream/REST tests and 475 W2/baseline
+tests (excluding W3 order/incident/trade-stream files), with one dependency
+deprecation warning. The full repository
+suite was interrupted after progress without completion; no full-suite pass is claimed. W2-06 closes only for this
+research component. Ross mandatory catalysts, semantic cross-source deduplication,
+issuer attribution, causal reaction qualification, continuous delivery/freshness
+and G03/G04 runtime release remain unaccepted. No orders or formal paper evaluation
+are authorized.
+
 ## W2-05 accepted independent research version and completion (2026-10-15)
 
 The user accepted the complete dated independent policy for research only.

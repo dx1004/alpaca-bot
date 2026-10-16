@@ -40,8 +40,10 @@ def capture_rest_news_page(
         or envelope.event_kind != "REST_RECOVERY_PAGE"
     ):
         raise RestNewsObservationError("event is not an Alpaca news REST page")
-    if processed_at < envelope.system_first_seen_at:
-        raise RestNewsObservationError("processing time precedes local page receipt")
+    if processed_at < envelope.available_at:
+        raise RestNewsObservationError(
+            "processing time precedes local page availability"
+        )
 
     try:
         metadata = json.loads(payload, parse_constant=_reject_constant)
