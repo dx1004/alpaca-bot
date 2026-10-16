@@ -60,6 +60,22 @@ and raw broker evidence only in protected local storage; the public record uses
 opaque references and digests. Engineering test activity cannot enter the
 formal ledger or its starting equity, loss streak, samples or returns.
 
+Account policy confirmed 2026-10-16: preserve the existing paper account and
+its history; obtain a dedicated USD 500 paper account for this study. The
+[official paper documentation](https://docs.alpaca.markets/us/docs/paper-trading),
+checked 2026-10-16, supports creating an additional paper account using the
+dashboard account menu's **Open New Paper Account**, then generating keys for
+that new account. No deletion of the existing account is required by these
+instructions. The current creation dialog's USD 500 field/minimum and the
+user's remaining account capacity are not verified; legacy reset/balance
+wording does not prove a current arbitrary-balance creation control. The actual
+dedicated account remains unverified. Do not implement separation
+by resetting the existing account, substituting a local virtual balance, or
+merely renaming a state directory. Bind the dedicated account's own verified
+identity and credentials to its protected state; reject credentials bound to a
+different account. Creating a separate account does not waive the empty-order,
+reconciliation, actual funding, fee-policy or pre-session E0 gates above.
+
 ## 2. Preconditions and remaining registration fields
 
 Before W3-08 is accepted, attach evidence of an accepted executable candidate,

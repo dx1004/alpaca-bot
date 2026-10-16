@@ -655,3 +655,21 @@ preserved corrected capture (no new network sample) confirms **all 1,025 quotes
 and 21 trades pass the corrected structure checks**. The original collection
 summary is preserved rather than rewritten. This does not retroactively accept
 provider-clock origin, condition-selection policy or runtime qualification.
+
+### Dedicated-account provisioning evidence (2026-10-16 follow-up)
+
+Independent GPT-6.1 Sol Low public retrieval and coordinator source readback
+confirmed the [official dashboard creation route](https://docs.alpaca.markets/us/docs/paper-trading):
+select the paper account menu, choose Open New Paper Account, and generate the
+new account's own keys. This is documented separately from account deletion;
+the user's existing account/history can therefore be preserved by the
+documented creation workflow. No account provisioning or credential mutation
+has been performed here.
+
+The source still mixes new create/delete instructions with legacy reset and
+arbitrary-balance wording. It does not establish the present creation dialog's
+USD 500 control/minimum or this user's remaining account capacity. These need
+actual dashboard verification before submission; no fixed account-count limit
+is accepted without direct supporting source text. The user has been asked to
+check the supported dialog, without sending credentials through chat. W3-08 now
+records the confirmed separation policy and this precise provisioning gap.
