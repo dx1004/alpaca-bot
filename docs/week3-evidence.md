@@ -993,3 +993,52 @@ for paper and live:
 Sending the form requires separate user authorization and contact information;
 none has been submitted. An answer must be reviewed before implementation or
 acceptance. Neither this packet nor the reported-input pass enables orders.
+
+## Bounded protection experiment plan — 2026-10-16
+
+The user requested completion of the documentation/test route. Preparation is
+authorized; this plan does not enable unattended execution or waive the existing
+no-broker-orders boundary. Use the existing W3 engineering components, not a
+second strategy runner. No actual experiment below has been executed.
+
+| Experiment | Deterministic/offline evidence | Additional isolated paper evidence | Acceptance limit |
+| --- | --- | --- | --- |
+| Working entry and stop rejection | Replay documented rejection, partial fill and uncertain response; preserve actual owned quantity | Observe a naturally occurring partial fill, then a bounded stop request only under an approved experiment | A fully filled or unfilled entry does not test partial-fill behavior |
+| Bracket activation | Replay entry partial/full, exit activation and late events | Capture all parent/child snapshots and updates through entry completion | An accepted bracket is not proof that partial fills were protected |
+| Existing-stop handoff | Test unknown response, conflicting reservations and forbidden cancel-before-replace | Only a documented supported operation may be attempted; do not guess a conversion payload | Repeated success does not establish atomicity; unsupported payloads are not a safe search method |
+| Cancel/fill and close race | Inject both event orders, disconnect, restart, duplicate updates and both exits filling | Observe supported lifecycle transitions without intentionally creating competing exits | Paper does not prove live race frequency or exchange execution guarantees |
+
+### Concrete execution envelope for review
+
+- Paper endpoint only; dedicated experiment journal outside the formal sample.
+  Do not reuse or reset the USD 500 evaluation account for experimental fills
+  without an explicit account-scope decision. Preserve all existing evidence.
+- One whole share maximum, one symbol and one scenario at a time, no shorting,
+  borrowing, extended hours or automatic retries. A USD 25 entry-notional ceiling
+  is a proposed engineering bound, not a strategy rule. If no suitable eligible
+  symbol fits it, skip; never increase the limit automatically.
+- Check broker calendar/clock, asset eligibility, account identity and current
+  empty owned inventory before entry. Record intent durably before the only send
+  attempt; subscribe before sending and retain raw HTTP/stream observations.
+- A response timeout means unknown: reconcile by client ID, never resubmit.
+  An unobserved natural partial fill is `NOT_OBSERVED`, not a passed scenario.
+- The current harness is **not ready for dispatch**: approved exit/protective
+  cleanup and crash recovery must cover every scenario first. Do not deliberately
+  create an unprotected partial position merely to investigate protection.
+  Never cancel a valid stop to make a new exit request acceptable.
+- Before any actual order, freeze the selected account, symbol, price/quantity,
+  time limits, allowed requests and supported cleanup in a reviewable manifest.
+  Missing support for safe cleanup blocks that scenario; a timeout cannot be
+  converted into an automatic market liquidation policy.
+
+### Completion criteria and honest outcomes
+
+The offline fault suite may pass independently. A paper scenario needs source
+requests, acknowledgments, all cumulative fills, exit states, restart replay and
+final broker/local reconciliation in isolated evidence. Residual orders or
+inventory are unresolved, never silently erased. Public reports expose only
+redacted summaries. Each finding is labeled documented, observed, not observed
+or unresolved; paper observations cannot be promoted into undocumented broker
+guarantees. W3 acceptance and the user's continuous-protection requirement are
+unchanged. Vendor clarification is necessary only for guarantees still missing
+after the supported public contract and bounded observations are evaluated.
