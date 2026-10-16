@@ -1,0 +1,70 @@
+{
+  "checked_on": "2026-10-16",
+  "status": "VERIFIED_OFFLINE_IMPLEMENTATION_PARENT_ACCEPTANCE_OPEN",
+  "version_id": "HYBRID_500_IEX_INTRADAY_RESEARCH_V1",
+  "classification": "USER_ACCEPTED_INDEPENDENT_ADAPTATION_NOT_TRADER_REPLICA",
+  "coverage": "NOT_SIP_EQUIVALENT",
+  "research_record": "evidence/hybrid-500-iex-intraday-research-v1.json",
+  "research_sha256": "acefeee493533686c2595fbc8347f0db0c03630c5bfdf1749ffa56c72b995c9a",
+  "files": {
+    "src/alpaca_ross_bot/strategy_features.py": "1375c52da7eadc80846b00fcf61e212306ac64dba0fd691cdcc932986d1c04fd",
+    "src/alpaca_ross_bot/entry_strategy.py": "e34427deb2df78ea3eb8cdbed50acf53d015fae3892f078150cf22549451e039",
+    "src/alpaca_ross_bot/strategy_risk.py": "6efc8609f69b020f2adda9c75099d35ad387ea63961f44b827dfbec646a8452d",
+    "src/alpaca_ross_bot/strategy_attempts.py": "886afb13f04932ade6eb9e04585daf7f332ba6be7df87e233edcdf3727c44b5d",
+    "tests/test_strategy_features.py": "9fae2826819a8e21256460d290984ef0db85285f68f65a420ee70a33ed00529c",
+    "tests/test_entry_strategy.py": "969a63746264d9b62876dd65aa3502353bd25db6b1deeea2df699757faff680c",
+    "tests/test_strategy_risk.py": "28ac83b4686631cbd24e81cdffae86f41201b69898824a3ab485d74813787aba",
+    "tests/test_strategy_attempts.py": "4e228000629374eabf0c46abe544a7770f6216f9af43632bcb3b618d0bdd4b42",
+    "tests/test_strategy_acceptance.py": "153390c1b930bd7ae6822dfecaa78eb87965a1ba35572355a577ea40523267b7"
+  },
+  "dependency_lock_sha256": "67e4f51a301b408eeb33f964c2ec65f1fc03d2f59ed13826f25e483a73ecbeb5",
+  "validation": {
+    "targeted_tests": 149,
+    "full_tests": 1008,
+    "full_warnings": 1,
+    "warning_scope": "existing upstream websockets.legacy deprecation",
+    "ruff": "PASS",
+    "format": "PASS",
+    "strict_mypy_source_files": 88,
+    "diff_check": "PASS",
+    "independent_review": "bounded review and three correction passes; latest risk/attempt/acceptance subset 61 passed"
+  },
+  "implemented": {
+    "P03": "30-symbol reserved-first monitor proposal with accepted ranking; no subscription mutation",
+    "P04": "exact 100 expected bars, provider-minute completeness, as-of revisions and rational EMA",
+    "P05_P08_P13": "gap/pullback, strict cross, invalidation, 1m/5m boundary, no chase and unavailable-data veto",
+    "P01_P09_P10": "whole-share maximal feasible size with verified-input contracts and complete quantity-specific fees",
+    "P11": "fixed stop and reconciled-terminal gross 2R target arithmetic; closing obligations only",
+    "P12": "account/date/E0-bound daily capacity, reserve partition, losing-streak latch and guarded date reset",
+    "P06_durable_attempt": "deterministic private account/version/symbol/date research intent; restart recovery and persist-before-consume"
+  },
+  "authority": {
+    "executable_release": false,
+    "live_input_qualification": false,
+    "operational_daily_risk_owner_accepted": false,
+    "order_authority": false,
+    "formal_paper_evaluation": false,
+    "live_trading": false,
+    "broker_operations_performed": false
+  },
+  "original_parent_acceptance": {
+    "W3-01": "OPEN: accepted research definitions and W2 research components do not establish the required executable/data-qualified strategy version",
+    "W3-02": "OPEN: W3-01 remains open; actual account/fee/mark/reservation sources and durable operational daily-state ownership are not qualified"
+  },
+  "remaining_gates": [
+    "Versioned trigger trade/quote condition and clock semantics, actual as-of raw data/calendar/history and monitor continuity qualification",
+    "Verified runtime account/funds/fees/mark/reservation inputs and canonical durable daily-risk owner",
+    "Separate protection/execution and release acceptance; no offline result may enable dispatch"
+  ],
+  "primary_source_review": {
+    "checked_on": "2026-10-16",
+    "urls": [
+      "https://docs.alpaca.markets/us/docs/real-time-stock-pricing-data",
+      "https://docs.alpaca.markets/us/docs/market-data-faq",
+      "https://alpaca.markets/learn/stock-minute-bars",
+      "https://docs.alpaca.markets/us/reference/stocklatesttrades-1",
+      "https://www.iex.io/resources/trading/market-data"
+    ],
+    "limits": "Timestamp precision is not IEX originating-clock or latency proof; bar-field condition rules do not accept a strategy trigger policy; revised historical bars do not establish decision-time availability."
+  }
+}

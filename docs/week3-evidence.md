@@ -448,3 +448,82 @@ questions above still require an authoritative answer before implementation
 acceptance. W3-01/W3-02 remain pending and the research acceptance manifest still
 has executable release disabled. No dependency, launch status or runtime code
 was changed; unchanged tests were not rerun for this documentation-only update.
+
+
+## W3-01/W3-02 — Offline implementation verified; original acceptance open (2026-10-16)
+
+The user requested completion of the strategy/risk prerequisites. Current
+W2-05 and W2-06 have accepted independent research-path components, so the
+known P01–P13 definitions were implemented without changing their policy,
+research digest or Ross baseline. This is a checked implementation increment,
+not completion of the original executable/data-qualified dependency. The
+[hash-bound verification record](../evidence/w3-entry-risk-offline-2026-10-16.json)
+records the exact nine implementation/test files and open gates.
+
+`strategy_features.py` implements exact rational EMA from exactly 100 expected
+bars, complete provider-minute aggregation anchored to supplied session open,
+truncated final buckets, as-of revisions and opening feature freeze.
+`entry_strategy.py` implements reserved-first monitor proposals, gap/pullback,
+strict prior-high crossing, session invalidation, decision-clock timeframe
+switch/expiry, no chase, and typed unavailable-input vetoes. It emits research
+signals only. Unknown source/condition/continuity facts do not qualify a trade.
+The arming observation can supply the crossing baseline; a threshold change
+alone cannot produce a signal, and switching timeframes discards the old
+baseline. No undocumented discretionary trade rule was filled in.
+
+`strategy_risk.py` computes exact next-cent limits, frozen floor-cent stops,
+maximal whole-share size with complete quantity-specific entry/stop-exit charge
+bounds, P12 capacity without double-counting accrued/remaining charges,
+reconciled-terminal 2R targets, daily/streak latches and closing obligations.
+Daily state binds account, date and frozen E0; sizing requires that state and
+carries the same provenance. A false ledger latch cannot override three losses
+or an already latched daily state. No fee, borrowing or liquidity default is
+assumed. The production account/fee/mark verifiers and durable operational daily
+owner are not supplied by these calculation dataclasses.
+
+`strategy_attempts.py` binds the pinned specification and private journal account
+to one deterministic research intent per symbol/date/version. Signal appearance
+does not consume the allowance; a successful durable write does, and restart
+recovers consumption from the intent. Risk account/date/E0 and signal prices
+must match. Failed persistence consumes nothing. These intents use a distinct
+non-dispatch purpose and have no broker request body; an injected-transport test
+verifies the existing paper adapter rejects them before HTTP or a send marker.
+This is not a production slot/reservation or execution acceptance.
+
+Independent review reproduced and corrected malformed boolean qualification,
+duplicate-event suppression bypassing current veto/expiry, and missing sizing
+account/date/E0 provenance. Root review additionally required frozen daily E0
+and independent latch enforcement. Final bounded review approved those changes.
+An independent closed-form EMA oracle checks the recurrence under low Decimal
+precision; integration verifies gap-to-pullback-to-cross, explicit nonzero fees,
+sizing and durable non-dispatch attempt. The five targeted files passed
+**149 tests**; the complete repository passed **1008 tests**, with only the
+existing upstream websockets deprecation. Ruff check/format and strict mypy
+passed for 88 files; diff checks passed. Commands:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-w30102-full`
+- `rtk proxy .venv/bin/ruff check --no-cache src tests scripts/reconcile_paper_orders.py`
+- `rtk proxy .venv/bin/ruff format --check --no-cache src tests scripts/reconcile_paper_orders.py`
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/mypy --strict --cache-dir /tmp/alpaca-w30102-mypy src tests scripts/reconcile_paper_orders.py`
+
+The full test run used the previously verified tool-approved execution path
+because sandboxed async executor shutdown remains an isolated environment
+limitation. No repair of that global behavior is claimed. Tests use synthetic
+account/market/fee facts; no credentials, broker operation or private runtime
+state were accessed. Public-only Ollama Cloud inference was verified as
+`route=cloud`, `model=gemma4:31b`, `success=true` for a generic exact-arithmetic
+engineering checklist. No local strategy specification or account facts were
+exported. Its ratio-only sizing suggestion and blanket architectural rules were
+not adopted; coordinator calculations, source review and tests govern the code.
+
+Independent Sol Low primary retrieval confirmed that Alpaca's
+[stream schema](https://docs.alpaca.markets/us/docs/real-time-stock-pricing-data)
+documents timestamps/conditions and bar revisions but does not establish IEX
+clock forwarding or a trigger whitelist. The
+[current FAQ](https://docs.alpaca.markets/us/docs/market-data-faq) has field-specific
+bar conditions; the [older aggregation article](https://alpaca.markets/learn/stock-minute-bars)
+uses different clock wording. Latest-trade endpoint filtering does not define
+raw-stream trigger eligibility. These sources do not turn historical bars into
+point-in-time inputs or promise the user's 1000ms research bounds. Actual source
+qualification and runtime ownership remain open; original W3-01/W3-02 are not
+checked complete, and W3-06/07/08 or formal paper are not unblocked.

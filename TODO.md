@@ -143,13 +143,15 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
 ## Week 3 — Strategy, risk, execution, and reconciliation
 
-- [ ] **W3-01 [P0] Implement sourced entry state machines**  
+- [!] **W3-01 [P0] Implement sourced entry state machines**
   Depends: an accepted executable Ross or separately labeled hybrid version, W2-05, W2-06. Separate each documented entry pattern/version.  
   Accept: every transition cites `rule_id`; undefined discretionary terms block the transition.
 
-- [ ] **W3-02 [P0] Implement Ross sizing and risk rules**  
+- [!] **W3-02 [P0] Implement Ross sizing and risk rules**
   Depends: W3-01. Position sizing, stops, targets, scaling, daily loss and stop-trading rules for the selected version.  
   Accept: no unsourced liquidity/slippage/spread adjustment enters formal orders; broker constraints are reported separately.
+
+  Partial implementation verified 2026-10-16 for W3-01/W3-02: exact features/entry, account/date/E0-bound risk and durable non-dispatch research attempts passed independent review, 149 targeted tests, 1008 full tests, Ruff/format and strict mypy. [Evidence](docs/week3-evidence.md#w3-01w3-02--offline-implementation-verified-original-acceptance-open-2026-10-16) binds code/tests and original open gates. Both parents remain blocked: accepted research definitions are not the required executable/data-qualified release; actual source/condition/account/charge qualification and operational daily-risk ownership remain open. No order or formal paper authority follows.
 
 - [ ] **W3-03 [P0] Implement capital-stage state**  
   Depends: W3-02. Separate capital, strategy, risk profile and broker capability versions. The user confirms no borrowed leverage below $2,000 and accepts researching a sourced Ross leveraged version at/above $2,000.  
