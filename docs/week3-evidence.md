@@ -720,3 +720,25 @@ qualification: omitted transfer fields remain unknown. Capture was intraday,
 not a pre-session E0, and no baseline was frozen. Actual risk-input resolver,
 fee-policy choice, data/clock/condition acceptance and continuous protection
 handoff remain open. W3-01/02/06/07/08 are not promoted by this account check.
+
+### Paper fee-policy decision — confirmed 2026-10-16
+
+The user selected conservative bounds from the reviewed official fee schedule
+for the paper risk budget, with paper's original broker fees reported separately.
+This resolves the fee-policy preference question. The source-versioned
+`equity_fees.py` calculations remain the mathematical basis: exact execution
+quantities, separate account/day fee-type ceilings, conservative incremental
+entry/stop reservations and no invented broker per-order minimum.
+
+W3-08 now records separate raw-broker and modelled-cost ledgers/report fields,
+reservation-versus-accrual treatment, and a requirement to reconcile rather than
+double-count fees. This is a user-authorized paper accounting convention, not a
+Ross rule, broker-posted fee, proof of tariff applicability, live-fee promise or
+runtime authorization. Existing tests already cover the unchanged arithmetic;
+no new executable fee acceptance flag or broker call is introduced here.
+
+Remaining work is implementing and accepting the actual source-derived ledger
+adapter under this convention, including execution completeness, charge matching
+and reservation retirement. The missing pre-session E0, funds/flow inputs,
+data/condition/clock and continuous-protection gates remain unchanged. Neither
+an accepted fee convention nor the USD 500 identity check closes W3-06/07/08.

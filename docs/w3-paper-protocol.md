@@ -53,6 +53,20 @@ database schema; fidelity oracle and review rubric; engineering scenario cases;
 and the report computation. Record the actual runtime build/config digests at
 startup and every restart; mismatch prevents new exposure.
 
+Paper cost policy selected by the user on 2026-10-16: reserve conservative
+regulatory fee bounds from the reviewed official 2026-10-12 ordinary-retail NMS
+schedule, even when Alpaca paper posts no regulatory charge. Bind the reviewed
+policy digest and calculator version at release freeze. Preserve the original
+broker fee ledger and raw paper P&L separately from the modelled charge ledger
+and cost-adjusted paper P&L. Report their reconciliation explicitly; do not add
+the same fee twice or present a modelled amount as broker-posted. Prospective
+entry/stop bounds are reservations, not incurred charges. Replace them with
+execution-derived daily fee-type aggregates only through the accepted ledger
+reconciliation contract. This selects the study's cost convention; account
+applicability, complete executions/charges, risk input qualification and actual
+broker fees remain separately verified facts. The fee bound is not a slippage
+or maximum-loss guarantee. No return threshold is introduced.
+
 Also freeze the account identity reference, verified paper endpoint, reconciled
 $500 starting state, no-borrowing boundary, zero inherited engineering inventory,
 no orphan orders, and initial risk/capital-stage state. Store account details
