@@ -669,7 +669,10 @@ has been performed here.
 The source still mixes new create/delete instructions with legacy reset and
 arbitrary-balance wording. It does not establish the present creation dialog's
 USD 500 control/minimum or this user's remaining account capacity. These need
-actual dashboard verification before submission; no fixed account-count limit
-is accepted without direct supporting source text. The user has been asked to
+actual dashboard verification before submission. Follow-up source readback of
+the [official guide](https://alpaca.markets/learn/start-paper-trading), revised
+2026-03-23, confirms its published maximum of **3** distinct paper accounts
+under “Key Differences Between Paper Trading API vs Live Trading API.” This
+does not establish the user's current remaining slots. The user has been asked to
 check the supported dialog, without sending credentials through chat. W3-08 now
 records the confirmed separation policy and this precise provisioning gap.
