@@ -1056,3 +1056,90 @@ freeze missing reviewer identities or substitute synthetic policy flags for
 W3-02/W3-06 acceptance. W3-07 still has no actual order-cycle evidence. The
 protection contract, safe dispatch/cleanup implementation and full prerequisite
 acceptance remain open; none is replaced with a weaker policy.
+
+## Isolated engineering recovery program — 2026-10-16
+
+Implemented `src/alpaca_ross_bot/paper_engineering.py` and
+`scripts/run_paper_engineering.py`, using the existing paper HTTP transport,
+private Journal and lifecycle REST recovery. This is an executable recovery
+component, not an enabled entry/protection/close runner. No actual API call was
+made while implementing it, and no existing account or runtime evidence changed.
+
+The experiment scope durably binds experiment identity, engineering account,
+declared formal account and formal storage root. Engineering/formal roots must
+not overlap, including resolved aliases. Database/WAL/SHM symlinks, hardlinks
+and non-regular files are rejected before opening and before later operations.
+Existing unscoped evidence cannot be adopted; a different scope cannot relabel
+the same journal. Scope evidence and its cached digest must agree on restart.
+Private permissions and source hashes remain enforced by the existing Journal.
+
+GET-only recovery authenticates the engineering account, rebuilds lifecycle
+state and captures complete REST evidence for persisted intents. A timed-out
+send, missing lookup, incomplete capture or stream gap never grants retry or
+cleanup authority. Recovery never sends POST/DELETE and does not fabricate a
+stream subscription, pre-session baseline or owned-position acceptance. Even a
+complete observed empty REST book is not reported as an accepted cleanup.
+Formal-account isolation is explicitly unauthenticated in this read-only report:
+two supplied references alone do not establish two actual accounts.
+
+The separate explicit `cancel_entry_once` method first authenticates the formal
+account into an independent protected proof journal, then authenticates the
+engineering account. It delegates only to the existing owned-buy-entry cancel
+transport, retaining the durable one-attempt marker and all raw response evidence.
+The method is never called at startup or recovery and has no CLI switch. Unknown
+DELETE outcomes cannot be repeated after restart. Protective sell cancellation,
+automatic liquidation, stop-to-OCO conversion and new entry dispatch remain
+unsupported. They cannot be enabled merely by an experiment scope file. A
+cancel acknowledgment is not terminal cancellation, flatness or cleanup success.
+
+### Operator entry point and boundaries
+
+Without `--recover-readonly`, the CLI returns `NOT_RUN` without reading scope,
+credentials or creating state. With the explicit flag it requires a private scope
+file with exactly `experiment_id`, `account_ref`, `formal_account_ref` and
+`formal_runtime_root`, plus an independently selected runtime root and credential
+file. References must come from actual authenticated account evidence; do not
+send credentials or private scope values in chat. Only the engineering account's
+credentials are needed for this GET-only entry point. Account and raw HTTP
+evidence remain in protected local storage; stdout contains redacted counts,
+status and difference codes, never raw exceptions/account values.
+
+```text
+rtk proxy .venv/bin/python scripts/run_paper_engineering.py --scope-file <private-scope-json> --runtime-root <isolated-engineering-root> --credentials-file <engineering-credentials-json>
+```
+
+The command above is deliberately a no-op. Add `--recover-readonly` only for an
+authorized GET capture. There is no command here for a new entry, protective exit,
+automatic cleanup, formal paper or live trading. The prior USD 500 formal account
+must not be reused as the engineering account. No new test account was created.
+
+### Verification and remaining acceptance
+
+Independent review found two material issues during development: a hardlinked
+database could alias formal storage, and a failed positions capture could be
+misreported as empty. Both were reproduced and fixed, with regression tests.
+The final independent harness/cancellation review passed **47 tests**, with no
+remaining material findings within this scope. Coordinator full offline suite
+passed **1,295 tests**, with one existing upstream websockets deprecation. Ruff
+check and format (113 files) passed; strict mypy passed 115 files, including the
+new CLI. Tests cover account disguise, directory/symlink/hardlink isolation,
+scope tampering, restart identity, persistence failure, unknown send recovery,
+unknown cancellation without replay, incomplete capture and default CLI no-op.
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-engineering-full-final tests
+rtk proxy .venv/bin/ruff check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/ruff format --check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-engineering-current-mypy src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```
+
+The sandboxed related async suite encountered the already documented executor
+shutdown limitation and was interrupted; full final validation used the approved
+execution environment. No application workaround or global change was made.
+
+This completes the verified isolated recovery and explicit owned-entry-cancel
+component. It does not complete the requested full safe order-cycle harness:
+supported initial protection, continuous handoff and accepted safe position-close
+semantics are still missing. Those missing paths remain non-dispatchable rather
+than being replaced with cancel-before-close or guessed exits. W3-07 therefore
+remains open pending W3-02/W3-06, supported cleanup and actual API-cycle evidence.

@@ -598,6 +598,9 @@ class Journal:
     def read_market_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
         return self._read_private_events("alpaca_market_data", None)
 
+    def read_engineering_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        return self._read_private_events("PAPER_ENGINEERING_HARNESS", None)
+
     def read_market_metadata_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
         return self._read_private_events("ALPACA_MARKET_METADATA", None)
 
