@@ -1211,3 +1211,59 @@ missing bid/source vetoes, daily fixture-stop propagation and restart persistenc
 pre-observation identity conflicts, failed persistence, cache tampering, existing
 protection preservation and historical daily-read corruption/availability cases.
 No formal paper sample started, and W3-06/W3-07/W3-08 remain unaccepted overall.
+
+## Owned nonflat equity conservation — 2026-10-18
+
+`owned_equity_ledger.py` now performs a source-bound conservation audit from a
+genuinely frozen flat E0. It joins captured account/activity pages, independently
+replayed order ownership and current owned IEX bid evidence. It checks every
+new execution against the lifecycle's activity census by ID, order, symbol,
+side, exact execution quantity, price and timestamp. Cumulative execution totals
+must match owned-order filled quantities; net quantities must match the observed
+owned inventory. Missing, foreign or disagreeing executions prevent acceptance.
+
+In the supported no-new-NTA case, exact reported cash must equal baseline cash
+plus gross sell notionals minus gross buy notionals. Observed equity at bid is
+reported cash plus source-owned quantity times bid; the gross change is measured
+against E0. Modelled paper regulatory costs are deducted separately using the
+reviewed cumulative fee delta, with its source-document reference retained.
+Provider position `market_value`, `current_price`, cumulative execution `cum_qty`
+and broker unrealized P&L do not supply this calculation. Unknown new cashflows,
+fees or corporate-action activities are rejected instead of being assumed zero
+or silently combined with modelled fees. Raw evidence is preserved privately.
+
+Sources rechecked 2026-10-18: [execution fields and nontrade activities](https://docs.alpaca.markets/us/docs/account-activities),
+[account equity structure](https://docs.alpaca.markets/us/docs/account-plans),
+and [paper limitations, including omitted regulatory fees](https://docs.alpaca.markets/us/docs/paper-trading).
+The conservation formula is a derived bookkeeping identity conditional on these
+observations, not an Alpaca promise of synchronized snapshots, final posting,
+settled cash, liquidation proceeds or future funds availability. A temporary
+posting mismatch remains a discrepancy, not a known loss or an assumed zero.
+
+Independent GPT-6.1 Sol Low gathered primary evidence. Public-only Cloud critique
+was verified as `gemma4:31b` remote inference, with alias metadata pointing to
+`https://ollama.com`. Its obsolete settlement-cycle statement was discarded;
+neither settlement nor cash-posting timing is inferred from that model response.
+No local source, private account evidence or credentials were sent to Cloud.
+
+Independent component review passed **11 tests**, with no remaining material
+findings in this bounded audit. Full offline regression passed **1,331 tests**,
+with one existing upstream websockets deprecation. Ruff check, format (118 files),
+strict mypy (120 files) and diff checks passed. Tests include nonflat ownership,
+cash mismatch, missing/foreign fills, execution-price disagreements, cumulative
+versus execution quantity, new NTA, missing genuine E0, stale bids, redaction and
+low Decimal precision. The deliberately wrong provider position mark is ignored.
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-owned-equity-full tests
+rtk proxy .venv/bin/ruff check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/ruff format --check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-owned-equity-final2-mypy src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```
+
+This is an additional implemented dependency toward the actual risk resolver.
+It is not attached as an authorizing daily owner, reservation allocator or release
+verifier. `runtime_authorized` remains false. Actual E0, complete risk reservation
+and roundtrip ownership, accepted operational inputs and continuous protection
+still require their own evidence. No actual account access, broker order or formal
+paper evaluation was performed, and no W3 parent was checked complete.
