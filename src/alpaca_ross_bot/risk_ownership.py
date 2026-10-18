@@ -59,6 +59,7 @@ def qualify_ownership(
     decision_at: datetime,
     session_open: datetime,
     max_age: timedelta,
+    _intent_ids: tuple[str, ...] | None = None,
 ) -> OwnershipFacts:
     """Inspect immutable account bytes and independently replayed lifecycle proof.
 
@@ -150,7 +151,17 @@ def qualify_ownership(
         except (ValueError, ArithmeticError):
             issues.add("POSITION_QUANTITY_UNQUALIFIED")
     raw_orders = orders_views[0] if len(orders_views) == 1 else []
-    intents = journal.read_order_intent_ids()
+    # Only the incident binder supplies a census captured under the same private
+    # write lock and preserved in its immutable event. Ordinary observations use
+    # the current census. This seam never grants runtime qualification.
+    intents = journal.read_order_intent_ids() if _intent_ids is None else _intent_ids
+    if (
+        type(intents) is not tuple
+        or any(type(cid) is not str or not cid.strip() for cid in intents)
+        or len(set(intents)) != len(intents)
+        or not set(intents) <= set(journal.read_order_intent_ids())
+    ):
+        raise ValueError("invalid immutable intent census")
     refs: tuple[int, ...] = (capture_sequence,)
     if observed or raw_orders or intents:
         state, lifecycle_refs = OrderReconciler.read_evidence_at(

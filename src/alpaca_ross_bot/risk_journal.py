@@ -6,7 +6,7 @@ import hashlib
 import json
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, replace
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from fractions import Fraction
 from zoneinfo import ZoneInfo
@@ -156,6 +156,57 @@ class RiskJournal:
         if raw is not None and not isinstance(raw, dict):
             raise JournalError("invalid risk projection")
         return raw
+
+    @classmethod
+    def read_evidence_at(
+        cls, journal: Journal, account_ref: str, decision_at: datetime
+    ) -> tuple[dict[str, object] | None, tuple[int, ...]]:
+        """Read a visible immutable prefix; fixture evidence never grants runtime.
+
+        Construction checks the current projection and deduplication cache, but
+        does not call an input resolver or append restart/observation events.
+        """
+        if type(decision_at) is not datetime or decision_at.utcoffset() != timedelta(0):
+            raise ValueError("UTC risk observation clock required")
+        reader = cls(journal, account_ref)
+        projected: dict[str, object] | None = None
+        seen: dict[str, str] = {}
+        refs: list[int] = []
+        unavailable_prefix = False
+        for event, payload in journal.read_strategy_risk_events():
+            item = json.loads(payload)
+            if (
+                not isinstance(item, dict)
+                or event.feed != "paper"
+                or event.event_kind != "RISK_INPUT"
+                or item.get("account_ref") != account_ref
+                or item.get("version") != VERSION
+            ):
+                raise JournalError("risk evidence identity differs")
+            if not event.visible_at(decision_at):
+                unavailable_prefix = True
+                continue
+            if unavailable_prefix or event.external_clock_conflict:
+                raise JournalError("risk evidence prefix is unavailable")
+            at = datetime.fromisoformat(item["at"])
+            if at.utcoffset() != timedelta(0) or at != event.system_first_seen_at:
+                raise JournalError("risk evidence clock differs")
+            inputs = RiskInputs.from_dict(item["inputs"])
+            for sequence in inputs.input_event_refs:
+                source = journal.read_event(sequence)
+                if (
+                    source is None
+                    or not source[0].visible_at(at)
+                    or source[0].external_clock_conflict
+                ):
+                    raise JournalError("risk input source is unavailable")
+                refs.append(sequence)
+            key, digest = item["key"], hashlib.sha256(payload).hexdigest()
+            conflict = key in seen and seen[key] != digest
+            seen.setdefault(key, digest)
+            projected = reader._reduce(projected, item, conflict, event.sequence)
+            refs.append(event.sequence)
+        return projected, tuple(dict.fromkeys(refs))
 
     def observe(self, event_id: str, refs: tuple[int, ...], at: datetime) -> None:
         self._record(event_id, refs, at, None)

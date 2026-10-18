@@ -4,8 +4,10 @@ import hashlib
 import json
 from dataclasses import replace
 from datetime import UTC, datetime
+from fractions import Fraction
 from uuid import uuid4
 
+from .incident_risk import IncidentRiskRequest, assess_incident_risk
 from .incident_state import (
     IncidentObservation,
     IncidentPolicy,
@@ -55,18 +57,42 @@ class IncidentJournal:
         return None if projection is None else IncidentProjection.from_dict(projection)
 
     def _check_wrapper(self, state: object) -> None:
+        base = {"schema", "policy", "projection", "watermark", "dispatch_authorized"}
         if (
             not isinstance(state, dict)
-            or set(state)
-            != {"schema", "policy", "projection", "watermark", "dispatch_authorized"}
+            or (
+                set(state) != base
+                if state.get("schema") == 1
+                else set(state) != base | {"risk"}
+            )
             or type(state["schema"]) is not int
-            or state["schema"] != 1
+            or state["schema"] not in (1, 2)
             or state["policy"] != self.policy.to_dict()
             or type(state["watermark"]) is not int
             or state["watermark"] <= 0
             or state["dispatch_authorized"] is not False
         ):
             raise JournalError("incident projection wrapper is invalid")
+
+    def observe_risk(
+        self, event_id: str, request: IncidentRiskRequest, received_at: datetime
+    ) -> dict[str, object]:
+        """Bind risk facts by immutable references; callers cannot submit flags."""
+        if not isinstance(event_id, str) or not event_id.strip():
+            raise JournalError("risk observation identity required")
+        self._record(
+            {
+                "kind": "BOUND_RISK",
+                "request": request.to_dict(),
+                "at": received_at.isoformat(),
+            },
+            received_at,
+            "risk:" + event_id,
+        )
+        state = self.journal.read_state(self.state_key)
+        if not isinstance(state, dict) or not isinstance(state.get("risk"), dict):
+            raise JournalError("bound risk assessment was not committed")
+        return dict(state["risk"])
 
     def observe(
         self, observation: IncidentObservation, received_at: datetime
@@ -97,6 +123,28 @@ class IncidentJournal:
                 raise JournalError(
                     "incident projection or deduplication differs from evidence"
                 )
+            if item["kind"] == "BOUND_RISK":
+                item["intent_census"] = [
+                    [
+                        cid,
+                        hashlib.sha256(
+                            json.dumps(
+                                self.journal.read_order_intent(cid),
+                                sort_keys=True,
+                                allow_nan=False,
+                            ).encode()
+                        ).hexdigest(),
+                    ]
+                    for cid in sorted(self.journal.read_order_intent_ids())
+                ]
+                item["assessment"] = assess_incident_risk(
+                    self.journal,
+                    self.policy.account_ref,
+                    IncidentRiskRequest.from_dict(item["request"]),
+                    datetime.fromisoformat(str(item["at"])),
+                    item["intent_census"],
+                )
+                return _json(item)
             return raw
 
         self.journal.apply_incident_event(
@@ -121,6 +169,7 @@ class IncidentJournal:
         previous = (
             None if previous_raw is None else IncidentProjection.from_dict(previous_raw)
         )
+        risk = old.get("risk") if isinstance(old, dict) else None
         if item.get("policy") != self.policy.to_dict():
             raise JournalError("incident policy changed without acceptance")
         if item["kind"] == "RESTART":
@@ -136,6 +185,30 @@ class IncidentJournal:
                     ),
                     proposals=proposals,
                 )
+        elif item["kind"] == "BOUND_RISK":
+            assessment = assess_incident_risk(
+                self.journal,
+                self.policy.account_ref,
+                IncidentRiskRequest.from_dict(item["request"]),
+                datetime.fromisoformat(str(item["at"])),
+                item["intent_census"],
+            )
+            if assessment != item["assessment"]:
+                raise JournalError("bound risk assessment differs from source replay")
+            risk = assessment | {
+                "daily_stop_latched": assessment["daily_stop_observed"] is True
+                or (isinstance(risk, dict) and risk.get("daily_stop_latched") is True),
+                "identity_conflict": conflict
+                or (isinstance(risk, dict) and risk.get("identity_conflict") is True),
+            }
+            projection = previous
+            if conflict and projection is not None:
+                projection = replace(
+                    projection,
+                    reasons=tuple(
+                        sorted(set(projection.reasons) | {"EVENT_ID_CONFLICT"})
+                    ),
+                )
         elif item["kind"] == "OBSERVE":
             observation = IncidentObservation.from_dict(item["observation"])
             projection = reduce_incident(previous, self.policy, observation)
@@ -145,13 +218,60 @@ class IncidentJournal:
                 )
         else:
             raise JournalError("incident event kind is unsupported")
-        return {
-            "schema": 1,
+        if risk is not None:
+            if not isinstance(risk, dict) or not isinstance(risk.get("reasons"), list):
+                raise JournalError("invalid bound risk projection")
+            if projection is not None:
+                reasons = {
+                    r for r in projection.reasons if not r.startswith("BOUND_RISK_")
+                }
+                reasons.update(str(r) for r in risk["reasons"])
+                if risk.get("ownership_verified") is True:
+                    raw_positions = risk.get("owned_positions")
+                    if not isinstance(raw_positions, list):
+                        raise JournalError("bound risk inventory missing")
+                    positions = dict(raw_positions)
+                    actual = Fraction(positions.get(self.policy.symbol, "0"))
+                    if (
+                        projection.expected_quantity is None
+                        or projection.observed_position is None
+                        or actual != Fraction(projection.expected_quantity)
+                        or actual != Fraction(projection.observed_position)
+                    ):
+                        reasons.add("BOUND_RISK_POSITION_MISMATCH")
+                if risk.get("identity_conflict") is True:
+                    reasons.add("EVENT_ID_CONFLICT")
+                if risk.get("daily_stop_latched") is True:
+                    reasons.add("DAILY_STOP_LATCHED")
+                if item["kind"] != "BOUND_RISK":
+                    reasons.add("BOUND_RISK_REFRESH_REQUIRED")
+                proposals = projection.proposals + (
+                    IncidentProposal(ProposalKind.RECONCILE),
+                )
+                if projection.pending_entry_ids:
+                    proposals += (
+                        IncidentProposal(
+                            ProposalKind.CANCEL_ENTRY_REMAINDER,
+                            projection.pending_entry_ids,
+                        ),
+                    )
+                projection = replace(
+                    projection,
+                    reasons=tuple(sorted(reasons)),
+                    daily_stop_latched=projection.daily_stop_latched
+                    or risk.get("daily_stop_latched") is True,
+                    proposals=tuple(dict.fromkeys(proposals)),
+                )
+        result: dict[str, object] = {
+            "schema": 2 if risk is not None else 1,
             "policy": self.policy.to_dict(),
             "projection": None if projection is None else projection.to_dict(),
             "watermark": sequence,
             "dispatch_authorized": False,
         }
+        if risk is not None:
+            result["risk"] = risk
+        return result
 
     def verify_rebuild(self) -> bool:
         """Require the cache to include every immutable event for this scope."""

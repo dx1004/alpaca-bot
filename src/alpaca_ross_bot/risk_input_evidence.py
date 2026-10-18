@@ -52,6 +52,7 @@ def inspect_risk_inputs(
     max_age: timedelta,
     mark_refs: tuple[tuple[str, int, int, int], ...] = (),
     max_metadata_age: timedelta,
+    _intent_ids: tuple[str, ...] | None = None,
 ) -> RiskInputEvidence:
     """Accept references, never caller-supplied positions or qualification flags.
 
@@ -67,6 +68,7 @@ def inspect_risk_inputs(
         decision_at=decision_at,
         session_open=session_open,
         max_age=max_age,
+        _intent_ids=_intent_ids,
     )
     if type(mark_refs) is not tuple:
         raise ValueError("immutable mark references required")

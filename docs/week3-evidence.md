@@ -1143,3 +1143,71 @@ supported initial protection, continuous handoff and accepted safe position-clos
 semantics are still missing. Those missing paths remain non-dispatchable rather
 than being replaced with cancel-before-close or guessed exits. W3-07 therefore
 remains open pending W3-02/W3-06, supported cleanup and actual API-cycle evidence.
+
+## Source-bound risk inputs connected to incidents — 2026-10-18
+
+`IncidentJournal.observe_risk()` now accepts immutable capture/calendar/quote
+references rather than qualification booleans. Under the existing private write
+transaction, `incident_risk.py` derives the session open from captured official
+calendar evidence, verifies reported funds, source-owned inventory and bid marks,
+and reads the point-in-time durable daily-risk prefix. Its assessment, source
+hashes and selected request are recorded with the incident event. Historical
+rebuild derives the assessment again; a mismatched cache, source or deduplication
+record fails closed. No broker/account access or runtime change was performed.
+
+Verified ownership is compared with both the incident's expected inventory and
+its supplied observed position. A caller's flat/reconciled/data flags cannot
+override a disagreement. Missing, stale or invalid risk sources retain a veto;
+they do not discard existing protective-order identities or known fills. A new
+ordinary observation or restart requires risk refresh, and cannot erase bound
+risk gates. Daily stops and evidence-identity conflicts remain sticky even when
+risk evidence arrives before the first order observation. Incident schema 1
+history remains readable; schema 2 adds the bound-risk projection only when used.
+
+`RiskJournal.read_evidence_at()` verifies the current cache/deduplication state,
+then reconstructs only the visible immutable prefix, without a resolver call,
+restart event or other mutation. It checks UTC, account/version, event metadata,
+source availability at the original risk event and external clock conflicts.
+Later daily-state events cannot retrospectively change an earlier observation.
+
+The existing daily-risk journal still uses an **OFFLINE_FIXTURE_ONLY** input seam.
+Its observed stop/veto may conservatively stop the incident, but it cannot certify
+actual account P&L, complete fees, reservations or operational risk eligibility.
+Missing or stale daily state remains explicit. Accounting, executable data,
+runtime risk-owner and protection acceptance remain separate blocked gates;
+neither caller flags nor positive reported-input qualification clears them.
+All new paths preserve `runtime_authorized=false` and have no dispatch operation.
+This is the requested risk-to-incident connection, not full W3-02/W3-06 acceptance.
+
+### Replay correction and verification
+
+Independent review reproduced a material defect: reading today's complete intent
+list while rebuilding yesterday's bound assessment could make a legitimate new
+intent invalidate history. The writer now preserves the sorted intent census
+and hashes of immutable intent contents under the same write lock. Historical
+assessment validates that preserved context through a private observer seam;
+ordinary/current qualification still reads all current intents. The regression
+proves that a later intent leaves old reconstruction unchanged and causes a
+fresh assessment to veto its unresolved ownership. `observe_risk()` exposes no
+caller override for this census. No historical intent-creation time is invented.
+
+Final independent review passed **76 related tests**, with no remaining material
+findings within this source-binding scope. Coordinator related integration passed
+134 tests before the census regression; final full regression passed **1,320
+tests**, with one existing upstream websockets deprecation. Ruff check, format
+(116 files), strict mypy (118 files) and diff checks passed. Full async tests used
+the previously approved execution environment; no global or application workaround
+was added. Relevant checks:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-incident-risk-full tests
+rtk proxy .venv/bin/ruff check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/ruff format --check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-incident-risk-final-mypy src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```
+
+Tests also cover source-owned nonflat bid qualification, inventory mismatch,
+missing bid/source vetoes, daily fixture-stop propagation and restart persistence,
+pre-observation identity conflicts, failed persistence, cache tampering, existing
+protection preservation and historical daily-read corruption/availability cases.
+No formal paper sample started, and W3-06/W3-07/W3-08 remain unaccepted overall.
