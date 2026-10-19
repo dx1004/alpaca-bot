@@ -60,6 +60,7 @@ def qualify_ownership(
     session_open: datetime,
     max_age: timedelta,
     _intent_ids: tuple[str, ...] | None = None,
+    _source_horizon: int | None = None,
 ) -> OwnershipFacts:
     """Inspect immutable account bytes and independently replayed lifecycle proof.
 
@@ -67,6 +68,12 @@ def qualify_ownership(
     again. Unsent local intents instead veto qualification. Optional transfer
     omissions remain unknown, never invented zeros or proof of settled cash.
     """
+    if _source_horizon is not None and (
+        type(_source_horizon) is not int
+        or _source_horizon < 0
+        or capture_sequence > _source_horizon
+    ):
+        raise ValueError("account capture exceeds immutable source horizon")
     facts = inspect_account_inputs(
         journal,
         capture_sequence,
@@ -165,7 +172,7 @@ def qualify_ownership(
     refs: tuple[int, ...] = (capture_sequence,)
     if observed or raw_orders or intents:
         state, lifecycle_refs = OrderReconciler.read_evidence_at(
-            journal, account_ref, decision_at
+            journal, account_ref, decision_at, through_sequence=_source_horizon
         )
         refs = tuple(sorted(set(refs + lifecycle_refs)))
         report = state.get("last_report")
@@ -182,7 +189,11 @@ def qualify_ownership(
             issues.add("LIFECYCLE_OWNERSHIP_UNQUALIFIED")
         watermark = state.get("watermark")
         last = journal.read_event(watermark) if type(watermark) is int else None
-        if last is None or decision_at - last[0].available_at > max_age:
+        if (
+            last is None
+            or (_source_horizon is not None and last[0].sequence > _source_horizon)
+            or decision_at - last[0].available_at > max_age
+        ):
             issues.add("LIFECYCLE_EVIDENCE_STALE_OR_MISSING")
         else:
             last_item = decode_broker_json(last[1])

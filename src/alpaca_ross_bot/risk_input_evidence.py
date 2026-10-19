@@ -53,6 +53,7 @@ def inspect_risk_inputs(
     mark_refs: tuple[tuple[str, int, int, int], ...] = (),
     max_metadata_age: timedelta,
     _intent_ids: tuple[str, ...] | None = None,
+    _source_horizon: int | None = None,
 ) -> RiskInputEvidence:
     """Accept references, never caller-supplied positions or qualification flags.
 
@@ -69,6 +70,7 @@ def inspect_risk_inputs(
         session_open=session_open,
         max_age=max_age,
         _intent_ids=_intent_ids,
+        _source_horizon=_source_horizon,
     )
     if type(mark_refs) is not tuple:
         raise ValueError("immutable mark references required")
@@ -114,6 +116,7 @@ def inspect_risk_inputs(
             metadata_sequence=metadata,
             decision_at=decision_at,
             max_metadata_age=max_metadata_age,
+            _source_horizon=_source_horizon,
         )
         marks.append(mark)
         refs.update(mark.source_refs)
@@ -122,7 +125,11 @@ def inspect_risk_inputs(
     evidence_refs: list[tuple[int, str]] = []
     for sequence in sorted(refs):
         stored = journal.read_event(sequence)
-        if stored is None or not stored[0].visible_at(decision_at):
+        if (
+            stored is None
+            or (_source_horizon is not None and sequence > _source_horizon)
+            or not stored[0].visible_at(decision_at)
+        ):
             raise ValueError("risk input reference is unavailable")
         evidence_refs.append((sequence, stored[0].payload_ref))
     value = (

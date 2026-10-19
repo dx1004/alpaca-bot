@@ -2,85 +2,16 @@
 
 import hashlib
 import json
-from dataclasses import dataclass
 from datetime import datetime, timedelta
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from .account_risk_owner import AccountRiskOwner
 from .journal import Journal, JournalError
 from .risk_baseline import session_open_from_evidence
+from .risk_evidence_request import IncidentRiskRequest as IncidentRiskRequest
 from .risk_input_evidence import inspect_risk_inputs
 from .risk_journal import RiskJournal
-
-
-@dataclass(frozen=True)
-class IncidentRiskRequest:
-    capture_sequence: int
-    calendar_sequence: int
-    max_age: timedelta
-    max_metadata_age: timedelta
-    mark_refs: tuple[tuple[str, int, int, int], ...] = ()
-
-    def to_dict(self) -> dict[str, object]:
-        for value in (self.capture_sequence, self.calendar_sequence):
-            if type(value) is not int or value <= 0:
-                raise ValueError("positive source sequences required")
-        for age in (self.max_age, self.max_metadata_age):
-            if type(age) is not timedelta or age <= timedelta(0):
-                raise ValueError("positive source age limits required")
-        if type(self.mark_refs) is not tuple or any(
-            type(row) is not tuple
-            or len(row) != 4
-            or type(row[0]) is not str
-            or not row[0].strip()
-            or any(type(v) is not int or v < 0 for v in row[1:])
-            or row[1] == 0
-            or row[3] == 0
-            for row in self.mark_refs
-        ):
-            raise ValueError("immutable mark identities required")
-        return {
-            "capture_sequence": self.capture_sequence,
-            "calendar_sequence": self.calendar_sequence,
-            "max_age_us": self.max_age // timedelta(microseconds=1),
-            "max_metadata_age_us": self.max_metadata_age // timedelta(microseconds=1),
-            "mark_refs": [list(row) for row in self.mark_refs],
-        }
-
-    @classmethod
-    def from_dict(cls, raw: object) -> "IncidentRiskRequest":
-        if not isinstance(raw, dict) or set(raw) != {
-            "capture_sequence",
-            "calendar_sequence",
-            "max_age_us",
-            "max_metadata_age_us",
-            "mark_refs",
-        }:
-            raise ValueError("invalid bound risk request")
-        if any(
-            type(raw[key]) is not int
-            for key in (
-                "capture_sequence",
-                "calendar_sequence",
-                "max_age_us",
-                "max_metadata_age_us",
-            )
-        ) or not isinstance(raw["mark_refs"], list):
-            raise ValueError("invalid bound risk request values")
-        rows: list[tuple[str, int, int, int]] = []
-        for row in raw["mark_refs"]:
-            if not isinstance(row, list) or len(row) != 4:
-                raise ValueError("invalid mark request")
-            rows.append((row[0], row[1], row[2], row[3]))
-        request = cls(
-            raw["capture_sequence"],
-            raw["calendar_sequence"],
-            timedelta(microseconds=raw["max_age_us"]),
-            timedelta(microseconds=raw["max_metadata_age_us"]),
-            tuple(rows),
-        )
-        if request.to_dict() != raw:
-            raise ValueError("noncanonical bound risk request")
-        return request
 
 
 def assess_incident_risk(
@@ -89,11 +20,13 @@ def assess_incident_risk(
     request: IncidentRiskRequest,
     at: datetime,
     intent_census: object,
+    account_risk_fee_policy: Path | None = None,
+    source_horizon: int | None = None,
 ) -> dict[str, object]:
     """Derive facts under the caller's Journal transaction and on immutable replay.
 
-    Existing daily-risk inputs are explicitly fixture-only. Their veto/latch can
-    conservatively stop the incident; they cannot establish operational clearance.
+    Default daily-risk inputs remain explicitly fixture-only. An explicit fee
+    policy selects the verified actual source owner; neither grants release.
     """
     request.to_dict()
     if type(at) is not datetime or at.utcoffset() != timedelta(0):
@@ -146,6 +79,7 @@ def assess_incident_risk(
             mark_refs=request.mark_refs,
             max_metadata_age=request.max_metadata_age,
             _intent_ids=tuple(ids),
+            _source_horizon=source_horizon,
         )
         refs.update(sequence for sequence, _ in facts.source_refs)
         refs.add(request.calendar_sequence)
@@ -163,15 +97,51 @@ def assess_incident_risk(
         raise
     except ValueError:
         reasons.add("BOUND_RISK_SOURCE_INVALID_OR_UNAVAILABLE")
-    daily, daily_refs = RiskJournal.read_evidence_at(journal, account_ref, at)
+    if account_risk_fee_policy is None:
+        daily, daily_refs = RiskJournal.read_evidence_at(journal, account_ref, at)
+    else:
+        daily, daily_refs = AccountRiskOwner.read_evidence_at(
+            journal,
+            account_ref,
+            at,
+            account_risk_fee_policy,
+            through_sequence=source_horizon,
+        )
+        reasons.discard("BOUND_RISK_RUNTIME_OWNER_UNQUALIFIED")
+        reasons.add("BOUND_RISK_RUNTIME_RELEASE_UNACCEPTED")
     refs.update(daily_refs)
     daily_stop = False
     if daily is None:
         reasons.add("BOUND_RISK_DAILY_STATE_MISSING")
     else:
-        reasons.add("BOUND_RISK_DAILY_STATE_OFFLINE_FIXTURE_ONLY")
-        raw_daily = daily.get("daily")
-        raw_at = daily.get("at")
+        if account_risk_fee_policy is None:
+            reasons.add("BOUND_RISK_DAILY_STATE_OFFLINE_FIXTURE_ONLY")
+            raw_daily = daily.get("daily")
+            raw_at = daily.get("at")
+        else:
+            raw_daily = {
+                "session": daily.get("session"),
+                "latched": daily.get("daily_stop_latched"),
+            }
+            snapshot = daily.get("last_snapshot")
+            raw_at = snapshot.get("observed_at") if isinstance(snapshot, dict) else None
+            selected = snapshot.get("selection") if isinstance(snapshot, dict) else None
+            source_matches = isinstance(selected, dict) and all(
+                selected.get(key) == request.to_dict()[key]
+                for key in ("capture_sequence", "calendar_sequence", "mark_refs")
+            )
+            if not source_matches:
+                reasons.add("BOUND_RISK_DAILY_SOURCE_SELECTION_MISMATCH")
+            if (
+                daily.get("source_snapshot_qualified") is True
+                and qualified
+                and source_matches
+            ):
+                reasons.discard("BOUND_RISK_ACCOUNTING_UNQUALIFIED")
+            else:
+                reasons.add("BOUND_RISK_DAILY_SOURCE_UNQUALIFIED")
+            if daily.get("issues"):
+                reasons.add("BOUND_RISK_OWNER_VETO")
         if not isinstance(raw_daily, dict) or not isinstance(raw_at, str):
             raise JournalError("invalid daily risk source projection")
         daily_stop = raw_daily.get("latched") is True or daily.get("veto") is True
@@ -186,13 +156,15 @@ def assess_incident_risk(
         daily_at = datetime.fromisoformat(raw_at)
         if at - daily_at > request.max_age:
             reasons.add("BOUND_RISK_DAILY_STATE_STALE")
+            if account_risk_fee_policy is not None:
+                reasons.add("BOUND_RISK_ACCOUNTING_UNQUALIFIED")
     references: list[list[object]] = []
     for sequence in sorted(refs):
         record = journal.read_event(sequence)
         if record is None or not record[0].visible_at(at):
             raise JournalError("bound risk evidence is unavailable")
         references.append([sequence, record[0].payload_ref])
-    return {
+    result: dict[str, object] = {
         "reported_inputs_qualified": qualified,
         "available_funds_qualified": funds,
         "ownership_verified": ownership,
@@ -204,3 +176,6 @@ def assess_incident_risk(
         "reasons": sorted(reasons),
         "runtime_authorized": False,
     }
+    if account_risk_fee_policy is not None:
+        result["daily_state_source"] = "SOURCE_BOUND_ACCOUNT_RISK"
+    return result

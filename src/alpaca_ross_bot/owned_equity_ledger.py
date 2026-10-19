@@ -65,6 +65,8 @@ def audit_owned_equity(
     fee_policy: Path,
     mark_refs: tuple[tuple[str, int, int, int], ...] = (),
     max_metadata_age: timedelta,
+    _intent_ids: tuple[str, ...] | None = None,
+    _source_horizon: int | None = None,
 ) -> OwnedEquityAudit:
     """Reconcile a flat-E0 paper account's observed fills, cash and owned bids.
 
@@ -72,6 +74,13 @@ def audit_owned_equity(
     New NTAs are unsupported, not inferred as zero funding or fees. Modelled paper
     costs are a separate adjustment, never relabelled as broker-posted charges.
     """
+    if _source_horizon is not None and (
+        type(_source_horizon) is not int
+        or _source_horizon < 0
+        or capture_sequence > _source_horizon
+        or calendar_sequence > _source_horizon
+    ):
+        raise ValueError("owned-equity reference exceeds immutable source horizon")
     day = decision_at.astimezone(ZoneInfo("America/New_York")).date()
     fee_document_ref = verify_fee_policy(fee_policy)
     opened = session_open_from_evidence(
@@ -86,6 +95,8 @@ def audit_owned_equity(
         max_age=max_age,
         mark_refs=mark_refs,
         max_metadata_age=max_metadata_age,
+        _intent_ids=_intent_ids,
+        _source_horizon=_source_horizon,
     )
     current = inspect_posted_ledger(
         journal,
@@ -102,7 +113,13 @@ def audit_owned_equity(
         issues.add("REPORTED_INPUTS_UNQUALIFIED")
     if not current.pagination_exhausted:
         issues.add("ACTIVITY_CENSUS_INCOMPLETE")
-    baseline = read_baseline(journal, account_ref=account_ref, session_day=day)
+    baseline = read_baseline(
+        journal,
+        account_ref=account_ref,
+        session_day=day,
+        decision_at=decision_at,
+        through_sequence=_source_horizon,
+    )
     cash_matches: bool | None = None
     quantity_matches = False
     equity = gross = fee_delta = net = None
@@ -144,7 +161,7 @@ def audit_owned_equity(
         if any(row["activity_type"] != "FILL" for row in new_rows):
             issues.add("NEW_NTA_REQUIRES_ATTRIBUTION")
         state, lifecycle_refs = OrderReconciler.read_evidence_at(
-            journal, account_ref, decision_at
+            journal, account_ref, decision_at, through_sequence=_source_horizon
         )
         refs.update(lifecycle_refs)
         raw_orders = state.get("orders")
@@ -188,12 +205,22 @@ def audit_owned_equity(
                     target[identity] = sig
             posted = {
                 str(row["id"]): signature(row)
-                for row in new_rows
-                if row["activity_type"] == "FILL"
+                for row in rows.values()
+                if row["activity_type"] == "FILL" and str(row["order_id"]) in orders
             }
             if posted != target:
                 issues.add("FILL_SOURCE_DISAGREEMENT")
         by_order: dict[str, Fraction] = {}
+        # Lifecycle quantities and its activity census cover each owned order's
+        # lifetime. E0 only partitions cash and position changes for this session.
+        for row in rows.values():
+            if row["activity_type"] != "FILL":
+                continue
+            order_id = str(row["order_id"])
+            if order_id in orders:
+                by_order[order_id] = by_order.get(order_id, Fraction(0)) + _exact(
+                    row["qty"], positive=True
+                )
         by_symbol: dict[str, Fraction] = {}
         cash_delta = Fraction(0)
         for row in new_rows:
@@ -214,7 +241,6 @@ def audit_owned_equity(
                 issues.add("FILL_OWNERSHIP_MISMATCH")
             qty = _exact(row["qty"], positive=True)
             notional = qty * _exact(row["price"], positive=True)
-            by_order[order_id] = by_order.get(order_id, Fraction(0)) + qty
             sign = 1 if row["side"] == "buy" else -1
             by_symbol[symbol] = by_symbol.get(symbol, Fraction(0)) + sign * qty
             cash_delta -= sign * notional
@@ -254,7 +280,11 @@ def audit_owned_equity(
     sources = []
     for seq in sorted(refs):
         record = journal.read_event(seq)
-        if record is None or not record[0].visible_at(decision_at):
+        if (
+            record is None
+            or (_source_horizon is not None and seq > _source_horizon)
+            or not record[0].visible_at(decision_at)
+        ):
             raise ValueError("owned-equity evidence is unavailable")
         sources.append((seq, record[0].payload_ref))
     return OwnedEquityAudit(

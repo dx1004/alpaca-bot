@@ -145,15 +145,25 @@ class OrderReconciler:
 
     @classmethod
     def read_evidence_at(
-        cls, journal: Journal, account_ref: str, decision_at: datetime
+        cls,
+        journal: Journal,
+        account_ref: str,
+        decision_at: datetime,
+        *,
+        through_sequence: int | None = None,
     ) -> tuple[dict[str, object], tuple[int, ...]]:
         """Rebuild only the visible immutable prefix, without a START mutation.
 
         This is observation provenance, never a submission or recovery grant.
         Current cache integrity is checked separately from point-in-time replay.
+        The sequence bound excludes later writes even at the same timestamp.
         """
         if type(decision_at) is not datetime or decision_at.utcoffset() != timedelta(0):
             raise ValueError("UTC lifecycle observation clock required")
+        if through_sequence is not None and (
+            type(through_sequence) is not int or through_sequence < 0
+        ):
+            raise ValueError("nonnegative lifecycle source horizon required")
         reader = cls(
             journal, account_ref, clock=lambda: decision_at, record_start=False
         )
@@ -161,7 +171,9 @@ class OrderReconciler:
         seen: dict[str, str] = {}
         refs: list[int] = []
         unavailable_prefix = False
-        for event, payload in journal.read_order_events():
+        for event, payload in journal.read_order_events(
+            through_sequence=through_sequence
+        ):
             if not event.visible_at(decision_at):
                 unavailable_prefix = True
                 continue
@@ -179,6 +191,10 @@ class OrderReconciler:
                 basis = journal.read_event(int(str(item["evidence_sequence"])))
                 if (
                     basis is None
+                    or (
+                        through_sequence is not None
+                        and basis[0].sequence > through_sequence
+                    )
                     or not basis[0].visible_at(event.available_at)
                     or basis[0].external_clock_conflict
                 ):

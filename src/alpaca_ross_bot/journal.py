@@ -583,6 +583,55 @@ class Journal:
             self._db.rollback()
             raise
 
+    def apply_account_risk_event(
+        self,
+        *,
+        account_ref: str,
+        state_key: str,
+        dedupe_key: str,
+        event_kind: str,
+        payload: bytes,
+        received_at: datetime,
+        reduce: Callable[[object | None, bool, int], object],
+        prepare_payload: Callable[[bytes], bytes],
+    ) -> EventEnvelope | None:
+        """Own source-bound risk separately from the legacy fixture resolver."""
+        return self._apply_private_event(
+            account_ref=account_ref,
+            state_key=state_key,
+            dedupe_key=dedupe_key,
+            event_kind=event_kind,
+            payload=payload,
+            received_at=received_at,
+            reduce=reduce,
+            prepare_payload=prepare_payload,
+            identity_payload=None,
+            namespace="account_risk",
+            source_id="ALPACA_ACCOUNT_RISK",
+            dedupe_namespace="account_risk_evidence",
+        )
+
+    def read_account_risk_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        return self._read_private_events("ALPACA_ACCOUNT_RISK", None)
+
+    def read_evidence_sequence(self) -> int:
+        """Current immutable observation horizon; writers sample under their lock."""
+        row = self._db.execute(
+            "SELECT COALESCE(MAX(sequence), 0) FROM events"
+        ).fetchone()
+        assert row is not None
+        return int(row[0])
+
+    def read_account_risk_evidence_cache(self, account_ref: str) -> dict[str, object]:
+        return self._read_evidence_cache("account_risk_evidence", account_ref)
+
+    def read_order_send_started_at(self, client_order_id: str) -> str | None:
+        row = self._db.execute(
+            "SELECT started_at FROM order_send_attempts WHERE client_order_id=?",
+            (client_order_id,),
+        ).fetchone()
+        return None if row is None else str(row[0])
+
     def read_order_events(
         self, *, through_sequence: int | None = None
     ) -> tuple[tuple[EventEnvelope, bytes], ...]:

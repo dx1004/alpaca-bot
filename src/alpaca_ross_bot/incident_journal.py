@@ -5,6 +5,7 @@ import json
 from dataclasses import replace
 from datetime import UTC, datetime
 from fractions import Fraction
+from pathlib import Path
 from uuid import uuid4
 
 from .incident_risk import IncidentRiskRequest, assess_incident_risk
@@ -75,17 +76,25 @@ class IncidentJournal:
             raise JournalError("incident projection wrapper is invalid")
 
     def observe_risk(
-        self, event_id: str, request: IncidentRiskRequest, received_at: datetime
+        self,
+        event_id: str,
+        request: IncidentRiskRequest,
+        received_at: datetime,
+        *,
+        account_risk_fee_policy: Path | None = None,
     ) -> dict[str, object]:
         """Bind risk facts by immutable references; callers cannot submit flags."""
         if not isinstance(event_id, str) or not event_id.strip():
             raise JournalError("risk observation identity required")
+        item: dict[str, object] = {
+            "kind": "BOUND_RISK",
+            "request": request.to_dict(),
+            "at": received_at.isoformat(),
+        }
+        if account_risk_fee_policy is not None:
+            item["account_risk_fee_policy"] = str(account_risk_fee_policy.resolve())
         self._record(
-            {
-                "kind": "BOUND_RISK",
-                "request": request.to_dict(),
-                "at": received_at.isoformat(),
-            },
+            item,
             received_at,
             "risk:" + event_id,
         )
@@ -124,6 +133,8 @@ class IncidentJournal:
                     "incident projection or deduplication differs from evidence"
                 )
             if item["kind"] == "BOUND_RISK":
+                if item.get("account_risk_fee_policy") is not None:
+                    item["source_horizon"] = self.journal.read_evidence_sequence()
                 item["intent_census"] = [
                     [
                         cid,
@@ -143,6 +154,12 @@ class IncidentJournal:
                     IncidentRiskRequest.from_dict(item["request"]),
                     datetime.fromisoformat(str(item["at"])),
                     item["intent_census"],
+                    None
+                    if item.get("account_risk_fee_policy") is None
+                    else Path(str(item["account_risk_fee_policy"])),
+                    None
+                    if item.get("source_horizon") is None
+                    else int(str(item["source_horizon"])),
                 )
                 return _json(item)
             return raw
@@ -186,12 +203,23 @@ class IncidentJournal:
                     proposals=proposals,
                 )
         elif item["kind"] == "BOUND_RISK":
+            if item.get("account_risk_fee_policy") is not None and (
+                type(item.get("source_horizon")) is not int
+                or not 0 <= int(str(item["source_horizon"])) < sequence
+            ):
+                raise JournalError("bound risk sequence horizon differs")
             assessment = assess_incident_risk(
                 self.journal,
                 self.policy.account_ref,
                 IncidentRiskRequest.from_dict(item["request"]),
                 datetime.fromisoformat(str(item["at"])),
                 item["intent_census"],
+                None
+                if item.get("account_risk_fee_policy") is None
+                else Path(str(item["account_risk_fee_policy"])),
+                None
+                if item.get("source_horizon") is None
+                else int(str(item["source_horizon"])),
             )
             if assessment != item["assessment"]:
                 raise JournalError("bound risk assessment differs from source replay")

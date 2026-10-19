@@ -53,6 +53,7 @@ def inspect_bid_mark(
     metadata_sequence: int,
     decision_at: datetime,
     max_metadata_age: timedelta,
+    _source_horizon: int | None = None,
 ) -> BidMark:
     """Validate immutable raw facts and latest locally visible quote/metadata.
 
@@ -61,6 +62,13 @@ def inspect_bid_mark(
     """
     if not symbol or symbol != symbol.strip():
         raise ValueError("exact symbol required")
+    if _source_horizon is not None and (
+        type(_source_horizon) is not int
+        or _source_horizon < 0
+        or sequence > _source_horizon
+        or metadata_sequence > _source_horizon
+    ):
+        raise ValueError("mark reference exceeds immutable source horizon")
     if type(metadata_sequence) is not int or metadata_sequence < 1:
         raise ValueError("positive metadata sequence required")
     if max_metadata_age <= timedelta(0):
@@ -91,7 +99,8 @@ def inspect_bid_mark(
         raise ValueError("reported regular quote condition and tape required")
     for other_event, other_raw in journal.read_market_events():
         if (
-            other_event.feed != "iex"
+            (_source_horizon is not None and other_event.sequence > _source_horizon)
+            or other_event.feed != "iex"
             or other_event.event_kind != "RAW_FRAME"
             or not other_event.visible_at(decision_at)
         ):
@@ -135,7 +144,8 @@ def inspect_bid_mark(
         raise ValueError("regular quote mapping unqualified")
     for newer, newer_raw in journal.read_market_metadata_events():
         if (
-            newer.sequence <= metadata_sequence
+            (_source_horizon is not None and newer.sequence > _source_horizon)
+            or newer.sequence <= metadata_sequence
             or newer.feed != "iex"
             or newer.event_kind != "CONDITION_CODE_METADATA"
             or not newer.visible_at(decision_at)

@@ -1,5 +1,7 @@
 """Source-bound pre-session equity observation; never trading authority."""
 
+import base64
+import hashlib
 import json
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, time, timedelta
@@ -8,8 +10,11 @@ from urllib.parse import parse_qs, urlsplit
 from zoneinfo import ZoneInfo
 
 from .journal import Journal
+from .order_lifecycle import OrderProjection
+from .order_reconciliation import OrderReconciler
 from .paper_order_contract import decode_broker_json
 from .risk_account_inputs import ENDPOINT, SOURCE, inspect_account_inputs
+from .risk_ownership import qualify_ownership
 
 NY = ZoneInfo("America/New_York")
 
@@ -29,6 +34,8 @@ class EquityBaseline:
     qualified_at: datetime | None = None
     receipt_sequence: int | None = None
     receipt_payload_ref: str | None = None
+    rollover_intents: tuple[tuple[str, str], ...] = ()
+    rollover_source_refs: tuple[tuple[int, str], ...] = ()
 
 
 def _now() -> datetime:
@@ -183,7 +190,7 @@ def _inspect_baseline(
     session_day: date,
     decision_at: datetime,
     max_age: timedelta,
-    require_unused: bool = True,
+    check_retained_intents: bool = True,
 ) -> EquityBaseline:
     """Inspect immutable flat equity, preserving missing transfer fields as unknown."""
     _utc(decision_at)
@@ -227,7 +234,6 @@ def _inspect_baseline(
         or not facts.before_session_open
         or decision_at >= opened
         or facts.observed_at.astimezone(NY).date() != session_day
-        or (require_unused and journal.read_order_intent_ids())
     ):
         raise ValueError("flat pre-session equity is not established")
     counts = facts.collection_counts
@@ -251,7 +257,7 @@ def _inspect_baseline(
         or query.get("direction", ["asc"]) != ["asc"]
     ):
         raise ValueError("open order query is incomplete")
-    return EquityBaseline(
+    candidate = EquityBaseline(
         account_ref,
         session_day,
         equity,
@@ -259,6 +265,107 @@ def _inspect_baseline(
         facts.observed_at,
         account_sequence,
         calendar_sequence,
+    )
+    intents = journal.read_order_intent_ids() if check_retained_intents else ()
+    return (
+        _with_rollover_proof(
+            journal, candidate, intents, decision_at, max_age, current_inputs=True
+        )
+        if intents
+        else candidate
+    )
+
+
+def _with_rollover_proof(
+    journal: Journal,
+    candidate: EquityBaseline,
+    intent_ids: tuple[str, ...],
+    decision_at: datetime,
+    max_age: timedelta,
+    *,
+    current_inputs: bool = False,
+    source_horizon: int | None = None,
+) -> EquityBaseline:
+    """Retain lifetime intent history while proving a fresh terminal flat book."""
+    if not intent_ids or tuple(sorted(set(intent_ids))) != intent_ids:
+        raise ValueError("rollover intent census is invalid")
+    ownership = qualify_ownership(
+        journal,
+        candidate.account_sequence,
+        account_ref=candidate.account_ref,
+        decision_at=decision_at,
+        session_open=candidate.session_open,
+        max_age=max_age,
+        _intent_ids=intent_ids,
+        _source_horizon=source_horizon,
+    )
+    state, lifecycle_refs = OrderReconciler.read_evidence_at(
+        journal,
+        candidate.account_ref,
+        decision_at,
+        through_sequence=source_horizon,
+    )
+    orders = state.get("orders")
+    if (
+        not ownership.ownership_verified
+        or ownership.issues
+        or ownership.owned_long_positions
+        or not isinstance(orders, dict)
+        or set(orders) != set(intent_ids)
+    ):
+        raise ValueError("rollover requires independently owned flat inventory")
+    for row in orders.values():
+        if not isinstance(row, dict) or OrderProjection.from_dict(
+            row
+        ).state.value not in {
+            "FILLED",
+            "CANCELED",
+            "EXPIRED",
+            "REJECTED",
+        }:
+            raise ValueError("rollover requires all retained orders terminal")
+    last = journal.read_event(int(str(state["watermark"])))
+    assert last is not None  # ownership verifier requires the latest REST source
+    source = decode_broker_json(last[1])
+    assert isinstance(source, dict) and isinstance(source["intents"], dict)
+    fingerprints: list[tuple[str, str]] = []
+    for cid in intent_ids:
+        intent = journal.read_order_intent(cid)
+        if not isinstance(intent, dict):
+            raise ValueError("rollover retained intent is missing")
+        if current_inputs:
+            current = {
+                "intent": intent,
+                "sent": journal.has_order_send_attempt(cid),
+                "http_history": [
+                    {
+                        "status": row.http_status,
+                        "body": base64.b64encode(row.body).decode(),
+                    }
+                    for row in journal.read_order_http_observations(cid)
+                    if row.body is not None and row.http_status in (200, 201)
+                ],
+            }
+            if current != source["intents"].get(cid):
+                raise ValueError("rollover local inputs changed after reconciliation")
+        digest = hashlib.sha256(
+            json.dumps(intent, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        fingerprints.append((cid, "sha256:" + digest))
+    refs: list[tuple[int, str]] = []
+    for sequence in sorted(set(ownership.source_refs + lifecycle_refs)):
+        stored = journal.read_event(sequence)
+        if (
+            stored is None
+            or not stored[0].visible_at(decision_at)
+            or stored[0].external_clock_conflict
+        ):
+            raise ValueError("rollover source proof is unavailable")
+        refs.append((sequence, stored[0].payload_ref))
+    return replace(
+        candidate,
+        rollover_intents=tuple(fingerprints),
+        rollover_source_refs=tuple(refs),
     )
 
 
@@ -290,7 +397,7 @@ def _key(account_ref: str, day: date) -> str:
 def _payload(
     candidate: EquityBaseline, frozen_at: datetime, max_age: timedelta
 ) -> dict[str, object]:
-    return {
+    body: dict[str, object] = {
         "account_ref": candidate.account_ref,
         "session_day": candidate.session_day.isoformat(),
         "equity": str(candidate.equity),
@@ -302,6 +409,13 @@ def _payload(
         "max_age_us": max_age // timedelta(microseconds=1),
         "runtime_authorized": False,
     }
+    if candidate.rollover_intents:
+        body["rollover_proof"] = {
+            "profile": "FLAT_OWNED_TERMINAL_LIFECYCLE_V1",
+            "intents": [list(item) for item in candidate.rollover_intents],
+            "source_refs": [list(item) for item in candidate.rollover_source_refs],
+        }
+    return body
 
 
 def _read_candidate(
@@ -338,6 +452,8 @@ def _read_candidate(
         type(body.get("account_sequence")) is not int
         or type(body.get("calendar_sequence")) is not int
         or type(body.get("max_age_us")) is not int
+        or not 0 < body["account_sequence"] < event.sequence
+        or not 0 < body["calendar_sequence"] < event.sequence
     ):
         raise ValueError("baseline source references are invalid")
     rebuilt = _inspect_baseline(
@@ -348,8 +464,51 @@ def _read_candidate(
         session_day=session_day,
         decision_at=frozen_at,
         max_age=timedelta(microseconds=body["max_age_us"]),
-        require_unused=False,
+        check_retained_intents=False,
     )
+    if "rollover_proof" in body:
+        proof = body["rollover_proof"]
+        if not isinstance(proof, dict) or set(proof) != {
+            "profile",
+            "intents",
+            "source_refs",
+        }:
+            raise ValueError("baseline rollover proof is invalid")
+        intents = proof["intents"]
+        if (
+            not isinstance(intents, list)
+            or not intents
+            or any(
+                not isinstance(item, list)
+                or len(item) != 2
+                or any(type(value) is not str or not value for value in item)
+                for item in intents
+            )
+        ):
+            raise ValueError("baseline rollover intent proof is invalid")
+        source_refs = proof["source_refs"]
+        if (
+            not isinstance(source_refs, list)
+            or not source_refs
+            or any(
+                not isinstance(item, list)
+                or len(item) != 2
+                or type(item[0]) is not int
+                or not 0 < item[0] < event.sequence
+                or type(item[1]) is not str
+                or not item[1]
+                for item in source_refs
+            )
+        ):
+            raise ValueError("baseline rollover source proof is invalid")
+        rebuilt = _with_rollover_proof(
+            journal,
+            rebuilt,
+            tuple(item[0] for item in intents),
+            frozen_at,
+            timedelta(microseconds=body["max_age_us"]),
+            source_horizon=max(item[0] for item in source_refs),
+        )
     if _payload(rebuilt, frozen_at, timedelta(microseconds=body["max_age_us"])) != body:
         raise ValueError("baseline source reconstruction differs")
     return (replace(rebuilt, frozen_at=frozen_at), event.sequence, event.payload_ref)
@@ -422,12 +581,23 @@ def read_baseline(
     *,
     account_ref: str,
     session_day: date,
+    decision_at: datetime | None = None,
+    through_sequence: int | None = None,
 ) -> EquityBaseline | None:
     """Accept only a first commit observed durable before the official open.
 
     A receipt may be committed later: it records when the already committed
     candidate was observed. A missing receipt never retrospectively proves E0.
+    With a decision cutoff, a not-yet-qualified candidate is unavailable; source
+    and projection corruption still raises instead of becoming a valid E0. A
+    sequence horizon also excludes later commits sharing the decision clock.
     """
+    if decision_at is not None:
+        _utc(decision_at)
+    if through_sequence is not None and (
+        type(through_sequence) is not int or through_sequence < 0
+    ):
+        raise ValueError("baseline sequence horizon must be a nonnegative integer")
     pending = _read_candidate(journal, account_ref=account_ref, session_day=session_day)
     if pending is None:
         orphan = journal.read_state(_receipt_key(account_ref, session_day)) is not None
@@ -441,9 +611,27 @@ def read_baseline(
         if orphan:
             raise ValueError("baseline receipt has no candidate")
         return None
+    if (
+        decision_at is not None
+        and pending[0].frozen_at is not None
+        and pending[0].frozen_at > decision_at
+    ) or (through_sequence is not None and pending[1] > through_sequence):
+        return None
     result = _read_receipt(journal, *pending)
     if result is None:
+        if decision_at is not None or through_sequence is not None:
+            return None
         raise ValueError("baseline candidate lacks pre-session durability receipt")
+    if (
+        decision_at is not None
+        and result.qualified_at is not None
+        and result.qualified_at > decision_at
+    ) or (
+        through_sequence is not None
+        and result.receipt_sequence is not None
+        and result.receipt_sequence > through_sequence
+    ):
+        return None
     return result
 
 

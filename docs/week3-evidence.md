@@ -1267,3 +1267,129 @@ verifier. `runtime_authorized` remains false. Actual E0, complete risk reservati
 and roundtrip ownership, accepted operational inputs and continuous protection
 still require their own evidence. No actual account access, broker order or formal
 paper evaluation was performed, and no W3 parent was checked complete.
+
+## Source-bound daily-risk and reservation owner — 2026-10-18
+
+`account_risk_owner.py` replaces the injected resolver **for its separately
+selected source-bound path**. It derives E0, exact modelled net P, reported
+available funds, owned inventory and bid marks from the retained calendar,
+account, execution, lifecycle, baseline-receipt and reviewed fee evidence. Its
+atomic private event, deduplication and state projection use a separate journal
+namespace; legacy `RiskJournal` events remain `OFFLINE_FIXTURE_ONLY`. No migration
+or reinterpretation of old fixture state is performed. Model output, caller
+qualification flags and a target USD 500 balance cannot supply these facts.
+
+For the existing hybrid research risk profile P09/P10/P12, a declared cent-grid
+long entry plan supplies L/S, not a caller-chosen quantity. The owner computes the
+largest positive whole-share quantity satisfying both reported funds with entry
+fee bounds and the lesser of 0.5% E0 per trade and remaining 1% E0 daily allowance.
+These are the preserved hybrid research rules, not newly attributed Ross rules.
+Pending entry risk and source-owned open-position stop risk are charged
+separately, including future fee bounds. A broker-represented pending buy hold is
+not subtracted twice; remaining local entry-fee liability is retained. One
+durable slot prevents concurrent allocations across independent connections.
+
+Entry and explicitly bound immutable sell intents must agree with the frozen
+plan, source account, symbol, side, type, quantity and stop level as applicable.
+New same-session fills not attributable to a held or completed plan veto the
+owner even when the account is flat. A terminal, source-reconciled flat book
+completes one exact roundtrip; repeated observations cannot count a loss twice.
+Three losing roundtrips or reaching the daily loss threshold latches the session
+stop, including after mark recovery and restart. Pending cancellation or unknown
+submission does not release a slot. An unsent plan needs explicit abandonment,
+fresh flat proof, no send marker and no declared exit; its identity remains used.
+These declarations establish accounting ownership, not broker protection or
+permission to send an entry, stop, target or close order.
+
+### Historical evidence and next-session continuity
+
+Each owner event preserves its locked intent-content hashes and observed send
+markers, timestamp and immutable source-sequence horizon. Replay checks that
+original context instead of today's expanding intent list. Higher-sequence
+lifecycle, quote, metadata, baseline or owner events sharing the same timestamp
+are excluded; current cache/source integrity is still verified independently.
+An exact caller-command retry reuses its original assessment bytes;
+a changed command with the same identity latches a conflict. Retrying an old
+positive proposal after release, another allocation or a current veto returns
+zero; it cannot recreate the slot or return a foreign plan's feasible quantity.
+Commit failure rolls back evidence, dedupe and projection together.
+
+`risk_baseline.py` now permits a next-day pre-session E0 with retained historical
+intents only after fresh complete lifecycle evidence proves every retained order
+terminal, inventory flat and all current intent/HTTP inputs reconciled. The
+baseline preserves immutable intent and source hashes; it does not delete history
+or reset unknown orders. A historical cutoff treats a later candidate or later
+receipt as unavailable, including a crash between candidate and receipt. Default
+current-baseline reads still reject a candidate lacking its durability receipt.
+
+`owned_equity_ledger.py` verifies the **lifetime known-owned** execution census
+against lifecycle cumulative fills, while only new rows since the flat E0 affect
+current-session cash, quantities and modelled P. Retained prior-day fills cannot
+inflate today's inventory or be mistaken for an unexplained current execution.
+Unknown new activities and incomplete, changed or conflicting evidence still
+veto. The tests exercise an earlier flat roundtrip followed by a source-proven
+next-day E0 and new partially filled entry.
+
+### Incident binding and verification boundary
+
+`IncidentJournal.observe_risk()` can explicitly select this actual owner using
+the reviewed fee-policy path. Its immutable observation records the selection,
+replays the source-owner prefix, propagates daily stops and compares observed
+inventory with incident expectations. An exit-binding event cannot refresh the
+underlying account observation's age. Freshness uses the oldest validated raw
+account HTTP request start, not the later evaluation clock. Accounting clears
+only when the owner and current incident select the same account/calendar/mark
+evidence and current stricter freshness checks pass. A newer incident capture
+requires a matching owner refresh; stale or different-source accounting stays
+unqualified. Missing source-owner state does not fall
+back to fixture qualification. Schema-1/2 historical incident data and the
+default fixture path remain readable. Runtime release, executable-data and
+protection gates remain closed even when reported accounting is verified.
+
+Independent review found and verified corrections for unbound executions while
+flat, retry identity after later intents, and future unfinished E0 changing a
+past missing-E0 assessment. The final bounded independent combination passed
+97 tests plus direct historical/retry reproductions, with no remaining material
+findings in that scope. New source-owner integration has 20 tests, including two
+private connections, partial fills, pending cancel, unknown acknowledgement,
+cache/dedupe corruption, stale/foreign sources, post-append commit failure,
+completed roundtrips and both daily-stop rules. Six further tests cover actual
+owner-to-incident propagation, source freshness, missing-owner refusal and both
+pending/completed future E0 historical cutoffs.
+
+A final review additionally reproduced raw-source age being refreshed by
+evaluation time and later same-clock source records changing history. Both were
+corrected as described above. Five dedicated regressions cover strict source
+age, same-clock lifecycle/quote/owner changes and both pending/completed E0 ties.
+Next-session baseline tests also preserve their original source-sequence proof
+after later same-clock lifecycle changes. The final independent scoped review
+passed **113 tests**, including all five new horizon regressions, with no
+remaining material findings in source binding, replay or incident propagation.
+
+Final full offline regression passed **1,389 tests**, with one existing upstream
+websockets deprecation. Ruff check, format (124 files), strict mypy (126 files) and
+diff checks passed. Full async tests used the previously validated execution
+environment; no global or application workaround was added.
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-account-risk-horizon-full tests
+rtk proxy .venv/bin/ruff check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/ruff format --check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-account-risk-horizon-mypy src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```
+
+A public-only generic failure-mode critique returned verified remote
+`gemma4:31b` inference on 2026-10-19 UTC (2026-10-18 Los Angeles). No local source,
+private account evidence, credentials or risk parameters were sent to Cloud;
+only deterministically verified implementation was adopted.
+
+This closes the **source-bound owner implementation increment**, not a trading
+release or W3 parent acceptance. Real pre-session E0 and repeated operational
+source evidence, accepted executable strategy/data qualification, protection
+continuity and actual broker API cycles remain unaccepted. The implemented
+quantity is a non-dispatch risk proposal with `strategy_plan_qualified=false`
+and `runtime_authorized=false`. It neither proves settled/available future funds
+nor guarantees final/atomic broker snapshots, stop fills, slippage or protection.
+The published partial-fill protection conflict and stop-to-OCO handoff are still
+unresolved. No actual account access, order, cancellation, data purchase, formal
+paper start or W3 completion checkbox occurred in this increment.
