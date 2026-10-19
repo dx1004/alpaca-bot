@@ -1,0 +1,79 @@
+{
+  "acceptance_basis": {
+    "path": "docs/w3-data-admission-proposal.md",
+    "proposal_id": "IEX_OBSERVED_INPUT_ADMISSION_PROPOSAL_1",
+    "type": "EXPLICIT_USER_DATA_CONTRACT_ACCEPTANCE"
+  },
+  "acceptance_timezone": "America/Los_Angeles",
+  "accepted_on": "2026-10-19",
+  "authority": {
+    "formal_paper_evaluation": false,
+    "live_trading": false,
+    "observation_age_component_only": true,
+    "orders": false,
+    "runtime_authorized": false,
+    "source_volume_age_qualified": false,
+    "strategy_eligible": false
+  },
+  "candidate_version_id": "HYBRID_500_IEX_OBSERVATION_AGE_RESEARCH_V1",
+  "classification": "INDEPENDENT_OBSERVATION_AGE_COMPONENT_NOT_SOURCE_AGE_EQUIVALENT",
+  "observation_contract": {
+    "age_seconds_inclusive": 300,
+    "clock_basis": "EARLIEST_USED_RAW_REQUEST_START",
+    "completed_discovery_requires_catalog_age": true,
+    "copy_keeps_original_source_reference": true,
+    "coverage_label": "NOT_SIP_EQUIVALENT",
+    "full_market_coverage": false,
+    "genuine_new_identical_raw_responses_allowed": true,
+    "late_sweep_or_processing_cannot_refresh_acquisition": true,
+    "network_attestation": "NOT_PROVIDED_TRUSTED_COLLECTOR_BOUNDARY",
+    "per_member_pages": true,
+    "volume": "EXACT_RAW_IEX_CUMULATIVE_CURRENT_NY_DAY_DAILY_BAR",
+    "volume_source_age": "UNKNOWN",
+    "volume_source_updated_at": "UNKNOWN"
+  },
+  "parent": {
+    "policy_sha256": "a92b174d7b6fb5e94d408021aca75895853dabeb74417191751825cb3ddf57cf",
+    "research_sha256": "acefeee493533686c2595fbc8347f0db0c03630c5bfdf1749ffa56c72b995c9a",
+    "scanner_sha256": "5ce35ecf7e4869dfda490c5e54b0d17d35c47b4d29cd641ccf2d14f87d8bc88f",
+    "source_age_contract_preserved": true,
+    "unchanged_rule_ids": [
+      "P01",
+      "P02",
+      "P04",
+      "P05",
+      "P06",
+      "P07",
+      "P08",
+      "P09",
+      "P10",
+      "P11",
+      "P12"
+    ],
+    "version_id": "HYBRID_500_IEX_INTRADAY_RESEARCH_V1"
+  },
+  "remaining_gates": [
+    "SOURCE_CONDITION_POLICY",
+    "FEATURE_HISTORY_AND_REVISIONS",
+    "FROM_OPEN_CONTINUITY_AND_FIRST_TRADE",
+    "ENTRY_RISK_VERSION_BINDING_FOR_NEW_CANDIDATE",
+    "ACCOUNT_AND_RISK_QUALIFICATION",
+    "CONTINUOUS_PROTECTION",
+    "BROKER_ORDER_CYCLE",
+    "EXECUTABLE_RELEASE_FREEZE",
+    "FORMAL_PAPER_PROTOCOL"
+  ],
+  "retained_requirements": {
+    "conditions": "SEPARATELY_REVIEWED_VERSIONED_SOURCE_POLICY_REQUIRED",
+    "continuity": "FROM_RTH_OPEN_FIRST_TRADE_SETUP_PATH_AND_LOD",
+    "history": "P04_EXPECTED_CALENDARS_100_BARS_DECISION_TIME_REVISIONS",
+    "monitoring": "30_SYMBOL_LIMIT_ACKNOWLEDGED_SUBSCRIPTIONS_RESERVED_RETENTION_GAP_VETO",
+    "news_float": "OPTIONAL_NON_VETO_PREFERENCES",
+    "screen_formulas": "UNCHANGED_PARENT_PRICE_RVOL_RANKING",
+    "trigger_age_basis": "NONNEGATIVE_PROVIDER_REPORTED_EVENT_AND_LOCAL_RECEIPT_PRESERVE_PRECISION",
+    "trigger_event_and_receipt_age_ms": 1000
+  },
+  "schema_version": 1,
+  "status": "USER_ACCEPTED_INDEPENDENT_DATA_RESEARCH_CONTRACT",
+  "version_id": "IEX_SNAPSHOT_OBSERVATION_AGE_RESEARCH_V1"
+}

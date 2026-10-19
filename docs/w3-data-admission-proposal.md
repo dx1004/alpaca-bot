@@ -1,13 +1,15 @@
 # W3 data admission proposal — observation-age alternative
 
-Status: **PROPOSED_FOR_REVIEW — NOT ACCEPTED**, 2026-10-19, Los Angeles.
+Status: **USER_ACCEPTED_CONTRACT_CHANGE — OBSERVATION_COMPONENT_VERIFIED**, 2026-10-19, Los Angeles.
 Proposal ID: `IEX_OBSERVED_INPUT_ADMISSION_PROPOSAL_1`.
 
 This is a separately reviewable alternative to the frozen research candidate's
 source-age requirement. It does not amend that candidate, change executable
-configuration or authorize a reservation, order or formal paper run. A future
-adoption needs a distinct version and its own acceptance evidence. The user's
-request for a recommendation is not recorded as acceptance of this proposal.
+configuration or authorize a reservation, order or formal paper run. Adoption
+needs a distinct version and its own acceptance evidence. After requesting a
+recommendation, the user explicitly selected “接受，建立独立版本并验证”. This
+accepts the data-contract tradeoff and authorizes implementation/validation;
+it does not assert actual source admission, executable release or paper approval.
 
 ## Recommendation and exact tradeoff
 
@@ -64,7 +66,31 @@ watermark. This residual risk must be acknowledged in a separately accepted
 research version and studied prospectively; a profitable paper result cannot
 retroactively prove freshness.
 
-## Required evidence before adoption
+## Acceptance and remaining validation
+
+The user accepted this contract change on 2026-10-19. Its scope is an
+independent research/data version; the original source-age contract remains
+frozen. Implementation and tests must distinguish a passing observation-age
+component from complete source admission. No release flag changes are implied.
+
+The collector's journaled raw response and acquisition metadata form the local
+trust boundary. Hashes detect changed recorded bytes; they do not authenticate a
+network exchange independently of the collector. Reusing an old raw reference
+cannot refresh acquisition time. Fabricating an entirely new raw capture is not
+claimed to be detectable merely because its content matches an earlier response.
+
+The following evidence remains required; the first item's user decision is now
+satisfied, while implementation and actual-source qualifications are separate.
+
+The independent component is implemented in
+`src/alpaca_ross_bot/observation_admission.py`, pinned to
+`evidence/iex-snapshot-observation-age-research-v1.json` as
+`IEX_SNAPSHOT_OBSERVATION_AGE_RESEARCH_V1`. New tests exercise the actual collector
+with synthetic network responses; they do not certify a real session's data.
+Seventeen new tests and 1501 full offline regression tests passed; independent
+review passed 69 combined tests with no material findings. Ruff/format and strict
+mypy passed. This verifies the bounded observation-age component, not all items
+below. See [implementation evidence](week3-evidence.md#independent-observation-age-contract--user-acceptance-2026-10-19).
 
 1. Independent review of the exact metric, source interpretations and differences
    from the frozen candidate. Explicit user acceptance of a new data contract.

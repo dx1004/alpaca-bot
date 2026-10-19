@@ -1658,3 +1658,62 @@ The proposal is NOT ACCEPTED: the user asked for a recommendation, not adoption.
 The original frozen specification is unchanged. Optional non-veto news stays
 optional; source-scoped history/conditions, actual input admission, protection
 and release gates remain separate. W3-01/02/03 are not complete.
+
+## Independent observation-age contract — user acceptance 2026-10-19
+
+After the recommendation, the user explicitly selected “接受，建立独立版本并验证”.
+This accepts the tradeoff in `docs/w3-data-admission-proposal.md`, not an actual
+source-admission or trading release. The original research artifact, policy
+section and scanner pins remain unchanged and their existing loaders pass.
+
+The independent data profile is `IEX_SNAPSHOT_OBSERVATION_AGE_RESEARCH_V1`, linked
+to research candidate `HYBRID_500_IEX_OBSERVATION_AGE_RESEARCH_V1`. It retains the
+parent strategy/screen definitions and all separate condition, history,
+continuity, account/risk, protection, broker-cycle and release requirements.
+The existing entry/risk bridge remains bound to the original research identity;
+this new data component does not silently relabel that bridge as the new version.
+
+The new metric is at most 300 seconds since the earliest raw request start used
+by the assessment, including the catalog when discovery uses it. Each page keeps
+its own request time. A sweep completion, derived processing delay or cache copy
+cannot refresh acquisition. Genuine new responses with unchanged content are
+allowed as new observations; source-volume update time and age remain UNKNOWN.
+The raw capturer remains a trust boundary, not an independently attested network
+exchange. All outputs remain observation-component-only, NOT_SIP_EQUIVALENT and
+non-authorizing.
+
+Implementation: `src/alpaca_ross_bot/observation_admission.py`,
+`tests/test_observation_admission.py`, and pinned
+`evidence/iex-snapshot-observation-age-research-v1.json` (SHA-256
+`f5439d49ac9354abbe56b7b1fcb603c915942dee647efedebf48060e63b49e8c`).
+It reuses the original stricter raw-capture/discovery audit rather than relaxing
+or duplicating those source contracts. The page API cannot rebuild a pool; the
+completed-sweep API checks coverage identity and each returned member separately.
+Missing responses remain separately reported. Current NY-day daily volume is
+parsed from raw bytes, with booleans, negative volume and wrong-day buckets
+refused. All used sweep inputs are retained as sequence/hash references.
+
+Review found and corrected a future-horizon acceptance gap and added strict
+raw-before-derived sequence ordering before final verification. Evidence bounds
+cannot exceed the journal's actual captured horizon. No source changes followed
+the full regression; only explicit non-None assertions in tests were needed for
+strict typing, and the 17 affected tests were rerun afterward.
+
+Validation (project venv, temporary caches, no broker/private-account access):
+
+- `python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-observation-age-full tests`:
+  1501 passed, one existing websockets legacy deprecation warning.
+- Final `tests/test_observation_admission.py`: 17 passed; implementation worker's
+  related discovery/snapshot/contract suite: 76 passed.
+- Independent source/test review: no material findings; 69 combined tests passed.
+- `ruff check` and `ruff format --check` across src/tests and the qualification /
+  engineering scripts: pass, 130 files formatted.
+- `mypy --strict` across src/tests and the four qualification/engineering/order /
+  credential scripts: pass, 132 source files; `git diff --check`: pass.
+
+The earlier NOT ACCEPTED proposal entry is superseded only by this explicit user
+decision and bounded component verification. Raw setup/history admission,
+condition policy, new-candidate entry/risk identity binding, continuous protection,
+actual broker cycles and release remain unaccepted. W3-01/02/03 parents remain
+open. No order intent, attempt consumption, broker mutation, data purchase or
+formal paper evaluation occurred.
