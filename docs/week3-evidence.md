@@ -1530,3 +1530,44 @@ rtk proxy .venv/bin/ruff check src tests scripts/run_paper_engineering.py script
 rtk proxy .venv/bin/ruff format --check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
 rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-open-final-mypy src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
 ```
+
+
+## October 19 pre-open capture — verified 2026-10-19
+
+The scheduled pre-open phase ran in the declared window on the previously
+bound dedicated paper account and existing private journal. Collector summary:
+`/tmp/alpaca-w3-20261019-preopen-132150.json`. Independent local verification:
+`/tmp/alpaca-w3-20261019-preopen-verified-132225.json`. These are redacted reports;
+credentials, account identity and raw broker state remain outside Git.
+
+Fresh calendar evidence established the October 19 open at 13:30 UTC (06:30
+Los Angeles). The genuine E0 candidate committed at **13:22:10.780376 UTC**;
+its durability was observed at **13:22:10.787980 UTC** and receipt qualified at
+**13:22:10.788014 UTC**, all before the official open. The original account and
+calendar capture sequences are 1317 and 1316; receipt sequence is **1319**,
+with payload hash
+`sha256:e26f27e466b05c8414e6ad76282cda4eb4d647e32e72ff708cabe1bfedcf5c0b`.
+Source reconstruction verified the candidate, receipt, decision-time availability
+and source hashes. No intraday or synthetic E0 was substituted.
+
+The source-bound risk snapshot was qualified for its reported-observation
+profile, with no owner issue codes, no reservation and runtime authorization
+false. Capital research state remains no-borrowing research with higher-stage
+acceptance blocked. Both private projections rebuilt successfully. Verification
+checked SQLite integrity and all **1,331** current event payloads; local order
+intent, send and cancellation-attempt counts were all zero. No broker order,
+cancellation, account reset or formal paper start occurred.
+
+The legacy flat-account availability report remains `UNQUALIFIED` and settlement
+unknown; the ledger observation still lists non-atomic/finality/operational
+qualification limitations. Its pagination exhausted two activity pages, with
+zero new fills and matching observed cash. These narrower reported-account
+observations do not close operational funds, executable strategy/data or
+protection/release acceptance.
+
+IEX SPY subscription was acknowledged, but the finite pre-open capture observed
+**zero market records**. Live record freshness/flow therefore was not verified,
+and closing the bounded stream leaves continuity recovery required. Preserve
+`NOT_SIP_EQUIVALENT`; do not report this as a healthy continuous market feed or
+scanner acceptance. The 06:30 and 06:35 Los Angeles read-only phases remain
+scheduled. No W3 parent is checked complete by this pre-open result.
