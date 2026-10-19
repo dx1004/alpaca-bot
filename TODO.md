@@ -193,6 +193,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   Pre-open phase verified 2026-10-19: genuine source-bound E0 and durability receipt qualified at 06:22:10 Los Angeles, before the official 06:30 open; receipt sequence 1319. Private integrity, all 1331 event hashes, source-risk/capital rebuilds and zero intent/send/cancel counts passed. The bounded IEX subscription observed zero records, so live feed flow/freshness remains unverified. Later open samples stay scheduled; strategy/data/protection/API-order acceptance and W3 completion remain blocked. [Evidence](docs/week3-evidence.md#october-19-pre-open-capture--verified-2026-10-19).
 
+  Open diagnostics verified 2026-10-19: two finite SPY/IEX captures observed 4709 and 3288 schema-valid/measured-fresh records; both subsequent SDK/REST comparisons were MATCHED with no differences. Independent verification checked all 4858 event hashes, risk/capital/lifecycle rebuilds, original E0 receipt preservation and zero intent/send/cancel counts. Actual samples completed at 06:35:31 and 06:36:53 Los Angeles; exact-open/continuous coverage was not observed. The one-day native W3 heartbeat was deleted after completion. [Evidence](docs/week3-evidence.md#october-19-open-observations--verified-2026-10-19). W3 strategy/data/protection, actual order cycles and release/paper acceptance remain blocked; no broker orders occurred.
+
 - [!] **W3-08 [P0] Pre-register four-week paper protocol**
   Depends: an accepted executable Ross or separately labeled hybrid version, W2-08, W3-02. Freeze window, minimum natural events/candidates, engineering scenarios, fidelity holdout and restart rules.  
   Accept: no threshold can be changed from observed paper P&L.

@@ -1571,3 +1571,56 @@ and closing the bounded stream leaves continuity recovery required. Preserve
 `NOT_SIP_EQUIVALENT`; do not report this as a healthy continuous market feed or
 scanner acceptance. The 06:30 and 06:35 Los Angeles read-only phases remain
 scheduled. No W3 parent is checked complete by this pre-open result.
+
+
+## October 19 open observations — verified 2026-10-19
+
+Two finite open samples and their read-only SDK/REST diagnostics completed
+inside the declared 06:30–06:40 Los Angeles window. The heartbeat arrived late
+for the nominal 06:30 slot: the first sample completed at **06:35:31.003018**,
+and the final scheduled phase was then collected sequentially, completing at
+**06:36:53.288401**. These actual observation times do not represent a capture
+at the exact opening tick or a backfill of the unobserved opening interval.
+No concurrent mutation of the private journal was used.
+
+| Redacted local report | Assessed records | Schema-valid | Measured fresh |
+| --- | --- | --- | --- |
+| `/tmp/alpaca-w3-20261019-open-133450.json` | 4709 | 4709 | 4709 |
+| `/tmp/alpaca-w3-20261019-open-final-133605.json` | 3288 | 3288 | 3288 |
+
+These are assessed record counts, not unique trade counts or all-market
+coverage. Both finite SPY/IEX subscriptions acknowledged and observed reported
+regular quotes and trade conditions. Both source-bound risk snapshots were
+qualified for their reported-observation profile, had a current session E0,
+no issue codes and no reservation; risk/capital projections rebuilt. Provider
+clock origin, strategy trigger policy and runtime eligibility remain unaccepted.
+The earlier zero-record pre-open observation is retained unchanged; these later
+samples establish observed open-session flow, not its pre-open root cause.
+
+Read-only SDK subscription and REST reconciliation completed at
+**06:35:53.872278** and **06:37:19.320496** Los Angeles. Both reports were
+`MATCHED`, with empty difference-code lists, verified account/subscription and
+successful lifecycle reconstruction. Reports are
+`/tmp/alpaca-w3-20261019-reconcile-133535.json` and
+`/tmp/alpaca-w3-20261019-reconcile-final-133700.json`.
+The initial verified empty lifecycle baseline was registered only if absent;
+existing history and the original E0 were preserved. These captures are not
+atomic, and intentional stream closure requires recovery before another
+operational observation. They do not establish continuous monitoring.
+
+Independent final verification at 13:37:50 UTC checked private SQLite integrity,
+all **4,858** current immutable source payloads and successful risk, capital and
+lifecycle rebuilds. The original E0 receipt sequence **1319** and its previously
+recorded digest were unchanged. Local intent/send/cancellation-attempt counts
+were all zero. Consolidated redacted evidence is
+`/tmp/alpaca-w3-20261019-open-final-verification.json`. No broker order,
+cancellation, reset, data purchase, leverage/version activation or formal paper
+start occurred. Preserve `NOT_SIP_EQUIVALENT` and runtime authorization false.
+
+After both open phases finished, the native one-day W3 heartbeat
+`alpaca-bot-w3-strategy-risk-execution` was deleted through the app tool, which
+confirmed deletion. It was not converted into an ongoing trading task. The
+planned observation sequence is complete; actual delivery differed from its
+nominal schedule as noted above. W3-01/02/03 operational dependencies,
+continuous protection/stop-to-OCO semantics, actual order cycles and final
+paper/release freeze remain open; no parent completion checkbox changed.

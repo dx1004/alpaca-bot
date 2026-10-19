@@ -80,6 +80,8 @@ Paper-month automation remains intentionally unregistered until `W4-07` and `G05
 
 ## W3 follow-up — October 19 market-open readiness
 
+Completed October 19: genuine pre-open E0 and two finite open samples/SDK-REST diagnostics were independently verified; the native W3 one-day heartbeat was deleted afterward. Delivery was later than its nominal open times; actual sample completion was 06:35:31 and 06:36:53 Los Angeles. This closes the scheduled observation sequence only, not W3 or paper release. See [actual evidence](week3-evidence.md#october-19-open-observations--verified-2026-10-19).
+
 Prepared on October 18, 2026, at the user's request. Reuse the existing W3
 heartbeat and persistent chat; do not create a fifth project chat or a formal
 paper-month task. Intended one-day follow-up times are **06:20, 06:30 and 06:35
