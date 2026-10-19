@@ -77,3 +77,39 @@ The native scheduler setup was verified on 2026-09-28: Codex App created four ac
 | W4 | `01a0e9d3-f9fa-7f13-a52a-b27c99459657` | `alpaca-bot-w4-integration-and-release-gate` | Active |
 
 Paper-month automation remains intentionally unregistered until `W4-07` and `G05` pass.
+
+## W3 follow-up — October 19 market-open readiness
+
+Prepared on October 18, 2026, at the user's request. Reuse the existing W3
+heartbeat and persistent chat; do not create a fifth project chat or a formal
+paper-month task. Intended one-day follow-up times are **06:20, 06:30 and 06:35
+America/Los_Angeles** (13:20, 13:30 and 13:35 UTC). Scheduler delivery is not an
+exchange-clock guarantee. The machine must remain powered on and the desktop
+app running for local scheduled work; see [official OpenAI documentation](https://learn.chatgpt.com/docs/automations?surface=app).
+
+The 06:20 phase collects a genuine pre-open E0 and its durability receipt using
+the previously bound dedicated-account journal. The two open phases collect
+bounded read-only account/lifecycle and IEX diagnostic evidence and explicitly
+observe the source-bound daily-risk owner. Credentials and runtime root must be
+specified, never replaced with generic defaults. The collector's code-level
+date/window guards refuse a late/mismatched run before loading credentials or
+connecting. Existing-account checks prevent a fresh journal from silently
+substituting for the dedicated account. Account identity must still match the
+journal's authenticated binding.
+
+The pre-open collection window is 06:15 inclusive to 06:25 exclusive; open
+collection is 06:30 inclusive to 06:40 exclusive, all Los Angeles time on October
+19 only. Fresh official calendar evidence must confirm the declared 09:30 New
+York opening. Missed pre-open collection is `NOT_CAPTURED`, never an intraday
+E0. Open samples may still record diagnostic failures without an E0; missing
+baseline and source/strategy/data/protection gates remain blocked. These finite
+samples do not establish continuous monitoring of a small-cap universe.
+
+This follow-up cannot submit orders, cancellations, resets, subscriptions or
+formal-paper decisions. Each result must retain `NOT_SIP_EQUIVALENT`, source age,
+private integrity/rebuild status, zero intents and explicit remaining gates.
+After the final phase, or if the one-day schedule has expired, delete the
+heartbeat and record completion or the missed window. Keep intermediate runs
+quiet unless a phase completes meaningfully, a gate fails or user action is
+required. Registration/readback evidence belongs in Week 3 evidence; planned
+times above alone do not prove scheduler registration or future delivery.

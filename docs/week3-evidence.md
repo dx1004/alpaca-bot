@@ -1393,3 +1393,140 @@ nor guarantees final/atomic broker snapshots, stop fills, slippage or protection
 The published partial-fill protection conflict and stop-to-OCO handoff are still
 unresolved. No actual account access, order, cancellation, data purchase, formal
 paper start or W3 completion checkbox occurred in this increment.
+
+## Capital review state and October 19 open preparation — 2026-10-18
+
+The user requested completion of W3 and advance preparation for tomorrow's
+real-time tests. This increment implements the remaining independently safe
+capital-review component and connects actual-source risk observations to the
+finite read-only collector. It does not redefine the W3 acceptance criteria.
+
+### Capital-stage component
+
+`capital_stage.py` derives fresh reported USD equity, multiplier and buying power
+from immutable account/calendar evidence and separately reads the qualified
+session E0. The private journal owns atomic capital observations and their
+source-sequence horizon, independent account/strategy/risk/broker version fields,
+idempotent retry identity, cache/source reconstruction and downgrade history.
+Concurrent retries cannot duplicate the observation; commit failure cannot
+publish a projection or consume its identity.
+
+Current reported equity reaching USD 2,000 records only the user's authorized
+research-review threshold. E0 crossing that threshold is a separate observed
+fact, not an extra invented policy requirement. Reported multiplier and buying
+power do not establish borrowing or instrument entitlement. Blocked/invalid
+account flags produce an unqualified stage. Withdrawal of the observed review
+threshold is durable; it cannot force liquidation or silently change strategy,
+risk, leverage or broker configuration. Higher stages remain
+`BLOCKED_PENDING_SEPARATE_ACCEPTANCE`. Operational tranche activation,
+hysteresis, a sourced leveraged Ross version and separate leveraged-paper
+evidence are still unspecified/unaccepted; no defaults are invented to fill
+those gaps. W3-03's original W3-02 dependency therefore remains open.
+
+### Read-only collector and timed boundaries
+
+`scripts/qualify_risk_inputs.py` now has an explicit observation option that
+calls `AccountRiskOwner.observe()` and `CapitalStageOwner.assess()` with the
+fresh capture/calendar/owned-mark references. It does not call `reserve()` or
+any order/cancel API. The summary includes redacted source-owner/capital stage,
+current-session baseline presence, veto codes, rebuild and zero-intent status;
+account identities, money, credentials and raw responses remain private.
+
+The dedicated-account mode requires an existing journal and authenticated
+binding; an account change refuses subsequent capture and preserves old history.
+Date/phase guards run before credential/network use, after fresh calendar
+validation, before freezing E0, before metadata requests and risk/capital
+assessment, and before success is returned. An in-flight request may complete
+after a boundary, but a late phase cannot be accepted as successful. Interrupted
+evidence remains in the journal. Open collection cannot request baseline freeze.
+The reported E0 must belong to the latest snapshot's session and receipt, not a
+previous session's retained owner state.
+
+### Actual preflight and native scheduler registration
+
+A bounded **GET-only preflight** at 2026-10-19 01:21:45 UTC (October 18 in Los
+Angeles) verified the dedicated credentials still match the existing private
+journal's account binding, private permissions and SQLite integrity, with zero
+local order intents and zero send markers. No account state was changed. Fresh
+Alpaca calendar response for October 19 reported **09:30–16:00 New York**, or
+**06:30–13:00 Los Angeles**. Calendar response SHA-256:
+`b3c9c1464db3966cf10f7400ccb14f357384c063cb48f9d419a9f70911718fad`.
+This preflight is connectivity/calendar preparation, not a durable pre-session
+E0 or complete source/risk acceptance. Its redacted report is retained locally
+at `/tmp/alpaca-open-20261019-preflight.json`; no private account body is copied
+into Git.
+
+The existing native W3 heartbeat `alpaca-bot-w3-strategy-risk-execution` was
+updated, not duplicated, in the same persistent W3 chat. Active status, target
+chat, read-only instructions and recurrence were read back from the saved
+automation. RFC recurrence expansion independently confirmed exactly:
+
+| Los Angeles, October 19 | UTC | Planned observation |
+| --- | --- | --- |
+| 06:20 | 13:20 | Pre-open GET/calendar, genuine E0 plus durability receipt, short IEX observation and risk/capital state |
+| 06:30 | 13:30 | Finite open IEX/account sample plus read-only SDK/REST lifecycle diagnostic |
+| 06:35 | 13:35 | Second finite sample/reconciliation; end the one-day heartbeat |
+
+The pre-open window is 06:15 inclusive to 06:25 exclusive; the open window is
+06:30 inclusive to 06:40 exclusive. Missing the first cannot be backfilled by
+the later phases. Each uses the explicit existing dedicated credentials/root,
+retains separate redacted output, leaves all strategy/protection/release gates
+closed, and may report failed qualification without pretending it passed.
+Earlier phases retain the task; the final phase or expiry deletes it. Native
+scheduler registration is verified, but actual delivery and tomorrow's
+observations are not yet verified. Local execution requires the computer
+powered on and desktop app running, per [official OpenAI documentation](https://learn.chatgpt.com/docs/automations?surface=app).
+
+### Remaining W3 acceptance
+
+| Item | What remains open |
+| --- | --- |
+| W3-01 | Accepted executable candidate and source-scoped scanner/news/trigger data gates; diagnostic SPY is not a small-cap candidate census |
+| W3-02 | Genuine E0 and accepted operational data/strategy/risk/protection inputs; a source-bound observation is not a release |
+| W3-03 | W3-02 dependency and any separately accepted operational higher-stage transition; research component is implemented |
+| W3-04/05 | Previously accepted engineering components; no new strategy authority |
+| W3-06 | Continuous protection of partial entry fills and protection-preserving stop/target/close handoff |
+| W3-07 | Actual isolated order cycles and protected cleanup after their execution gates pass |
+| W3-08 | Complete accepted release/version/data/incident evidence and final protocol freeze |
+
+Primary Alpaca documentation rechecked October 18 still lists existing limit
+buy plus new stop sell as rejected and applies wash-trade protection to paper:
+[user protection](https://docs.alpaca.markets/us/docs/user-protection).
+[Bracket documentation](https://docs.alpaca.markets/us/docs/orders-at-alpaca)
+activates exits only after the entry completely fills. Applying the first rule
+to a working remainder after a partial fill is an explicit inference; no actual
+order was submitted to test it. An authoritative atomic standalone-stop-to-OCO
+conversion contract remains absent from the reviewed interface evidence, not
+proved impossible by an absence search. The user's continuous-protection
+requirement is preserved; tests cannot waive it.
+
+Public-only Cloud critique returned verified `gemma4:31b` remote inference.
+Its suggestion that synthetic responses prove real broker behavior was rejected.
+Only first-party interface statements and deterministic local evidence inform
+the acceptance conclusions. No private code, account state or credentials were
+sent to Cloud.
+
+No broker order, cancellation, account reset, data purchase, live enablement or
+formal four-week paper start occurred. No W3 parent was checked complete merely
+because the date or test count advanced. The scheduled samples are diagnostic
+observations, not continuous full-market monitoring, proof of executable
+strategy fidelity or actual fill/protection acceptance.
+
+### Final verification
+
+The capital component has 31 deterministic integration tests; the collector has
+46, including genuine-source E0/missing-E0 observations, account mismatch with
+history preservation, source redaction, no reservation, seven mid-collection
+expiry boundaries and an earlier-session E0 retained in owner state but absent
+from the current snapshot. Final independent scoped review passed all **77
+tests**, with no remaining material findings in this bounded preparation scope.
+Final full offline regression passed **1,460 tests**, with one existing upstream
+websockets deprecation. Ruff check, format (126 files), strict mypy (128 files)
+and diff checks passed. No test result grants broker or formal-paper authority.
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-w3-open-ready-full tests
+rtk proxy .venv/bin/ruff check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/ruff format --check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-open-final-mypy src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```

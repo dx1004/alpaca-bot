@@ -5,12 +5,14 @@ import asyncio
 import json
 import sqlite3
 from dataclasses import asdict
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
+from alpaca_ross_bot.account_risk_owner import AccountRiskOwner
+from alpaca_ross_bot.capital_stage import CapitalStageOwner
 from alpaca_ross_bot.config import PaperConfig
 from alpaca_ross_bot.feed_clients import make_observable_stream
 from alpaca_ross_bot.feed_health import FeedKind
@@ -21,9 +23,32 @@ from alpaca_ross_bot.market_input_checks import assess_market_record
 from alpaca_ross_bot.paper_order_contract import paper_account_ref
 from alpaca_ross_bot.risk_account_inputs import inspect_account_inputs
 from alpaca_ross_bot.risk_baseline import freeze_baseline
+from alpaca_ross_bot.risk_evidence_request import IncidentRiskRequest
 from alpaca_ross_bot.risk_input_evidence import inspect_risk_inputs
 from alpaca_ross_bot.risk_ledger_audit import audit_risk_ledger
 from alpaca_ross_bot.risk_ownership import qualify_ownership
+
+
+def check_collection_window(args: argparse.Namespace, at: datetime) -> None:
+    """Bound the one-session diagnostic before loading credentials or connecting."""
+    selected = getattr(args, "session_date", None)
+    window = getattr(args, "collection_window", None)
+    if selected is None and window is None:
+        return
+    if selected is None or window not in {"preopen", "open"}:
+        raise ValueError("both session date and collection window required")
+    if at.utcoffset() != timedelta(0):
+        raise ValueError("UTC collection clock required")
+    local = at.astimezone(ZoneInfo("America/New_York"))
+    start, end = (
+        (time(9, 15), time(9, 25))
+        if window == "preopen"
+        else (time(9, 30), time(9, 40))
+    )
+    if local.date() != selected or not start <= local.time() < end:
+        raise ValueError("outside the declared diagnostic collection window")
+    if window == "open" and getattr(args, "freeze_baseline", False):
+        raise ValueError("open collection cannot create a baseline")
 
 
 def get_record(url: str, headers: dict[str, str]) -> dict[str, object]:
@@ -41,6 +66,13 @@ def get_record(url: str, headers: dict[str, str]) -> dict[str, object]:
 
 
 async def capture(args: argparse.Namespace) -> dict[str, Any]:
+    check_collection_window(args, datetime.now(UTC))
+    root = args.runtime_root.resolve()
+    if (
+        getattr(args, "require_bound_account", False)
+        and not (root / "journal.sqlite3").is_file()
+    ):
+        raise ValueError("an existing bound private journal is required")
     config = PaperConfig.from_toml(args.config)
     environment = load_paper_credentials(args.credentials_file, config)
     credentials = config.resolve_credentials(environment)
@@ -48,7 +80,6 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
         "APCA-API-KEY-ID": credentials.key_id.reveal(),
         "APCA-API-SECRET-KEY": credentials.secret_key.reveal(),
     }
-    root = args.runtime_root.resolve()
     journal = Journal.open_private(root / "journal.sqlite3", root)
     stream = None
     report: dict[str, Any] = {
@@ -56,6 +87,11 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
         "runtime_authorized": False,
     }
     try:
+        if (
+            getattr(args, "require_bound_account", False)
+            and journal.read_paper_account_ref() is None
+        ):
+            raise ValueError("dedicated account identity must already be bound")
         base = "https://paper-api.alpaca.markets"
         account = get_record(base + "/v2/account", headers)
         raw_account = str(account["body"]).encode()
@@ -81,6 +117,11 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
             .replace(tzinfo=ZoneInfo("America/New_York"))
             .astimezone(UTC)
         )
+        if getattr(args, "collection_window", None) is not None:
+            # The declared 09:30 window must agree with fresh official evidence.
+            if opened.astimezone(ZoneInfo("America/New_York")).time() != time(9, 30):
+                raise ValueError("official session open differs from declared window")
+            check_collection_window(args, datetime.now(UTC))
         calendar_at = datetime.now(UTC)
         calendar_event = journal.append_next(
             source_id="ALPACA_PAPER_RISK_HTTP",
@@ -155,6 +196,7 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
         baseline_frozen = False
         baseline_status = "NOT_REQUESTED"
         if getattr(args, "freeze_baseline", False):
+            check_collection_window(args, datetime.now(UTC))
             try:
                 freeze_baseline(
                     journal,
@@ -218,6 +260,7 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
         metadata_sequences: dict[tuple[str, str], int] = {}
         for kind in ("trade", "quote"):
             for tape in ("A", "B", "C"):
+                check_collection_window(args, datetime.now(UTC))
                 url = (
                     "https://data.alpaca.markets/v2/stocks/meta/conditions/"
                     + kind
@@ -308,6 +351,7 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
             and ("quote", latest_quotes[symbol][2]) in metadata_sequences
         )
         risk_at = datetime.now(UTC)
+        check_collection_window(args, risk_at)
         risk_inputs = inspect_risk_inputs(
             journal,
             event.sequence,
@@ -333,6 +377,60 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
         report["risk_inputs"] = risk_inputs.public_summary() | {
             "assessment_sequence": risk_event.sequence,
         }
+        if getattr(args, "observe_risk_owner", False):
+            owner_at = datetime.now(UTC)
+            check_collection_window(args, owner_at)
+            owner = AccountRiskOwner(
+                journal,
+                account_ref,
+                Path(__file__).resolve().parents[1]
+                / "evidence/alpaca-equity-fees-20261012.json",
+            )
+            owner.observe(
+                "read-only-capture:" + str(event.sequence),
+                IncidentRiskRequest(
+                    event.sequence,
+                    calendar_event.sequence,
+                    timedelta(seconds=60),
+                    timedelta(seconds=60),
+                    mark_refs,
+                ),
+                owner_at,
+            )
+            state = owner.view()
+            assert state is not None
+            current_snapshot = state["last_snapshot"]
+            report["source_risk_owner"] = {
+                "source_snapshot_qualified": state["source_snapshot_qualified"],
+                "baseline_present": (
+                    isinstance(current_snapshot, dict)
+                    and current_snapshot.get("e0") is not None
+                    and current_snapshot.get("baseline_ref") is not None
+                    and current_snapshot.get("session")
+                    == owner_at.astimezone(ZoneInfo("America/New_York"))
+                    .date()
+                    .isoformat()
+                ),
+                "daily_stop_latched": state["daily_stop_latched"],
+                "issue_codes": state["issues"],
+                "assessment_sequence": state["watermark"],
+                "rebuild_verified": owner.verify_rebuild(),
+                "reservation_performed": False,
+                "runtime_authorized": False,
+            }
+            capital = CapitalStageOwner(journal, account_ref)
+            capital_at = datetime.now(UTC)
+            check_collection_window(args, capital_at)
+            capital.assess(
+                "read-only-capture:" + str(event.sequence),
+                account_sequence=event.sequence,
+                calendar_sequence=calendar_event.sequence,
+                decision_at=capital_at,
+                max_age=timedelta(seconds=60),
+            )
+            report["capital_stage"] = capital.public_summary() | {
+                "rebuild_verified": capital.verify_rebuild(),
+            }
         await stream.close()
         report["market"] = {
             "feed": "iex",
@@ -364,6 +462,8 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
         if any(journal.read_event(sequence) is None for sequence in sequences):
             raise ValueError("private source event disappeared")
         report["private_integrity_verified"] = True
+        report["zero_order_intents_verified"] = not journal.read_order_intent_ids()
+        check_collection_window(args, datetime.now(UTC))
         return report
     finally:
         if stream is not None:
@@ -374,6 +474,14 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--connect", action="store_true")
+    parser.add_argument(
+        "--observe-risk-owner",
+        action="store_true",
+        help="Observe risk and capital review state; never reserve or send",
+    )
+    parser.add_argument("--require-bound-account", action="store_true")
+    parser.add_argument("--session-date", type=date.fromisoformat)
+    parser.add_argument("--collection-window", choices=("preopen", "open"))
     parser.add_argument(
         "--freeze-baseline",
         action="store_true",
