@@ -1624,3 +1624,37 @@ planned observation sequence is complete; actual delivery differed from its
 nominal schedule as noted above. W3-01/02/03 operational dependencies,
 continuous protection/stop-to-OCO semantics, actual order cycles and final
 paper/release freeze remain open; no parent completion checkbox changed.
+
+## Research entry-to-risk bridge — 2026-10-19
+
+`AccountRiskOwner.reserve_research_decision` now derives the declared pending
+research signal's exact limit and cent-floored stop, rather than accepting
+caller-selected prices. The declaration and risk reservation share an atomic
+record; replay verifies derived prices, session identity and version metadata.
+Generic reservation compatibility and old-client-ID retries remain guarded.
+Capital assessment in fixtures checks the same account/calendar and independent
+versions; capital and risk are not claimed to share one transaction.
+
+Classification remains `RESEARCH_DECLARED_SIGNAL_NOT_SOURCE_ADMISSION`.
+`strategy_plan_qualified=false` and `runtime_authorized=false`; declarations do
+not prove raw bar provenance, eligible conditions, complete session history or
+live data admission. No order intent or entry-attempt consumption is performed.
+All new reservation exercises used synthetic temporary fixtures, not the user's
+account. No broker requests, writes or formal paper start occurred this increment.
+
+Validation: full offline pytest 1484 passed (one existing websockets deprecation
+warning); independent bounded bridge review 157 passed, no material findings;
+Ruff check and format (128 files) passed; strict mypy passed 130 source files.
+Commands used the project virtual environment, `PYTHONDONTWRITEBYTECODE=1`,
+pytest `-p no:cacheprovider`, and temporary test/type-cache directories.
+
+Primary-source recheck of Alpaca stock snapshots, real-time stock data and pinned
+alpaca-py v0.44.0 Bar models found no verifiable cumulative-volume update
+watermark. Bar interval start, latest trade time and local response receipt do
+not establish that watermark. This is an unresolved proof requirement, not a
+claim that observed volume was actually stale. See the source links and
+explicit alternative in [the independent proposal](w3-data-admission-proposal.md).
+The proposal is NOT ACCEPTED: the user asked for a recommendation, not adoption.
+The original frozen specification is unchanged. Optional non-veto news stays
+optional; source-scoped history/conditions, actual input admission, protection
+and release gates remain separate. W3-01/02/03 are not complete.

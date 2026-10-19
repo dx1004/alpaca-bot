@@ -14,12 +14,18 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from .entry_strategy import EntryDecision
 from .equity_fees import planned_charge_bounds
 from .journal import Journal, JournalError
 from .order_lifecycle import OrderProjection
 from .order_reconciliation import OrderReconciler
 from .owned_equity_ledger import audit_owned_equity
 from .paper_order_contract import decode_broker_json, validate_saved_request
+from .research_risk_binding import (
+    RESEARCH_BINDING,
+    _declared_research_plan,
+    _research_declaration,
+)
 from .risk_baseline import read_baseline, session_open_from_evidence
 from .risk_evidence_request import IncidentRiskRequest
 from .risk_input_evidence import inspect_risk_inputs
@@ -158,14 +164,52 @@ class AccountRiskOwner:
         plan: EntryRiskPlan,
     ) -> dict[str, object]:
         self._record(event_id, at, "RESERVE", selection, plan=plan.to_dict())
+        return self._reservation_result(plan.client_order_id)
+
+    def reserve_research_decision(
+        self,
+        event_id: str,
+        selection: IncidentRiskRequest,
+        at: datetime,
+        *,
+        client_order_id: str,
+        decision: EntryDecision,
+    ) -> dict[str, object]:
+        """Trace declared reducer L/S into one non-dispatch risk reservation.
+
+        This neither admits source market inputs nor consumes the P06 attempt.
+        """
+        declared = _research_declaration(decision)
+        plan = EntryRiskPlan(**_declared_research_plan(client_order_id, declared, at))
+        self._record(
+            event_id,
+            at,
+            "RESERVE",
+            selection,
+            plan=plan.to_dict(),
+            research_signal=declared,
+        )
+        result = self._reservation_result(client_order_id)
+        if result["quantity"] and (
+            result.get("client_order_id") != client_order_id
+            or result.get("signal_id") != declared["signal_id"]
+        ):
+            result.update(quantity=0, reason="RESERVATION_NOT_CURRENT")
+        result.update(
+            strategy_plan_qualified=False,
+            binding_classification=RESEARCH_BINDING,
+        )
+        return result
+
+    def _reservation_result(self, client_order_id: str) -> dict[str, object]:
         state = self.view()
         assert state is not None
         result = dict(state["decision"])
         held = state["held"]
         if result["quantity"] and (
             held is None
-            or held["client_order_id"] != plan.client_order_id
-            or result.get("client_order_id") != plan.client_order_id
+            or held["client_order_id"] != client_order_id
+            or result.get("client_order_id") != client_order_id
             or state["issues"]
             or state["daily_stop_latched"]
             or state["veto"]
@@ -480,6 +524,17 @@ class AccountRiskOwner:
         )
         at = datetime.fromisoformat(item["at"])
         _utc(at)
+        research_signal = item.get("research_signal")
+        if research_signal is not None:
+            if item.get("kind") != "RESERVE":
+                raise JournalError("research signal requires a research reservation")
+            if not isinstance(research_signal, dict) or (
+                _declared_research_plan(
+                    item["plan"]["client_order_id"], research_signal, at
+                )
+                != item["plan"]
+            ):
+                raise JournalError("research-derived risk plan differs")
         reasons: set[str] = set()
         if conflict:
             state.update(
@@ -536,6 +591,21 @@ class AccountRiskOwner:
             snapshot = self._snapshot(item)
             if snapshot != item["snapshot"]:
                 raise JournalError("source risk snapshot differs from immutable replay")
+            if research_signal is not None:
+                if research_signal["session_day"] != snapshot["session"]:
+                    raise JournalError("research/risk session identity differs")
+                if snapshot["qualified"]:
+                    selection = IncidentRiskRequest.from_dict(item["selection"])
+                    opened = session_open_from_evidence(
+                        self.journal,
+                        selection.calendar_sequence,
+                        self.account_ref,
+                        at.astimezone(ZoneInfo("America/New_York")).date(),
+                        at,
+                        selection.max_age,
+                    )
+                    if opened.isoformat() != research_signal["session"]["open_at"]:
+                        raise JournalError("research/risk session calendar differs")
             if not snapshot["qualified"]:
                 reasons.update(snapshot["issues"])
             else:
@@ -594,7 +664,9 @@ class AccountRiskOwner:
                         raise JournalError("only an unsent flat plan may be abandoned")
                     state["held"] = held = None
                 if kind == "RESERVE":
-                    self._reserve(state, item["plan"], snapshot, reasons)
+                    self._reserve(
+                        state, item["plan"], snapshot, reasons, research_signal
+                    )
             state["last_snapshot"] = snapshot
         if kind == "RESERVE" and not item["snapshot"]["qualified"]:
             state["decision"] = {
@@ -727,6 +799,7 @@ class AccountRiskOwner:
         raw: dict[str, str],
         snapshot: dict[str, Any],
         reasons: set[str],
+        research_signal: dict[str, Any] | None = None,
     ) -> None:
         plan = EntryRiskPlan(**raw)
         plan.to_dict()
@@ -758,7 +831,7 @@ class AccountRiskOwner:
                     quantity = q
             if quantity:
                 state["used_plan_ids"].append(plan.client_order_id)
-                state["held"] = plan.to_dict() | {
+                held_plan: dict[str, Any] = plan.to_dict() | {
                     "quantity": quantity,
                     "pending_quantity": quantity,
                     "open_quantity": 0,
@@ -768,6 +841,9 @@ class AccountRiskOwner:
                     "exits": {},
                     "net_at_start": snapshot["net"],
                 }
+                if research_signal is not None:
+                    held_plan["research_signal"] = research_signal
+                state["held"] = held_plan
             else:
                 reason = "NO_FEASIBLE_QUANTITY"
         state["decision"] = {
@@ -777,6 +853,12 @@ class AccountRiskOwner:
             "runtime_authorized": False,
             "strategy_plan_qualified": False,
         }
+        if research_signal is not None:
+            state["decision"].update(
+                signal_id=research_signal["signal_id"],
+                binding_classification=RESEARCH_BINDING,
+                research_sha256=research_signal["research_sha256"],
+            )
 
     def _totals(self, state: dict[str, Any], vetoed: bool) -> None:
         risk = cash = Fraction(0)
