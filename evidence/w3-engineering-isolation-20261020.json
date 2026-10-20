@@ -1,0 +1,82 @@
+{
+  "actual_order_cycle_performed": false,
+  "as_of": "2026-10-20",
+  "classification": "ACTUAL_GET_SDK_PREFLIGHT_NOT_ORDER_CYCLE_ACCEPTANCE",
+  "code_sha256": {
+    "scripts/reconcile_paper_orders.py": "d809e3b342e5a69ed2ee031ac5eed604ebdf1f551aaee6464523e73545707dcd",
+    "scripts/run_paper_engineering.py": "ebd1d200b964c4fdaa846751eb3d0f65d3bdf8d74687e68c9f8dd0e0a67ba01c",
+    "src/alpaca_ross_bot/paper_engineering.py": "87a20352ed1cbf114f782c6e0daf866d338a42c76688de5ce5e492df6fc984a9"
+  },
+  "formal_sample_started": false,
+  "limitations": [
+    "Distinct authenticated accounts and configured paths do not qualify formal starting state.",
+    "Complete empty observations initialize lifecycle baseline only when absent, preserving original account histories.",
+    "MATCHED is a bounded live-subscription comparison, not continuous monitoring or atomic snapshots.",
+    "Intentional stream closure requires recovery before any operational continuation.",
+    "Actual order cycles remain blocked by supported protection/cleanup and strategy/risk gates."
+  ],
+  "observations": {
+    "dual_account_recovery": {
+      "broker_writes_performed": false,
+      "capture_complete": true,
+      "capture_stable": true,
+      "cleanup_accepted": false,
+      "command_exit_code": 0,
+      "difference_codes": [
+        "BASELINE_NOT_REGISTERED",
+        "STREAM_NOT_SUBSCRIBED"
+      ],
+      "formal_account_isolation_authenticated": true,
+      "formal_existing_journal_binding_verified": true,
+      "formal_starting_state_qualified": false,
+      "intent_count": 0,
+      "observed_empty_book": true,
+      "rebuild_verified": true,
+      "reconciliation_status": "INCOMPLETE",
+      "runtime_authorized": false,
+      "send_attempt_count": 0,
+      "status": "RECOVERY_REQUIRED"
+    },
+    "finite_sdk_reconciliation": {
+      "broker_writes_performed": false,
+      "capture_status": "MATCHED",
+      "difference_codes": [],
+      "observed_at": "2026-10-20T20:29:04.313825+00:00",
+      "paper_account_verified": true,
+      "rebuild_verified": true,
+      "sdk_subscription_verified": true,
+      "shutdown_requires_recovery": true,
+      "snapshots_atomic": false,
+      "trading_authorized": false
+    },
+    "postflight_integrity": {
+      "distinct_accounts_and_matching_formal_proof": true,
+      "engineering_integrity_ok": true,
+      "engineering_zero_order_markers": true,
+      "formal_integrity_ok": true,
+      "formal_original_e0_unchanged": true,
+      "formal_zero_order_markers": true,
+      "observed_at": "2026-10-20T20:37:17.829981+00:00",
+      "runtime_authorized": false
+    }
+  },
+  "protection_accepted": false,
+  "runtime_authorized": false,
+  "schema_version": 1,
+  "source_reports": {
+    "dual_account_recovery": {
+      "path": "/tmp/alpaca-w3-engineering-isolation-20261020-202805350463.json",
+      "sha256": "f79b04fbfa03449d937bbbcc8e9376d585204ec082626bddb8719c1062f14c0e"
+    },
+    "finite_sdk_reconciliation": {
+      "path": "/tmp/alpaca-w3-engineering-sdk-20261020-202904477792.json",
+      "sha256": "f5872b10f03ca69e0db2f724a6772880e6f8d03f48d2cacccd64c8f53db3ca0e"
+    },
+    "postflight_integrity": {
+      "path": "/tmp/alpaca-w3-engineering-integrity-20261020-203717837540.json",
+      "sha256": "66699c19b5fb3290034949c5d232d648f63712fdb90a2f2fae36fcd5e325b787"
+    }
+  },
+  "timezone": "America/Los_Angeles",
+  "w3_07_accepted": false
+}

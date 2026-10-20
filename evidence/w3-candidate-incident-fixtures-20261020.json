@@ -1,0 +1,77 @@
+{
+  "as_of": "2026-10-20",
+  "candidate_version": "HYBRID_500_IEX_OBSERVATION_AGE_RESEARCH_V1",
+  "data_contract_sha256": "f5439d49ac9354abbe56b7b1fcb603c915942dee647efedebf48060e63b49e8c",
+  "data_contract_version": "IEX_SNAPSHOT_OBSERVATION_AGE_RESEARCH_V1",
+  "groups": [
+    {
+      "actual_broker_scenario_accepted": false,
+      "evidence_scope": "OFFLINE_SYNTHETIC",
+      "file_sha256": "03b0fe158a32d2fbbb1f75a5b8edea745d8e9bb78dcfdc32ceaf45c28ea3088f",
+      "group": "LOST_RESPONSE",
+      "line": 219,
+      "node_id": "tests/test_observation_incident_binding.py::test_candidate_unknown_response_keeps_protection_and_cannot_authorize_retry"
+    },
+    {
+      "actual_broker_scenario_accepted": false,
+      "evidence_scope": "OFFLINE_SYNTHETIC",
+      "file_sha256": "03b0fe158a32d2fbbb1f75a5b8edea745d8e9bb78dcfdc32ceaf45c28ea3088f",
+      "group": "DISCONNECT_RECONNECT",
+      "line": 127,
+      "node_id": "tests/test_observation_incident_binding.py::test_candidate_keeps_protection_target_cancel_and_close_obligations"
+    },
+    {
+      "actual_broker_scenario_accepted": false,
+      "evidence_scope": "OFFLINE_SYNTHETIC",
+      "file_sha256": "03b0fe158a32d2fbbb1f75a5b8edea745d8e9bb78dcfdc32ceaf45c28ea3088f",
+      "group": "PERSISTENCE_FAILURE",
+      "line": 348,
+      "node_id": "tests/test_observation_incident_binding.py::test_candidate_commit_failure_rolls_back_binding_and_obligation_updates"
+    },
+    {
+      "actual_broker_scenario_accepted": false,
+      "evidence_scope": "OFFLINE_SYNTHETIC",
+      "file_sha256": "03b0fe158a32d2fbbb1f75a5b8edea745d8e9bb78dcfdc32ceaf45c28ea3088f",
+      "group": "CANCEL_FILL_RACE",
+      "line": 251,
+      "node_id": "tests/test_observation_incident_binding.py::test_candidate_cancel_fill_race_owns_fills_beyond_existing_stop_coverage"
+    },
+    {
+      "actual_broker_scenario_accepted": false,
+      "evidence_scope": "OFFLINE_SYNTHETIC",
+      "file_sha256": "03b0fe158a32d2fbbb1f75a5b8edea745d8e9bb78dcfdc32ceaf45c28ea3088f",
+      "group": "PARTIAL_FILL_RESTART",
+      "line": 319,
+      "node_id": "tests/test_observation_incident_binding.py::test_candidate_replay_idempotency_restart_and_policy_migration"
+    },
+    {
+      "actual_broker_scenario_accepted": false,
+      "evidence_scope": "OFFLINE_SYNTHETIC",
+      "file_sha256": "03b0fe158a32d2fbbb1f75a5b8edea745d8e9bb78dcfdc32ceaf45c28ea3088f",
+      "group": "BOTH_EXITS_REVERSE_INVENTORY",
+      "line": 157,
+      "node_id": "tests/test_observation_incident_binding.py::test_candidate_preserves_sticky_reverse_inventory_faults"
+    }
+  ],
+  "legacy_fixture_binding": {
+    "path": "evidence/w3-engineering-fixture-binding-20261016.json",
+    "sha256": "a9488b2906414ad916b13b51a6b809cc2e269b946d62dfc29537dc601ad997ec"
+  },
+  "limitations": [
+    "Selected-candidate obligations only, not release preregistration or a broker protection guarantee.",
+    "Synthetic binding covers fault obligations; actual isolated broker cycles remain unexecuted.",
+    "Original nine-function six-group binding remains intact; new-case groups use the draft report computation identifiers.",
+    "Actual-source qualifications, executable candidate, W3 dependencies and release reviews remain required."
+  ],
+  "protection_accepted": false,
+  "runtime_authorized": false,
+  "schema_version": 1,
+  "source_admission_qualified": false,
+  "source_sha256": {
+    "src/alpaca_ross_bot/account_risk_owner.py": "691d304c292795e400e4905c603cbf9eaaa32233e7d9f4254340f2069a98da43",
+    "src/alpaca_ross_bot/incident_journal.py": "61c660588b30e93f7b2d33fad5d2d2005b8e6dffc245012f23a8c3af5ffb3373",
+    "src/alpaca_ross_bot/incident_risk.py": "408c0237e4f8616bae80483518c2f0514618fd082c8d4b27eeded3e185d8f2d3",
+    "src/alpaca_ross_bot/incident_state.py": "9705e63e26be899ea600927a745190ec3d5e3c7ad4ab9c0d22ddbe69e817da54"
+  },
+  "status": "RESEARCH_FIXTURE_BINDING_NOT_RELEASE_FREEZE"
+}

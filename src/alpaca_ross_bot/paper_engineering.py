@@ -43,7 +43,8 @@ class EngineeringHarness:
 
     The account references must come from separately authenticated account
     evidence. This harness checks the engineering account again before recovery;
-    it does not certify caller-supplied formal-account evidence or grant orders.
+    optional formal authentication must use a second API call, never a supplied
+    flag or an old sidecar proof. Neither path grants orders or a formal baseline.
     """
 
     def __init__(
@@ -133,10 +134,17 @@ class EngineeringHarness:
             proof.close()
 
     def recover(
-        self, api: PaperOrderHttp, policy: ReconciliationPolicy
+        self,
+        api: PaperOrderHttp,
+        policy: ReconciliationPolicy,
+        *,
+        formal_api: PaperOrderHttp | None = None,
     ) -> dict[str, object]:
         """One bounded GET-only capture; unknown orders are never submitted again."""
         self.verify_scope()
+        if formal_api is not None:
+            # A previous sidecar proof is never a substitute for this call.
+            self.verify_formal_account(formal_api)
         api.verify_account(self.journal, expected_reference=self.scope.account_ref)
         lifecycle = OrderReconciler(
             self.journal, self.scope.account_ref, clock=self.now
@@ -159,7 +167,10 @@ class EngineeringHarness:
                 and batch.positions == ()
                 and batch.open_orders == ()
             ),
-            "formal_account_isolation_authenticated": False,
+            "formal_account_isolation_authenticated": formal_api is not None,
+            # This proves distinct authenticated identities and configured paths,
+            # not the formal ledger's baseline, contents or release readiness.
+            "formal_starting_state_qualified": False,
             "intent_count": len(self.journal.read_order_intent_ids()),
             "send_attempt_count": sum(
                 self.journal.has_order_send_attempt(cid)

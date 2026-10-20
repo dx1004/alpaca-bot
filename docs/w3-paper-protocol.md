@@ -258,6 +258,32 @@ and mark assumptions, alongside availability, counts, mismatches, incidents and
 unobserved branches. Paper fills do not establish real execution quality. No
 result enables live trading, leverage, a subscription or a strategy switch.
 
+## Draft computation implementation — 2026-10-20
+
+`src/alpaca_ross_bot/paper_report.py` implements deterministic declared-input
+coverage and outcome computation for this draft. It accepts no P&L or returns
+argument. A positive result is `DRAFT_CRITERIA_MET`, never an accepted paper PASS;
+calendar, preregistration, source/reviewer attestations and release freeze remain
+explicitly unverified, and runtime authority remains false.
+
+Inputs distinguish unknown session census from an explicit zero-candidate census,
+reconcile every natural identity against its declared session and deduplicate
+repeated traces globally. Complete period records, independent-review summaries,
+decision-visible source times, all enabled cells, six scenario groups, natural
+owned filled-to-flat evidence and final reconciliation are checked together.
+Every natural decision must be auditable, including cases beyond the minimum
+witness quota; a quota cannot excuse missing inputs or risk decisions elsewhere.
+Failure takes precedence over incomplete coverage. Fixtures and exposed research
+cases cannot fill natural witness quotas. NOT_STARTED, IN_PROGRESS, ABORTED and
+incomplete/completed declared runs remain distinct.
+
+This pure evaluator does not authenticate opaque references or enroll a real
+holdout. A source adapter must still provide the complete stage census and
+verify raw provenance, review independence/masking, enrollment clocks, frozen
+versions and calendar. Descriptive broker/modelled-fee ledgers and P&L reporting
+remain separate from this verdict computation. The implementation does not fill
+the missing final registration fields, accept a release or start the window.
+
 ## Method references
 
 Checked by the coordinator 2026-10-15; source publication/version dates are not

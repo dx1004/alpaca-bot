@@ -35,12 +35,12 @@ class IncidentJournal:
     """
 
     def __init__(self, journal: Journal, policy: IncidentPolicy) -> None:
-        self.journal = journal
-        self.policy = IncidentPolicy.from_dict(policy.to_dict())
         if policy.runtime_risk_accepted or policy.protection_contract_accepted:
             raise JournalError(
                 "runtime risk/protection acceptance verifier is unavailable"
             )
+        self.journal = journal
+        self.policy = IncidentPolicy.from_dict(policy.to_dict())
         if journal.read_paper_account_ref() != policy.account_ref:
             raise JournalError("incident account is not bound to this journal")
         self.state_key = "incident:" + policy.account_ref + ":" + policy.scope_id

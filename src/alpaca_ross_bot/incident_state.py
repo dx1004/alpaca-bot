@@ -7,6 +7,7 @@ from decimal import Decimal, InvalidOperation, localcontext
 from enum import StrEnum
 from typing import cast
 
+from .observation_admission import CANDIDATE_VERSION, ObservationContract
 from .order_lifecycle import (
     LifecycleState,
     OrderObservation,
@@ -14,6 +15,8 @@ from .order_lifecycle import (
     reduce_order,
 )
 from .paper_order_contract import OrderSnapshot, PaperContractError
+from .research_risk_binding import OBSERVATION_IDENTITY
+from .strategy_features import FeatureUnavailable, research_candidate_version
 
 RESEARCH_POLICY_VERSION = "HYBRID_500_IEX_INTRADAY_RESEARCH_V1"
 
@@ -124,13 +127,31 @@ class IncidentPolicy:
     protection_contract_accepted: bool = False
     risk_acceptance_ref: str | None = None
     protection_acceptance_ref: str | None = None
+    observation_contract: ObservationContract | None = None
 
     def to_dict(self) -> dict[str, object]:
-        return cast(dict[str, object], _encoded(asdict(self)))
+        item = asdict(self)
+        del item["observation_contract"]
+        if self.observation_contract is not None or self.version == CANDIDATE_VERSION:
+            _validate_policy(self)
+            item["candidate_binding"] = dict(OBSERVATION_IDENTITY)
+        return cast(dict[str, object], _encoded(item))
 
     @classmethod
     def from_dict(cls, value: object) -> "IncidentPolicy":
-        item = _mapping(value, {f.name for f in fields(cls)})
+        names = {f.name for f in fields(cls)} - {"observation_contract"}
+        bound = isinstance(value, dict) and "candidate_binding" in value
+        item = _mapping(value, names | ({"candidate_binding"} if bound else set()))
+        contract = None
+        if bound:
+            identity = item["candidate_binding"]
+            if (
+                not isinstance(identity, dict)
+                or identity != OBSERVATION_IDENTITY
+                or identity.get("source_admission_qualified") is not False
+            ):
+                raise IncidentInputError("incident candidate/data/risk binding differs")
+            contract = ObservationContract()
         result = cls(
             _text(item["account_ref"]),
             _text(item["version"]),
@@ -146,6 +167,7 @@ class IncidentPolicy:
             None
             if item["protection_acceptance_ref"] is None
             else _text(item["protection_acceptance_ref"]),
+            contract,
         )
         _validate_policy(result)
         return result
@@ -302,6 +324,7 @@ class IncidentProjection:
             and not self.daily_stop_latched
             and self.policy.runtime_risk_accepted
             and self.policy.protection_contract_accepted
+            and self.policy.observation_contract is None
             and self.expected_quantity == self.observed_position == 0
             and not any(_working(item.order) for item in self.orders)
         )
@@ -320,7 +343,9 @@ class IncidentProjection:
         return "PROTECTED" if self.expected_quantity else "FLAT_RECONCILED"
 
     def to_dict(self) -> dict[str, object]:
-        return cast(dict[str, object], _encoded(asdict(self)))
+        item = asdict(self)
+        item["policy"] = self.policy.to_dict()
+        return cast(dict[str, object], _encoded(item))
 
     @classmethod
     def from_dict(cls, value: object) -> "IncidentProjection":
@@ -393,6 +418,25 @@ def _validate_policy(policy: IncidentPolicy) -> None:
         or not _reference(policy.evidence_ref)
     ):
         raise IncidentInputError("incident policy identity/evidence is invalid")
+    if policy.observation_contract is not None:
+        try:
+            version = research_candidate_version(policy.observation_contract)
+        except FeatureUnavailable as exc:
+            raise IncidentInputError(
+                "pinned incident observation contract required"
+            ) from exc
+        if (
+            policy.version != version
+            or policy.runtime_risk_accepted is not False
+            or policy.protection_contract_accepted is not False
+        ):
+            raise IncidentInputError(
+                "incident research candidate cannot grant acceptance"
+            )
+    elif policy.version == CANDIDATE_VERSION:
+        raise IncidentInputError(
+            "explicit pinned incident observation contract required"
+        )
     for accepted, reference in (
         (policy.runtime_risk_accepted, policy.risk_acceptance_ref),
         (policy.protection_contract_accepted, policy.protection_acceptance_ref),
@@ -614,11 +658,14 @@ def reduce_incident(
         (),
     )
     expected = state.expected_quantity
-    bound = policy.version == RESEARCH_POLICY_VERSION and {"P11", "P12", "P13"} <= set(
-        policy.rule_refs
-    )
+    bound = (
+        policy.version == RESEARCH_POLICY_VERSION
+        or policy.observation_contract is not None
+    ) and {"P11", "P12", "P13"} <= set(policy.rule_refs)
     if not bound:
         reasons.add("RESEARCH_POLICY_UNBOUND")
+    if policy.observation_contract is not None:
+        reasons.add("SOURCE_ADMISSION_UNQUALIFIED")
     for verified, reason in (
         (baseline_verified, "BASELINE_UNVERIFIED"),
         (observation.reconciliation_verified, "RECONCILIATION_REQUIRED"),

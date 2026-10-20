@@ -143,6 +143,67 @@ def test_restart_recovers_unknown_send_without_resend_or_cancel(tmp_path: Path) 
         harness.close()
 
 
+def test_recovery_explicitly_authenticates_both_distinct_accounts_without_orders(
+    tmp_path: Path,
+) -> None:
+    harness = EngineeringHarness(
+        tmp_path / "engineering", scope(tmp_path), clock=lambda: NOW
+    )
+    engineering = FakeExchange()
+    formal = FakeExchange()
+    formal.account_views = [PaperHttpResponse(200, FORMAL_BODY)]
+    formal_api = PaperOrderHttp(
+        CONFIG,
+        CREDENTIALS,
+        FORMAL_REF,
+        timeout_seconds=2,
+        max_request_bytes=4096,
+        max_response_bytes=4096,
+        exchange=formal,
+    )
+    try:
+        result = harness.recover(api(engineering), POLICY, formal_api=formal_api)
+        assert result["formal_account_isolation_authenticated"] is True
+        assert result["formal_starting_state_qualified"] is False
+        assert result["cleanup_accepted"] is result["runtime_authorized"] is False
+        assert result["status"] == "RECOVERY_REQUIRED"
+        assert all(method == "GET" for method, _, _ in engineering.calls + formal.calls)
+        assert formal.calls and engineering.calls
+        assert ACCOUNT_REF not in json.dumps(result)
+        assert FORMAL_REF not in json.dumps(result)
+        proof = Journal.open_private(
+            harness.root / "formal-account-proof.sqlite3", harness.root
+        )
+        try:
+            assert proof.read_paper_account_ref() == FORMAL_REF
+        finally:
+            proof.close()
+        # Stored proof does not authenticate a later call that omitted formal_api.
+        again = harness.recover(api(FakeExchange()), POLICY)
+        assert again["formal_account_isolation_authenticated"] is False
+    finally:
+        harness.close()
+
+
+def test_existing_formal_proof_cannot_hide_changed_credentials_on_restart(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "engineering"
+    spec = scope(tmp_path)
+    harness = EngineeringHarness(root, spec, clock=lambda: NOW)
+    harness.verify_formal_account(proof_api())
+    harness.close()
+    reopened = EngineeringHarness(root, spec, clock=lambda: NOW)
+    engineering = FakeExchange()
+    try:
+        with pytest.raises(PaperOrderHttpError):
+            reopened.recover(api(engineering), POLICY, formal_api=api(FakeExchange()))
+        assert engineering.calls == []
+        assert not reopened.journal.read_order_intent_ids()
+    finally:
+        reopened.close()
+
+
 def test_scope_corruption_blocks_network(tmp_path: Path) -> None:
     harness = EngineeringHarness(
         tmp_path / "engineering", scope(tmp_path), clock=lambda: NOW

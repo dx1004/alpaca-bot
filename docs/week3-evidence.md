@@ -1839,3 +1839,128 @@ Outcome: research binding verified; bounded actual observation component verifie
 actual strategy/risk-source qualification and continuous protection NOT ACCEPTED.
 W3 parents remain open. No broker writes, account reset, data purchase, weakened
 protection, live mode or formal paper evaluation occurred.
+
+## W3-06 through W3-08 — candidate incident duties, isolated preflight and draft computation, 2026-10-20
+
+The active goal remains completion of the original W3-06/W3-07/W3-08 acceptance,
+including their real dependencies. The preceding goal turn made progress through
+the candidate research bridge and real source/refusal evidence. This increment
+adds the required candidate-specific incident duties, authenticates isolated
+engineering preflight and implements the draft study computation. No W3 parent
+is marked complete by those component results.
+
+### W3-06: new-candidate obligations and fault evidence
+
+`IncidentPolicy` now accepts the exact pinned `ObservationContract` explicitly
+for the new observation-age candidate. Its durable representation binds the
+candidate/data identity separately from the inherited risk profile. Original
+policy and projection serialization retain their previous shape. A missing,
+forged or mixed contract cannot acquire the new binding; policy migration cannot
+relabel an existing incident scope. `IncidentJournal` continues to refuse caller
+runtime/protection acceptance flags. The candidate also retains an explicit
+source-admission refusal and cannot authorize new exposure.
+
+The new version previously remained `RESEARCH_POLICY_UNBOUND`, which omitted its
+P11–P13 target, remainder-cancel and closing obligations. Those obligations now
+apply to its own valid research identity while preserving verified stops,
+tracking racing fills, retaining daily-stop and reverse-inventory faults, and
+requiring reconciliation/approved disposition. It reads the same canonical
+parent `AccountRiskOwner`, without a second account risk budget or risk-profile
+migration.
+
+Twenty-three candidate tests now cover typed identity/replay, storage rollback,
+source-owner binding and all six fault groups. Unknown entry responses preserve
+the stop and pending-entry obligations without retry authority. A cancel-pending
+entry can still fill beyond its old stop quantity; the extra quantity remains
+owned and triggers protection escalation. Restart testing closes and physically
+reopens the SQLite connection before checking durable quantities, protection and
+cancel obligations. The six groups and exact source bytes are bound in
+[candidate fixture evidence](../evidence/w3-candidate-incident-fixtures-20261020.json).
+The original nine-function/six-group October 16 binding was separately verified
+intact. These are synthetic obligations, not broker-native continuous-protection
+acceptance or a release freeze.
+
+### W3-07: independently authenticated isolated preflight
+
+`EngineeringHarness.recover` now optionally takes a second `formal_api` and
+authenticates it freshly before the engineering recovery. An old sidecar proof
+cannot stand in for the current request. Wrong formal credentials fail before
+engineering requests; omitting the optional argument keeps the authentication
+claim false. The CLI exposes `--formal-credentials-file` for this read-only path.
+Distinct authenticated identities and disjoint configured paths do not qualify
+the formal starting ledger, baseline, protection or cleanup.
+
+The actual check used the two existing account credentials and a new private
+engineering namespace, `~/.local/state/alpaca-bot/w3-engineering-isolation-20261020`.
+The existing dedicated formal journal binding was also checked directly. Both
+account histories were preserved; only GET and passive SDK operations occurred.
+The first recovery authenticated isolation and captured a complete stable empty
+book, while correctly reporting its missing lifecycle baseline/subscription.
+
+The existing finite SDK/REST diagnostic then initialized an independently
+verified empty engineering lifecycle baseline only because it was absent. At
+**13:29:04.313825 Los Angeles** (20:29:04.313825 UTC), subscription was confirmed
+and reconciliation was `MATCHED`, with no differences and successful rebuild.
+Intentional shutdown requires recovery; snapshots remain non-atomic and the
+observation does not establish continuous monitoring or an executed order cycle.
+
+[Actual redacted preflight evidence](../evidence/w3-engineering-isolation-20261020.json)
+binds the reports and runtime source hashes. Postflight verification at
+20:37:17 UTC confirmed both private databases' integrity, distinct account/proof
+bindings, zero intent/send/cancel markers and the original formal E0 receipt
+unchanged. No formal sample or actual order cycle was started. W3-07 still needs
+the supported protection/cleanup contract and actual isolated order scenarios.
+
+### W3-08: deterministic draft report computation
+
+`paper_report.py` implements the existing draft's declared-input coverage and
+outcome rules without a P&L/returns argument. It distinguishes an unknown daily
+candidate census from explicit zero, reconciles census/trace identities, dedupes
+globally, checks planned session periods and decision-visible inputs/reviews,
+requires distinct natural witnesses for every enabled cell and a natural owned
+filled-to-flat lifecycle, and checks six scenario groups and final owned state.
+Fixtures and exposed research cases cannot fill natural quotas. Failure takes
+precedence over incomplete evidence, and run state distinguishes NOT_STARTED,
+IN_PROGRESS, ABORTED and incomplete/completed declared windows.
+
+Independent review found an extra-case gap: once quotas were satisfied, an
+additional ENTRY with missing inputs could escape the incompleteness verdict.
+The corrected computation audits every natural case, including extra cases;
+missing inputs/rule/lifecycle evidence and unreached ENTRY risk decisions block
+draft criteria. A filled lifecycle without an ENTRY is a contradiction. The
+reproduction now returns INCONCLUSIVE and all 56 focused tests pass. No threshold
+or sample minimum was changed in response to paper outcomes.
+
+A positive computation is `DRAFT_CRITERIA_MET`; the calendar, preregistration,
+source/reviewer attestations and release freeze stay unverified. It neither
+authenticates raw provenance nor proves holdout enrollment/masking, and does not
+replace the source-stage census adapter or descriptive fee/P&L ledgers. The
+[canonical protocol](w3-paper-protocol.md#draft-computation-implementation--2026-10-20)
+records this implementation and the remaining final registration fields.
+
+### Final validation and remaining acceptance
+
+From the repository, using the project venv and temporary test/type caches:
+
+- Full offline pytest: `-q -p no:cacheprovider --basetemp /tmp/alpaca-w30608-final tests`
+  — **1598 passed**, one existing websockets legacy deprecation warning.
+- Candidate incident tests: 23 passed; isolated engineering tests: 15 passed;
+  draft report tests: 56 passed. Independent reviews covered incident source and
+  101 related tests at its first freeze, the engineering authentication diff,
+  and all 56 corrected report tests. Root reviewed the final two added incident
+  cases and physical restart, then verified the full suite.
+- Ruff check and format passed (134 files). Strict mypy across src/tests plus
+  qualification/engineering/reconciliation/credential scripts passed 136 files.
+  `git diff --check` passed.
+
+No affected environment fault occurred. Broker orders/cancellations/resets,
+data purchases, source/protection waivers, live enablement and formal paper
+evaluation remained absent. The [support questions](#ready-to-submit-support-request-not-sent)
+remain prepared and unsent; an explicit external-submission/contact-information choice has been
+requested, without assuming authorization.
+
+Completion is still unproven: W3-06 needs accepted actual strategy/risk/data and
+broker-supported continuous protection/close semantics; W3-07 needs safe actual
+order-cycle evidence after those gates; W3-08 needs the accepted executable
+candidate, dependency evidence and fully populated independently reviewed freeze.
+The full active goal is preserved, not redefined as the increments above.
