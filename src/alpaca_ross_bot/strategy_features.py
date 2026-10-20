@@ -5,9 +5,27 @@ from datetime import date, datetime, timedelta
 from fractions import Fraction
 from zoneinfo import ZoneInfo
 
+from .observation_admission import CANDIDATE_VERSION, ObservationContract
+
 NY = ZoneInfo("America/New_York")
 VERSION = "HYBRID_500_IEX_INTRADAY_RESEARCH_V1"
 COVERAGE = "NOT_SIP_EQUIVALENT"
+
+
+def research_candidate_version(
+    observation_contract: ObservationContract | None = None,
+) -> str:
+    """Opt into a pinned research identity; this never admits observed inputs."""
+    if observation_contract is None:
+        return VERSION
+    if (
+        type(observation_contract) is not ObservationContract
+        or observation_contract != ObservationContract()
+        or observation_contract.runtime_authorized is not False
+        or type(observation_contract.max_age_seconds) is not int
+    ):
+        raise FeatureUnavailable("pinned observation-age research contract required")
+    return CANDIDATE_VERSION
 
 
 class FeatureUnavailable(ValueError):
@@ -262,8 +280,11 @@ def build_trend(
     history_sessions: tuple[Session, ...],
     daily_bars: tuple[Bar, ...],
     minutes: tuple[Bar, ...],
+    *,
+    observation_contract: ObservationContract | None = None,
 ) -> Trend:
     """Freeze at open: 100 full-NY-day bars and 100 RTH hourly minute aggregates."""
+    version = research_candidate_version(observation_contract)
     if session.available_at > session.open_at:
         raise FeatureUnavailable("P04/P05: calendar unknown at open")
     daily_expected = expected_history(history_sessions, None, session.open_at)
@@ -283,6 +304,7 @@ def build_trend(
         ema(hc, 9),
         ema(hc, 21),
         tuple(bar.evidence_ref for bar in daily + hourly),
+        version=version,
     )
 
 

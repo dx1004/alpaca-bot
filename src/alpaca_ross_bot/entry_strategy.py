@@ -11,6 +11,7 @@ from datetime import date, datetime, timedelta
 from fractions import Fraction
 
 from .adapted_scanner import ScreenResult
+from .observation_admission import ObservationContract
 from .scanner_contract import ACCEPTED_SHA256, RULE_IDS
 from .strategy_features import (
     COVERAGE,
@@ -19,6 +20,7 @@ from .strategy_features import (
     FeatureUnavailable,
     Trend,
     positive,
+    research_candidate_version,
     session_slots,
     utc,
 )
@@ -272,9 +274,12 @@ def evaluate_entry(
     prior_bar: Bar | None,
     health: InputHealth,
     decision_at: datetime,
+    *,
+    observation_contract: ObservationContract | None = None,
 ) -> EntryDecision:
     """Evaluate a new eligible trade. Signals never consume the attempt allowance."""
     utc(decision_at)
+    version = research_candidate_version(observation_contract)
     session = trend.session
     if state.trend_snapshot is not None and state.trend_snapshot != trend:
         return _result(
@@ -284,8 +289,8 @@ def evaluate_entry(
             cancel=True,
         )
     if (
-        state.version != VERSION
-        or trend.version != VERSION
+        state.version != version
+        or trend.version != version
         or state.symbol != trend.symbol
         or trade.symbol != state.symbol
         or state.session_day != session.day
@@ -431,12 +436,13 @@ def evaluate_entry(
         return _result(next_state, "NO_SIGNAL", "P08:NO_CHASE")
     assert health.low_since_open is not None
     signal = Signal(
-        f"{VERSION}:{session.day}:{state.symbol}:{trade.event_id}",
+        f"{version}:{session.day}:{state.symbol}:{trade.event_id}",
         state.symbol,
         session.day,
         trade.event_id,
         limit_price,
         health.low_since_open,
+        version=version,
     )
     return _result(
         replace(next_state, pending_signal=signal),

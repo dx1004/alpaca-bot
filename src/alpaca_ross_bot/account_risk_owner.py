@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 from .entry_strategy import EntryDecision
 from .equity_fees import planned_charge_bounds
 from .journal import Journal, JournalError
+from .observation_admission import ObservationContract
 from .order_lifecycle import OrderProjection
 from .order_reconciliation import OrderReconciler
 from .owned_equity_ledger import audit_owned_equity
@@ -174,12 +175,15 @@ class AccountRiskOwner:
         *,
         client_order_id: str,
         decision: EntryDecision,
+        observation_contract: ObservationContract | None = None,
     ) -> dict[str, object]:
         """Trace declared reducer L/S into one non-dispatch risk reservation.
 
         This neither admits source market inputs nor consumes the P06 attempt.
         """
-        declared = _research_declaration(decision)
+        declared = _research_declaration(
+            decision, observation_contract=observation_contract
+        )
         plan = EntryRiskPlan(**_declared_research_plan(client_order_id, declared, at))
         self._record(
             event_id,
@@ -199,6 +203,20 @@ class AccountRiskOwner:
             strategy_plan_qualified=False,
             binding_classification=RESEARCH_BINDING,
         )
+        if "data_contract_version" in declared:
+            result.update(
+                {
+                    key: declared[key]
+                    for key in (
+                        "strategy_version",
+                        "risk_profile_version",
+                        "data_contract_version",
+                        "data_contract_sha256",
+                        "volume_source_age",
+                        "source_admission_qualified",
+                    )
+                }
+            )
         return result
 
     def _reservation_result(self, client_order_id: str) -> dict[str, object]:
@@ -859,6 +877,20 @@ class AccountRiskOwner:
                 binding_classification=RESEARCH_BINDING,
                 research_sha256=research_signal["research_sha256"],
             )
+            if "data_contract_version" in research_signal:
+                state["decision"].update(
+                    {
+                        key: research_signal[key]
+                        for key in (
+                            "strategy_version",
+                            "risk_profile_version",
+                            "data_contract_version",
+                            "data_contract_sha256",
+                            "volume_source_age",
+                            "source_admission_qualified",
+                        )
+                    }
+                )
 
     def _totals(self, state: dict[str, Any], vetoed: bool) -> None:
         risk = cash = Fraction(0)

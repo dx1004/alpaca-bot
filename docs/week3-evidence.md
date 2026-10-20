@@ -1717,3 +1717,125 @@ condition policy, new-candidate entry/risk identity binding, continuous protecti
 actual broker cycles and release remain unaccepted. W3-01/02/03 parents remain
 open. No order intent, attempt consumption, broker mutation, data purchase or
 formal paper evaluation occurred.
+
+## New candidate binding and actual-source acceptance attempt — 2026-10-20
+
+Scope: the user requested actual market-input qualification, new-version
+entry/risk binding and protection acceptance. This increment completes an
+explicit research-version bridge and records actual-source checks/refusals;
+it does not claim all three operational gates passed.
+
+### Explicit new-candidate research binding
+
+The exact pinned `ObservationContract` is now an explicit opt-in to
+`build_trend`, `evaluate_entry` and `reserve_research_decision`. Without it the
+original path remains unchanged. New feature/state/signal identities must all
+match `HYBRID_500_IEX_OBSERVATION_AGE_RESEARCH_V1`; signal IDs use its namespace.
+Mixed versions and relabeling an old state are refused. The declaration persists
+the new strategy/data identity and hash separately from the unchanged inherited
+risk profile. One canonical account risk owner and slot prevent either version
+from allocating an independent second risk budget. Replay checks this mapping.
+
+This is `RESEARCH_DECLARED_SIGNAL_NOT_SOURCE_ADMISSION`, with
+`source_admission_qualified=false`, source-volume age UNKNOWN and runtime/order
+authority false. No caller-supplied admission boolean or parsed market value is
+accepted as evidence of source eligibility. The original attempt owner still
+refuses the new candidate; no attempt is consumed and no order intent is created.
+Connecting an accepted actual-source decision to a dispatch/attempt owner is
+still a separate operational gate.
+
+Validation: 16 new tests and 166 related feature/entry/risk/attempt tests passed.
+Independent read-only review found no actionable issues, passed the same 166
+tests and seven additional contract field/type refusal checks. Full offline
+pytest (`-q -p no:cacheprovider --basetemp /tmp/alpaca-candidate-binding-full tests`)
+passed 1517 tests with one existing websockets deprecation warning. Ruff check,
+format (131 files) and strict mypy (133 source files, including the four
+qualification/engineering/reconciliation/credential scripts) passed.
+
+### Real-source checks and current-session refusal
+
+At **12:31:53.303859 Los Angeles** (19:31:53.303859 UTC), one finite GET-only
+explicit SPY snapshot passed the independent observation-age component. The
+existing dedicated account/journal binding was authenticated, observed positions
+and open orders were empty, and no generic account/root was substituted.
+Raw snapshot reference: sequence 4859,
+`sha256:cba836dd60a5696a66511d726cbb7cd1a10806c7af37651f3f430db1481a4b52`,
+captured horizon 4860. Redacted report:
+`/tmp/alpaca-w3-20261020-observation-193153309609.json`; finite driver:
+`/tmp/alpaca-w3-20261020-observation-capture.py`. No market/account values or raw
+responses were printed. This is a diagnostic symbol, not a qualified small-cap
+candidate, completed catalog sweep or proof of a setup from open.
+
+A subsequent existing collector run used `--connect --require-bound-account
+--observe-risk-owner --stream-seconds 20`, the same dedicated credentials and
+private root, and no baseline freeze or dated open-window claim. It finished at
+**12:33:06.483908 Los Angeles** (report filename timestamp). Redacted report:
+`/tmp/alpaca-w3-20261020-inputs-193306483908.json`. Subscription was acknowledged;
+the 1315 trade/quote records passed schema and measured event/receipt ages.
+One additional record was a minute bar, correctly not qualified by the
+trade/quote checker. Independent private read-only counts were 1296 quotes,
+19 trades and one bar; SQLite integrity passed and intent/send/cancel counts
+were zero. Final verification at 19:38:43 UTC confirmed the original E0 receipt
+sequence 1319 and its recorded digest unchanged, SQLite integrity OK and zero
+intent/send/cancel markers. Redacted proof is
+`/tmp/alpaca-w3-20261020-final-integrity-193843471517.json`.
+The bounded stream was intentionally closed and requires continuity
+recovery; it proves neither monitoring from open nor all-market coverage.
+
+The source-bound risk owner explicitly refused the current session with
+`PRESESSION_E0_MISSING`; rebuild verified, reservation=false and runtime=false.
+The prior session's E0 was preserved, not relabeled or retroactively frozen.
+An intraday observation cannot supply today's missing pre-open evidence.
+
+Current actual admission therefore remains blocked by current-session E0,
+decision-visible history/features and first-RTH/setup/LOD reconstruction,
+continuous monitoring, and a separately accepted condition policy. The original
+collector reports provider-clock qualification false; the new contract only
+measures provider-reported event and local-receipt age and makes no additional
+exchange-clock SLA claim. Passing those measurements does not accept a trigger
+condition policy or establish complete actual-source eligibility.
+
+### Protection recheck: no positive acceptance
+
+Independent GPT-6.1 Sol Low retrieval and coordinator primary-source review on
+2026-10-20 rechecked the living US Trading API v2 contracts:
+
+- [Order guide](https://docs.alpaca.markets/us/docs/orders-at-alpaca#bracket-orders):
+  bracket exits activate only after full entry fill. Thus brackets do not meet
+  the required protection from the first partial fill. OCO exits can both fill
+  before cancellation in a fast market; their name is not an absolute guarantee
+  against excess exits.
+- [Replace order](https://docs.alpaca.markets/us/reference/patchorderbyorderid-1):
+  no documented order-class conversion/adoption field; successful HTTP replacement
+  is not guaranteed execution-venue replacement. The official SDK replacement
+  request also supplies no simple-stop-to-OCO conversion operation.
+
+No supported atomic standalone-stop-to-OCO handoff guarantee was found. This is
+not proof of the impossibility of all broker-private capabilities. A client
+reaction after receiving a partial fill cannot by itself establish uninterrupted
+broker-native protection from that first fill. Bounded experiments can reveal
+counterexamples or particular observed sequences, not prove universal atomicity.
+No deliberately unprotected position was created to test this known gap.
+The existing unsent vendor questions and protection requirement remain valid;
+written supported broker semantics are still needed for positive acceptance.
+
+Public-only Cloud inference was verified as `route=cloud`, `model=gemma4:31b`,
+success=true at 19:30:49 UTC. It supported the limited testing/contract distinction;
+its wording suggesting a single exit filling before cancellation alone falsifies
+OCO was rejected (the relevant excess-exit counterexample needs both exits).
+No private project/account material was exported.
+
+Independent retrieval also rechecked [condition metadata](https://docs.alpaca.markets/us/reference/stockmetaconditions-1),
+[stream schema](https://docs.alpaca.markets/us/docs/real-time-stock-pricing-data)
+and [bar aggregation rules](https://docs.alpaca.markets/us/docs/market-data-faq).
+Names and aggregation eligibility do not uniquely determine the strategy's
+tick-trigger whitelist. Observed Regular Sale, Odd Lot and regular-open quote
+definitions were preserved, not silently made executable rules. A public-only
+Cloud critique at 19:34:03 UTC was also verified; its unsupported claims about
+noise reduction, professional strategies and subtracting excluded volume were
+rejected. No new condition policy was adopted or original volume changed.
+
+Outcome: research binding verified; bounded actual observation component verified;
+actual strategy/risk-source qualification and continuous protection NOT ACCEPTED.
+W3 parents remain open. No broker writes, account reset, data purchase, weakened
+protection, live mode or formal paper evaluation occurred.
