@@ -2024,6 +2024,13 @@ rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-w308-performance-mypy-
 
 ## Native API compatibility review — 2026-10-20
 
+User decision after review, 2026-10-20: preserve the original protection
+requirements and continue seeking a verifiable supported implementation. The
+user did not authorize an independent Bracket execution version, acceptance of
+a protection gap, strategy changes or broker orders. Existing valid protection
+must be preserved; no guarantee of stop execution price or universal absence of
+exit races is inferred from this requirement.
+
 The user authorized the documentation-first compatibility review, not a change
 to the accepted protection policy or broker-order permissions. The conclusion
 is scoped to the published US retail contract checked today. No claim is made
@@ -2122,3 +2129,39 @@ The coordinator also checked the public REST replacement page directly rather
 than relying on the worker's SDK inventory. `git diff --check` passed. A worker
 read initially used unavailable bare `python`; repeating that bounded read with
 installed `sed` succeeded, resolving the affected read without a global change.
+
+### Protection-preserving follow-up — 2026-10-20
+
+After the user's explicit decision to retain the original requirements, a
+bounded six-search follow-up checked public first-party guidance and potential
+maintainer/forum answers rather than repeating the native-order comparison.
+No new documented per-partial attachment, existing-stop adoption/group mutation
+or stop-preserving close operation was found. This is a bounded search result,
+not proof that an undocumented implementation cannot exist.
+
+The [Alpaca-owned paper-trading guide](https://github.com/alpacahq/alpaca-skills/blob/main/skills/trading-api/paper-trading/SKILL.md)
+labels `position_intent` as options-only. The coordinator inspected its raw
+public text as reference data, not as instructions to install or execute.
+The [create-order reference](https://docs.alpaca.markets/us/reference/postorder)
+lists that enum with a generic description, but supplies no equity reduce-only
+or competing-exit guarantee. Neither source permits treating `sell_to_close`
+as a proven equity reversal-prevention mechanism. The guide is mutable `main`,
+with no immutable revision established in this check, and is guidance rather
+than a venue contract; unrelated guide statements were not adopted.
+
+Historical forum leads were [partial take profit](https://forum.alpaca.markets/t/partial-take-profit-order/13578)
+(2024-01/02) and [bracket exit behavior](https://forum.alpaca.markets/t/bracket-order-fails-to-execute-exit-orders/11097)
+(2023-02). Their author name suggests Alpaca association, but the rendered
+profile did not independently verify staff status. They are leads only, not
+official acceptance evidence. Allocating already-owned shares to separate new
+exit orders does not document adoption of an established stop; partial exit
+handling does not prove protection of partial entry fills.
+
+Sol retrieval, coordinator source checks and verified Cloud `gemma4:31b`
+public-only synthesis agree on that limited conclusion. No private file or
+account content was exported, no forum message/support request was sent, and
+no broker test or policy change was performed. Established valid stops remain
+preserved; price guarantees and universal absence of racing exits are not new
+requirements. W3-06 acceptance still needs a supported mapping for the precise
+partial-fill/handoff/close requirements before actual W3-07 orders; W3-08 cannot
+freeze an unaccepted executable release. No parent is marked complete.
