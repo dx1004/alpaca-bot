@@ -212,6 +212,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   Draft computation verified 2026-10-20: deterministic session/candidate census, per-cell natural witnesses, independent-review summaries, six fault groups and final-state computation are implemented; P&L cannot enter the verdict. All natural cases are audited even beyond quotas. Fifty-six focused tests and independent review pass; full regression 1598 tests plus Ruff/format/strict mypy pass. Positive output is DRAFT_CRITERIA_MET with registration/calendar/source/review/release gates unverified, not formal PASS. [Protocol implementation](docs/w3-paper-protocol.md#draft-computation-implementation--2026-10-20). Accepted dependencies, actual evidence adapters, descriptive ledgers and final freeze remain open.
 
+  Calendar observation 2026-10-20: authenticated broker GET matched all 20 proposed sessions and UTC hours, including DST, while preserving the expected artifact. Separate descriptive fee/P&L/drawdown computation is implemented for declared scoped ledgers, with source verification and runtime authority false. [Increment and remaining three-path acceptance](docs/week3-evidence.md#calendar-and-descriptive-report-increment--2026-10-20) distinguishes these components from actual source/entry-risk/protection acceptance. Actual evidence adapters, accepted executable dependencies and final freeze remain open; no formal paper started.
+
 ## Week 4 — Integration, audit, and release freeze
 
 - [ ] **W4-01 [P0] End-to-end deterministic replay**  

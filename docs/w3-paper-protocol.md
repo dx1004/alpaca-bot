@@ -44,6 +44,13 @@ emergency closure. Revalidate broker calendar/clock and exchange notices before
 launch, then bind the final calendar digest; a missed start still requires a
 new complete four-week preregistration.
 
+An authenticated [broker calendar check on 2026-10-20](../evidence/w3-paper-calendar-broker-check-20261020.json)
+matched all 20 expected session dates and UTC open/close instants, including the
+November DST transition. Its raw response remains in the existing bound private
+journal. This supplies an actual as-of broker observation for the proposed
+window; preregistration, release freeze and pre-launch revalidation remain
+required. The October 16 expected artifact and its digest were preserved.
+
 The freeze record must bind SHA-256 digests or immutable version identifiers for:
 the protocol; executable strategy and risk specifications; source/rule registry
 and attribution labels; accepted candidate manifest; enabled paths and disabled
@@ -283,6 +290,22 @@ verify raw provenance, review independence/masking, enrollment clocks, frozen
 versions and calendar. Descriptive broker/modelled-fee ledgers and P&L reporting
 remain separate from this verdict computation. The implementation does not fill
 the missing final registration fields, accept a release or start the window.
+
+`src/alpaca_ross_bot/paper_performance.py` separately calculates descriptive
+gross roundtrip results, broker-original costs and modelled regulatory costs
+from explicitly declared, scoped ledgers. Daily rounding uses the pinned fee
+policy; identified SEC/TAF/CAT postings are replaced once, other costs retained,
+and generic fee rows remain unclassified. Funding is excluded from P&L and
+requires study review. Exact fractional executions are supported without FIFO
+assignment or guessed per-trade fee allocation. Flat cash observations must
+match the declared window endpoints; incomplete ownership, census, attribution
+or cash conservation blocks complete P&L claims.
+
+Drawdown uses only supplied marked account-equity samples with their basis and
+observed span. Missing or insufficient curves remain unknown, and sampled
+drawdown is not a continuous maximum. This is a pure draft calculation, not an
+authenticated ledger adapter or actual study report. Source verification and
+runtime authority remain false; no descriptive value enters the verdict above.
 
 ## Method references
 

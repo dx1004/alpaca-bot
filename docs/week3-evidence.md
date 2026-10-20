@@ -1964,3 +1964,55 @@ broker-supported continuous protection/close semantics; W3-07 needs safe actual
 order-cycle evidence after those gates; W3-08 needs the accepted executable
 candidate, dependency evidence and fully populated independently reviewed freeze.
 The full active goal is preserved, not redefined as the increments above.
+
+## Calendar and descriptive-report increment — 2026-10-20
+
+The authenticated GET-only calendar check at 20:48:37 UTC matched all 20 proposed
+October 26–November 20 sessions, including UTC hours across the DST transition.
+The existing dedicated account and private journal were used. Raw broker bytes
+remain private under source sequence 5392; the [redacted proof](../evidence/w3-paper-calendar-broker-check-20261020.json)
+binds the response digest, report and unchanged expected-calendar artifact.
+This is an actual as-of calendar observation, not preregistration or launch
+approval; pre-launch calendar revalidation is still required. No broker write,
+new account/root, current-session E0 backfill or formal paper start occurred.
+
+The separate draft descriptive calculation in `paper_performance.py` preserves
+broker-original and modelled regulatory costs, replacing only explicitly
+attributed SEC/TAF/CAT charges once. It uses pinned account/day fee rounding,
+explicit execution/roundtrip ownership, exact fractional partial fills and
+exact flat cash endpoints. Missing censuses, attribution or conservation block
+complete P&L claims. Funding requires review, including offsetting transfers;
+unknown curve bases cannot become account-equity drawdown. Missing curves stay
+unknown; supplied sampled drawdown is not a continuous maximum. All inputs
+remain declared/unverified and runtime authority remains false. There is no
+P&L-based pass threshold or actual study result.
+
+The requested three acceptance paths remain distinct:
+
+| Path | Verified component | Remaining acceptance evidence |
+| --- | --- | --- |
+| Actual market qualification | Finite IEX format/age observations and independent acquisition-age contract | Complete candidate/history from open, accepted condition semantics and current-session pre-open E0; no source-volume-age or SIP-equivalence claim |
+| New-version entry/risk binding | Separate pinned strategy/data/risk identities and shared deterministic account-risk owner; offline version/replay negatives | Actual admissible source bundle and executable release; no dispatch/attempt authority from a research reservation |
+| Protection | Incident obligations, preservation and restart/race fixtures | Broker-supported first-partial-fill protection and continuous stop/target/close handoff; public evidence remains insufficient |
+
+The prepared Alpaca support request remains unsent. No unverified broker
+semantics or finite-test outcome is substituted for continuous-protection
+acceptance. W3 parents remain open.
+
+Validation on the final bytes: **1,648 full offline tests passed**, with the
+existing websockets legacy deprecation warning. The 50 focused descriptive
+tests passed independent read-only review. Review reproduced and corrected
+offsetting funding activity losing its review flag, and incompatible same-time
+equity basis metadata being hidden by deduplication. Ruff check, format (136
+files), strict mypy (138 files) and diff checks passed. Calendar/report digests
+and non-authorizing flags were independently checked locally. No affected
+environment fault occurred.
+
+Commands used from the repository:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-w308-performance-final tests
+rtk proxy .venv/bin/ruff check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/ruff format --check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-w308-performance-mypy-final src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```

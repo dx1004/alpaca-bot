@@ -1,0 +1,29 @@
+{
+  "account_binding_verified": true,
+  "broker_writes_performed": false,
+  "calendar_response_sha256": "4f7c3ae108da6c79abc868dcb66ae97652ea929e79a90ac2f1bddf8bf3574b80",
+  "expected_calendar_path": "evidence/w3-paper-calendar-20261026-20261120.json",
+  "expected_calendar_sha256": "123b7bf3c6e5d194e47ce8c04426cbb11ffb8cb0a1171da1de5eb5c75816e9c9",
+  "launch_authorized": false,
+  "limitations": [
+    "Future emergency changes still require pre-launch revalidation.",
+    "No executable/risk/protection/reviewer freeze or current-session E0 is supplied.",
+    "A missed proposed start still requires a new complete window."
+  ],
+  "matches_expected_dates_and_utc_hours": true,
+  "observed_at": "2026-10-20T20:48:37.196485+00:00",
+  "preregistration_accepted": false,
+  "runtime_authorized": false,
+  "schema_version": 1,
+  "session_count": 20,
+  "source_ref": [
+    5392,
+    "sha256:1ec05d6b8bf83ab4a0b019a7ab654d55ada1233e31eb212413ef216b6c49277e"
+  ],
+  "source_report": {
+    "path": "/tmp/alpaca-w3-calendar-20261020-204837220498.json",
+    "sha256": "e793c4a2b4e596a1fa5160d1d07c462b2373f367d6c3e1e6a377e65bd43d793d"
+  },
+  "status": "ACTUAL_BROKER_CALENDAR_MATCH_NOT_WINDOW_FREEZE",
+  "window_id": "PROPOSED_20261026_20261120"
+}
