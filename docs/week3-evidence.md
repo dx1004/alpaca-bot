@@ -2235,3 +2235,41 @@ rtk proxy .venv/bin/ruff check src tests scripts/run_paper_engineering.py script
 rtk proxy .venv/bin/ruff format --check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
 rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-w308-census-mypy src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
 ```
+
+## Alternative parent-reduction route — 2026-10-20
+
+The user asked to resolve the remaining blockage. A distinct route was checked:
+replace a partially filled Bracket parent's total quantity with its cumulative
+filled quantity, instead of canceling the parent and therefore its group.
+No operation was submitted. Five bounded primary-source/issue searches,
+coordinator inspection and verified public-only Cloud `gemma4:31b` analysis did
+not establish that this transition is supported for retail equity brackets.
+
+The [retail replacement contract](https://docs.alpaca.markets/us/reference/patchorderbyorderid-1)
+permits whole-share quantity amendments in general. It does not establish
+equality with cumulative fills, group preservation, child resizing/activation,
+or the result of additional fills racing with this particular reduction.
+The documented successful-HTTP/venue-replacement distinction remains in force.
+
+The [options error tables](https://docs.alpaca.markets/us/docs/options-trading-overview#error-responses)
+explicitly scope their replacement restriction `qty must be > filled_qty` to
+options. The coordinator checked that scope directly. It is not a retail-equity
+Bracket contract and cannot prove either acceptance or rejection of the proposed
+equity transition. The 2021 [partial-sell replacement discussion](https://forum.alpaca.markets/t/quantity-error-when-replacing-partially-filled-sell-order/4329)
+and [issue 165](https://github.com/alpacahq/Alpaca-API/issues/165) are historical
+problem reports, not a supported buy-parent operation or present-day guarantee.
+
+The [create-order interface](https://docs.alpaca.markets/us/reference/postorder)
+documents an absolute take-profit limit price; no native actual-entry-fill-
+relative target expression was established. Even a supported parent truncation
+would still need proof of the partial interval and the accepted actual-average
+target/close behavior. A placeholder target, per-fill regrouping, client-side
+trailing emulation or speculative quantity PATCH is not adopted as a solution.
+
+This check corrects scope assumptions rather than changing executable policy.
+No new safe dispatch path, current-session E0, source-condition acceptance or
+formal enrollment follows. All remaining W3 acceptance items retain their full
+scope. No code or broker state changed; document links/scope and diff checks are
+the relevant validation, with no new pytest claim. The absence of a supported
+public mapping is an unresolved feasibility limit, not proof that an
+undocumented backend operation is impossible or a demand to contact support.
