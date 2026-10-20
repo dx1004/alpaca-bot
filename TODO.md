@@ -190,6 +190,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   Candidate incident increment verified 2026-10-20: exact observation-contract opt-in restores the new candidate's P11–P13 protection/cancel/close obligations and retains source/runtime/protection refusal. Original serialization and shared canonical account-risk budget remain intact. Twenty-three candidate cases bind all six fault groups, including unknown response, racing fills beyond stop coverage, physical SQLite restart and rollback. Full regression 1598 tests, independent review and static checks pass. [Current evidence](docs/week3-evidence.md). Broker-native protection and W3-02 acceptance remain open; no parent completion follows.
 
+  Native API review 2026-10-20: Bracket/OTO/OCO, IOC/FOK, trailing stops, close-position and Elite routing were compared against the actual accepted P06/P08/P09/P11 rules. Bracket cancellation/activation, final-average target timing and fixed-stop differences prevent a drop-in replacement. [Compatibility evidence and safe test boundary](docs/week3-evidence.md#native-api-compatibility-review--2026-10-20) separates explicit support, conflicts and undocumented semantics. Vendor clarification is an optional evidence route, not a universal development prerequisite. No policy change, broker order or W3 completion is implied.
+
 - [!] **W3-07 [P1] Run isolated Alpaca paper API engineering tests**
   Depends: W3-04..W3-06, credentials available. Minimal non-strategy orders in isolated state only.  
   Accept: complete order lifecycle/reconciliation evidence; test activity cannot enter the formal paper sample. If credentials are unavailable, mark blocked without fabricating acceptance.

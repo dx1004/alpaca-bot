@@ -934,6 +934,11 @@ the original sources. No private account or local document was exported.
 
 ## Published protection conflict and vendor question — 2026-10-16
 
+Current interpretation (2026-10-20): the vendor-only wording below is historical.
+Public native mechanisms must be evaluated first; support is an optional route
+for the remaining specific undocumented guarantees, not a universal development
+prerequisite. See [the native-mechanism review](#native-api-compatibility-review--2026-10-20).
+
 **Failed gate:** Alpaca's [user-protection table](https://docs.alpaca.markets/us/docs/user-protection)
 explicitly rejects a new stop sell while a limit buy remains open, including
 paper. This conflicts with protecting the first partial fill using a standalone
@@ -2016,3 +2021,104 @@ rtk proxy .venv/bin/ruff check src tests scripts/run_paper_engineering.py script
 rtk proxy .venv/bin/ruff format --check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
 rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-w308-performance-mypy-final src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
 ```
+
+## Native API compatibility review — 2026-10-20
+
+The user authorized the documentation-first compatibility review, not a change
+to the accepted protection policy or broker-order permissions. The conclusion
+is scoped to the published US retail contract checked today. No claim is made
+that an undocumented backend feature is impossible.
+
+### Public contract and mechanism comparison
+
+[Order documentation](https://docs.alpaca.markets/us/docs/orders-at-alpaca)
+establishes the following native mechanisms:
+
+| Mechanism | Published behavior | Compatibility result |
+| --- | --- | --- |
+| Bracket | Children activate on full entry fill; canceling a member cancels remaining members; DAY/GTC only | Does not implement first-partial protection or independent remainder cancellation |
+| OTO | One attached exit; remaining bracket requirements inherited | No documented per-partial activation; replacement wording is internally inconsistent, so do not assume mutability |
+| OCO | Grouped exits after ownership; prices can be amended | Useful native exits; no documented adoption of a pre-existing standalone stop |
+| IOC | May partially fill, remainder canceled | Does not remove the partial-fill protection question |
+| FOK | Entire quantity or cancellation; whole-share table has sales-contact qualification | Not an unconditional account entitlement; FOK plus Bracket conflicts with its TIF restriction |
+| Trailing stop | Standalone, high-water-mark-based; not a Bracket/OCO child | Not equivalent to a fixed structural stop; no documented future-fill quantity attachment |
+
+The [wash-protection contract](https://docs.alpaca.markets/us/docs/user-protection)
+exempts trailing stops and grouped orders, but explicitly rejects ordinary
+stop-sell submission against a working limit buy, including paper. An exemption
+does not establish pre-position ownership, fill-linked sizing or no-short
+semantics. No speculative request is used to discover these properties.
+
+The [REST replacement interface](https://docs.alpaca.markets/us/reference/patchorderbyorderid-1)
+does not document existing-stop adoption into OCO. SDK fields alone are not an
+exhaustive REST schema. Successful replacement acknowledgement explicitly does
+not guarantee venue replacement, so a PATCH response cannot close that gate.
+
+[Single-position close](https://docs.alpaca.markets/us/reference/deleteopenposition-1)
+creates a closing order; its documented quantity/percentage inputs do not
+specify atomic coordination with a working stop.
+[Account-wide close](https://docs.alpaca.markets/us/reference/deleteallopenpositions-1)
+with `cancel_orders=true` cancels orders before liquidation and can fail when an
+order is no longer cancelable. That is a supported sequential workflow, not
+the accepted no-gap handoff. It also affects the whole account, not only an
+owned experiment symbol.
+
+[Elite routing](https://docs.alpaca.markets/us/docs/alpaca-elite-smart-router)
+documents DMA/VWAP/TWAP, not the missing protection contract. Its entitlement
+is not inferred for either existing paper account. No routing upgrade or data
+purchase is proposed.
+
+### Comparison against the authoritative accepted research rules
+
+This comparison uses P06/P08/P09/P11 in the accepted research section of
+`docs/no-leverage-pullback-research.md`, not a newly invented Ross requirement:
+
+- P11 requires protection of actual partial fills, cancellation of the entry
+  remainder on first fill, and reconciliation of racing fills. Canceling a
+  Bracket parent is therefore not an independent remainder-only operation.
+- P09 fixes the structural stop. A trailing stop changes its price behavior.
+- P11 derives the final target from actual average entry after entry termination.
+  An upfront Bracket target based on the entry limit can differ when execution
+  improves that limit. Later target amendment does not prove the initial target
+  was behaviorally equivalent or resolve the partial-entry interval.
+- P11's timed close still needs a supported protection-preserving close path.
+  Server-side cancellation followed by liquidation cannot be relabeled atomic.
+
+Thus native Bracket is a supported API mechanism but is **not a drop-in
+implementation of the accepted candidate**. Simple FOK followed by a new exit
+request also leaves a separate post-entry request interval and changes entry
+fulfillment; it is not adopted as a workaround. No executable rule, stop,
+target, entry TIF or protection gate changed.
+
+### What can be tested, and what still cannot be claimed
+
+The existing bounded experiment plan remains the canonical test envelope.
+An isolated supported Bracket experiment could observe parent/child states,
+full-fill activation, replacements and reconciliation once its complete
+dispatch/cleanup manifest is accepted. It would test native API behavior, not
+qualify the current P11 policy. A naturally absent partial fill is NOT_OBSERVED.
+Finite successful observations cannot establish atomic handoff or universal
+race absence; they can reveal contradictions and implementation faults.
+
+No safe actual-order scenario is newly enabled here: the full supported cleanup
+and crash path is still required before dispatch. First finish a source-backed
+execution mapping; if none preserves the accepted rules, either an explicitly
+reviewed independent execution version or a concrete broker clarification is
+needed. Support is one evidence route, not a mandatory prerequisite for all
+development. The prior unsent support draft is preserved without submission.
+
+Independent Sol retrieval and a verified Cloud `gemma4:31b` public-only
+synthesis were used. Coordinator source review rejected overbroad synthesis
+wording: FOK has no attached-stop promise; IOC merely leaves the question open;
+`cancel_orders` is not guaranteed successful or atomic; venue replacement is
+explicitly unguaranteed rather than an unknown. No local document/account data
+was sent to Cloud. This document-only increment does not rerun or supersede the
+1,648-test code validation above, start formal paper, or complete W3 parents.
+
+Independent read-only review found no actionable public-contract discrepancy in
+this section. It did not claim to validate the local research specification;
+the coordinator inspected its authoritative P06/P08/P09/P11 text directly.
+The coordinator also checked the public REST replacement page directly rather
+than relying on the worker's SDK inventory. `git diff --check` passed. A worker
+read initially used unavailable bare `python`; repeating that bounded read with
+installed `sed` succeeded, resolving the affected read without a global change.
