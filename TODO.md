@@ -216,6 +216,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   Calendar observation 2026-10-20: authenticated broker GET matched all 20 proposed sessions and UTC hours, including DST, while preserving the expected artifact. Separate descriptive fee/P&L/drawdown computation is implemented for declared scoped ledgers, with source verification and runtime authority false. [Increment and remaining three-path acceptance](docs/week3-evidence.md#calendar-and-descriptive-report-increment--2026-10-20) distinguishes these components from actual source/entry-risk/protection acceptance. Actual evidence adapters, accepted executable dependencies and final freeze remain open; no formal paper started.
 
+  Source-event denominator increment verified 2026-10-20: bounded hash-checked scanner-source enumeration retains malformed/unfinalized events, orphan raw references, explicit excluded kinds and deduplicated batch/symbol observation denominators. Independent focused review passed 60 tests; full regression 1668 tests, Ruff/format and strict mypy passed. Read-only audit of the actual October 15 archive copy preserved original bytes/event rows and missing returns. [Evidence](docs/week3-evidence.md#w3-08-source-event-denominator-audit--2026-10-20). This does not establish formal origin/enrollment or natural candidate IDs, session coverage, current live eligibility or release acceptance. Parent remains open; support submission/contact details are not prerequisites for independent engineering work.
+
 ## Week 4 — Integration, audit, and release freeze
 
 - [ ] **W4-01 [P0] End-to-end deterministic replay**  

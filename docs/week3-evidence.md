@@ -2165,3 +2165,73 @@ preserved; price guarantees and universal absence of racing exits are not new
 requirements. W3-06 acceptance still needs a supported mapping for the precise
 partial-fill/handoff/close requirements before actual W3-07 orders; W3-08 cannot
 freeze an unaccepted executable release. No parent is marked complete.
+
+## W3-08 source-event denominator audit — 2026-10-20
+
+The user reiterated completion of W3-06–08 without making a support submission
+or contact information the next prerequisite. The task plan now retains that
+clarification explicitly. Original partial-fill and established-stop protection
+requirements, source qualification and broker-order gates remain unchanged.
+
+The existing discovery audit began with a completed scan manifest. That alone
+could omit collector work that left raw records without a completed manifest.
+The new `Journal.read_scanner_events` and
+`scanner_discovery_audit.audit_scanner_event_census` audit the fixed
+`alpaca_scanner_data` source prefix through an explicit sequence horizon and
+UTC decision cutoff. They retain visible catalog, snapshot and manifest event
+identities, per-manifest audit errors, unresolved raw references and explicit
+excluded-kind references. Unknown/unfinalized evidence is retained, not promoted
+to a failed request, negative strategy decision or complete session census.
+
+Request-complete audited manifests associate their raw dependencies; malformed
+or mismatching manifests do not erase orphan records. Shared raw batch/symbol
+identities count once in aggregate observation denominators, while each
+manifest's denominators remain inspectable. Later manifest arrivals cannot
+resolve a historical prefix's orphans. Stored payload corruption and raw
+digest/size conflicts abort trust rather than turning the census into zeros.
+SQLite authorizer tests reject any attempted insert, update, delete or
+transaction during the audit. Existing APIs and source collection behavior are
+unchanged; there is no broker request or new persistence format.
+
+The [redacted actual-archive proof](../evidence/w3-scanner-source-prefix-audit-20261020.json)
+records a successful audit of the existing October 15 W2 capture. Its source
+path is already bound by W2 acceptance evidence. The original archive was
+opened read-only with an empty WAL checked, backed up to a temporary working
+copy, and left unchanged. The working copy's schema opening preserved exact
+event-row digest/count equality. The main archive digest was checked before
+and after; no original migration or evidence write occurred. The report binds
+the current code, temporary report and audit-driver digests and preserves the
+actual requested/returned/missing denominators. No freshness or new live
+observation is asserted for this historical capture.
+
+Independent read-only review found no actionable findings and passed all 60
+focused discovery tests. These cover unfinalized raw records, malformed/count-
+conflicting manifests, shared-source deduplication, distinct sweeps, future
+cutoffs/horizons, wrong sources, explicit unknown kinds, storage/raw corruption,
+empty prefixes and zero-write enforcement. The generic public-only Cloud
+`gemma4:31b` sanity check was advisory; its wall-clock wording was not adopted:
+enumerating every stored record in a prefix does not prove continuous real-world
+collection. No local code, archive or account data was exported.
+
+This completes the source-event denominator increment, not the formal natural
+candidate adapter. Existing schemas do not bind formal origin, candidate
+enrollment or the accepted downstream stage census. `natural_candidate_ids`
+therefore remains unknown, not an empty set. Engineering/historical records
+cannot become natural witnesses; `NOT_SIP_EQUIVALENT` and runtime refusal remain.
+W3-06 still lacks accepted actual source/execution mapping; W3-07 actual order
+cycles and W3-08 accepted dependencies/final freeze remain open. No W3 parent
+is marked complete, and no support message, order or formal paper was started.
+
+Final validation: **1,668 full offline tests passed**, with one existing
+websockets legacy deprecation warning. Ruff check and format (136 files), strict
+mypy (138 files), independent focused review and diff checks passed. The actual
+archive report's code digests and request = returned + missing identity were
+checked before saving the redacted evidence. No affected environment fault
+occurred. Commands used from the repository:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-w308-scanner-census-final tests
+rtk proxy .venv/bin/ruff check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/ruff format --check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-w308-census-mypy src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```

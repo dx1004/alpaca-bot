@@ -681,6 +681,32 @@ class Journal:
     def read_market_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
         return self._read_private_events("alpaca_market_data", None)
 
+    def read_scanner_events(
+        self, *, through_sequence: int
+    ) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        """Hash-check a bounded prefix of public scanner-data evidence, all kinds.
+
+        This does not require or establish an account binding, experiment origin,
+        collection completeness or permission to act on the observations.
+        """
+        if (
+            type(through_sequence) is not int
+            or not 0 <= through_sequence <= self.read_evidence_sequence()
+        ):
+            raise JournalError("scanner evidence horizon is outside the journal")
+        sequences = self._db.execute(
+            "SELECT sequence FROM events WHERE source_id=? AND sequence<=? "
+            "ORDER BY sequence",
+            ("alpaca_scanner_data", through_sequence),
+        ).fetchall()
+        result = []
+        for (sequence,) in sequences:
+            saved = self.read_event(sequence)
+            if saved is None or saved[0].source_id != "alpaca_scanner_data":
+                raise JournalError("scanner source evidence disappeared or changed")
+            result.append(saved)
+        return tuple(result)
+
     def read_engineering_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
         return self._read_private_events("PAPER_ENGINEERING_HARNESS", None)
 

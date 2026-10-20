@@ -1,0 +1,46 @@
+{
+  "audit_driver_sha256": "807c579e368af1675ba8534689f35392fba49ca6bc4294515120ce2273d9d111",
+  "audit_errors": 0,
+  "audit_evidence_writes": 0,
+  "audited_unique_missing_observations": 919,
+  "audited_unique_requested_observations": 14398,
+  "audited_unique_returned_observations": 13479,
+  "broker_requests": 0,
+  "catalog_events": 1,
+  "code_sha256": {
+    "src/alpaca_ross_bot/journal.py": "8aa1ce2f15d5bc89512238d6eebfbbcf08d37b78e87adbdee461dca71d9cbf55",
+    "src/alpaca_ross_bot/scanner_discovery_audit.py": "b62a360c7597e1ed1bab4f81ced4696e4ff6fd9f6c06d4f364af9f0a12227adc"
+  },
+  "coverage": "NOT_SIP_EQUIVALENT",
+  "excluded_kind_events": 31,
+  "formal_natural_candidate_census": "UNKNOWN",
+  "formal_sample_started": false,
+  "limitations": [
+    "NO_RECORDED_EVENT_DOES_NOT_PROVE_NO_NETWORK_ATTEMPT",
+    "EVENT_COUNTS_DO_NOT_PROVE_SESSION_OR_WALL_CLOCK_COVERAGE",
+    "FORMAL_ORIGIN_AND_NATURAL_ENROLLMENT_UNKNOWN",
+    "SNAPSHOT_NOT_RETURNED_IS_NOT_A_STRATEGY_NO_ENTRY",
+    "RAW_FRESHNESS_AND_STRATEGY_ELIGIBILITY_UNVERIFIED"
+  ],
+  "manifest_audits": 1,
+  "manifest_events": 1,
+  "observed_at": "2026-10-20T22:51:10.008849+00:00",
+  "original_capture_date": "2026-10-15",
+  "orphan_catalog_events": 0,
+  "orphan_snapshot_events": 0,
+  "runtime_authorized": false,
+  "schema_version": 1,
+  "snapshot_events": 144,
+  "source_archive": "var/research/w205-adapted-screen/2026-10-15/c7b0f08c10d64c47a39e2c374f0ea405/journal.sqlite3",
+  "source_archive_preserved": true,
+  "source_archive_sha256": "b0b857390e26c1a4b397ff214e07d658fb95249ec7759323f59edf2aff192248",
+  "source_event_count": 13801,
+  "source_event_rows_sha256": "58af33b70d2103e2732b88ea9fac03ccbce98d9f82e070bca602f028c20ee4fb",
+  "source_report": {
+    "path": "/tmp/alpaca-w308-prefix-20261020-225111868354.json",
+    "sha256": "ef17e3dc7c7a85d5b8d85069aba07529bdf06bf7877a2795fe3d685e0772ac0d"
+  },
+  "status": "HISTORICAL_SCANNER_PREFIX_AUDITED_NOT_FORMAL_CENSUS",
+  "through_sequence": 13801,
+  "working_copy_event_rows_equal": true
+}

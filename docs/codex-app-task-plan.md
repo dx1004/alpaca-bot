@@ -48,6 +48,7 @@ Every scheduled chat must:
 - Schedule: 2026-10-12 through 2026-10-16, Monday–Friday at 06:00 America/Los_Angeles.
 - Persistent chat title: `Alpaca Bot W3 — Strategy Risk Execution`.
 - Dependency: Week 1 strategy version and Week 2 point-in-time data contracts.
+- October 20 user clarification: continue W3-06–08 from public API contracts and verifiable engineering work while preserving the original protection requirements. Do not make a support submission, email address or permission to contact Alpaca a prerequisite for the whole task. Unsupported individual execution paths remain unaccepted; this clarification neither waives their evidence nor authorizes orders or external messages.
 - Completion: deterministic strategy/risk and paper execution gates pass; the four-week paper protocol is pre-registered.
 
 ## Task 4 — Integration, audit, and release freeze

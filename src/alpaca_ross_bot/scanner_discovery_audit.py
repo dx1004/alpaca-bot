@@ -15,6 +15,9 @@ from alpaca_ross_bot.journal import Journal, JournalError
 _CATALOG_SCOPE = "CURRENT_ALPACA_ASSET_MASTER_NOT_HISTORICAL_UNIVERSE"
 _CATALOG_QUERY = {"status": "active", "asset_class": "us_equity"}
 _CATALOG_URL = "https://paper-api.alpaca.markets/v2/assets?" + urlencode(_CATALOG_QUERY)
+_CATALOG_KIND = "ASSET_DIRECTORY_RAW_RESPONSE"
+_BATCH_KIND = "IEX_SNAPSHOT_RAW_RESPONSE"
+_MANIFEST_KIND = "IEX_ASSET_SNAPSHOT_SCAN_MANIFEST"
 
 
 class ScannerDiscoveryAuditError(ValueError):
@@ -49,6 +52,152 @@ class ScannerDiscoveryAudit:
     def returned_data_coverage_complete(self) -> bool:
         """Snapshot objects were returned; their usable/fresh fields are unproven."""
         return self.request_coverage_complete and not self.missing_symbols
+
+
+@dataclass(frozen=True)
+class ScannerEventCensus:
+    """Stored event identities, not a natural-candidate or wall-clock census."""
+
+    through_sequence: int
+    decision_at: datetime
+    event_refs: tuple[tuple[int, str, str], ...]
+    catalog_event_count: int
+    snapshot_event_count: int
+    manifest_event_count: int
+    manifest_audits: tuple[ScannerDiscoveryAudit, ...]
+    audit_errors: tuple[tuple[int, str, str], ...]
+    orphan_catalog_refs: tuple[tuple[int, str], ...]
+    orphan_snapshot_refs: tuple[tuple[int, str], ...]
+    excluded_kind_refs: tuple[tuple[int, str, str], ...]
+    audited_unique_requested_observations: int
+    audited_unique_returned_observations: int
+    audited_unique_missing_observations: int
+    scope: str = "VISIBLE_KNOWN_DISCOVERY_EVENT_IDENTITIES_NOT_ALL_SCANNER_ACTIVITY"
+    coverage_label: str = "NOT_SIP_EQUIVALENT"
+    strategy_eligibility: str = "BLOCKED_RESEARCH"
+    runtime_authorized: bool = False
+    limitations: tuple[str, ...] = (
+        "NO_RECORDED_EVENT_DOES_NOT_PROVE_NO_NETWORK_ATTEMPT",
+        "EVENT_COUNTS_DO_NOT_PROVE_SESSION_OR_WALL_CLOCK_COVERAGE",
+        "FORMAL_ORIGIN_AND_NATURAL_ENROLLMENT_UNKNOWN",
+        "SNAPSHOT_NOT_RETURNED_IS_NOT_A_STRATEGY_NO_ENTRY",
+        "RAW_FRESHNESS_AND_STRATEGY_ELIGIBILITY_UNVERIFIED",
+    )
+
+
+def audit_scanner_event_census(
+    journal: Journal, *, through_sequence: int, decision_at: datetime
+) -> ScannerEventCensus:
+    """Enumerate the whole fixed-source prefix, retaining unresolved raw events.
+
+    Only visible, request-complete audited manifests resolve their dependencies.
+    Raw references shared by several manifests count once in observation totals;
+    each manifest's own request/return denominator stays in ``manifest_audits``.
+    This neither assigns an experiment origin nor creates formal candidate IDs.
+    """
+    _utc(decision_at)
+    known = {_CATALOG_KIND, _BATCH_KIND, _MANIFEST_KIND}
+    events: dict[int, EventEnvelope] = {}
+    excluded: list[tuple[int, str, str]] = []
+    errors: list[tuple[int, str, str]] = []
+    audits: list[ScannerDiscoveryAudit] = []
+    raw_batches: dict[int, tuple[dict[str, Any], Any]] = {}
+
+    def retain_error(sequence: int, kind: str, exc: ScannerDiscoveryAuditError) -> None:
+        # These faults invalidate trust in bytes, not just a collector's outcome.
+        if str(exc) in {"JOURNAL_INTEGRITY_INVALID", "RAW_DIGEST_OR_SIZE_INVALID"}:
+            raise exc
+        errors.append((sequence, kind, str(exc)))
+
+    for event, raw in journal.read_scanner_events(through_sequence=through_sequence):
+        if event.payload_ref != "sha256:" + hashlib.sha256(raw).hexdigest():
+            raise JournalError("scanner source payload failed integrity check")
+        if event.available_at > decision_at:
+            continue
+        if event.event_kind not in known:
+            excluded.append((event.sequence, event.payload_ref, event.event_kind))
+            continue
+        events[event.sequence] = event
+        if event.event_kind == _MANIFEST_KIND:
+            continue
+        try:
+            _, metadata, response = _raw(
+                journal,
+                event.sequence,
+                event.event_kind,
+                "asset_master" if event.event_kind == _CATALOG_KIND else "iex",
+                decision_at,
+            )
+            if event.event_kind == _BATCH_KIND:
+                raw_batches[event.sequence] = metadata, response
+        except ScannerDiscoveryAuditError as exc:
+            retain_error(event.sequence, event.event_kind, exc)
+    used_catalogs: set[int] = set()
+    used_batches: set[int] = set()
+    requested: set[tuple[int, str]] = set()
+    returned: set[tuple[int, str]] = set()
+    missing: set[tuple[int, str]] = set()
+    for event in events.values():
+        if event.event_kind != _MANIFEST_KIND:
+            continue
+        try:
+            audit = audit_iex_asset_discovery(
+                journal, manifest_sequence=event.sequence, decision_at=decision_at
+            )
+        except ScannerDiscoveryAuditError as exc:
+            retain_error(event.sequence, event.event_kind, exc)
+            continue
+        audits.append(audit)
+        errors.extend(
+            (event.sequence, event.event_kind, reason) for reason in audit.reasons
+        )
+        if not audit.request_coverage_complete:
+            continue
+        if audit.catalog_sequence not in events or any(
+            sequence not in raw_batches for sequence in audit.snapshot_batch_sequences
+        ):
+            errors.append(
+                (event.sequence, event.event_kind, "DEPENDENCY_OUTSIDE_VISIBLE_PREFIX")
+            )
+            continue
+        used_catalogs.add(audit.catalog_sequence)
+        used_batches.update(audit.snapshot_batch_sequences)
+        for sequence in audit.snapshot_batch_sequences:
+            metadata, response = raw_batches[sequence]
+            for symbol in _symbols(metadata.get("requested_symbols")):
+                key = sequence, symbol
+                requested.add(key)
+                if symbol in response:
+                    returned.add(key)
+                else:
+                    missing.add(key)
+    return ScannerEventCensus(
+        through_sequence,
+        decision_at,
+        tuple(
+            (event.sequence, event.payload_ref, event.event_kind)
+            for event in events.values()
+        ),
+        sum(event.event_kind == _CATALOG_KIND for event in events.values()),
+        sum(event.event_kind == _BATCH_KIND for event in events.values()),
+        sum(event.event_kind == _MANIFEST_KIND for event in events.values()),
+        tuple(audits),
+        tuple(errors),
+        tuple(
+            (event.sequence, event.payload_ref)
+            for event in events.values()
+            if event.event_kind == _CATALOG_KIND and event.sequence not in used_catalogs
+        ),
+        tuple(
+            (event.sequence, event.payload_ref)
+            for event in events.values()
+            if event.event_kind == _BATCH_KIND and event.sequence not in used_batches
+        ),
+        tuple(excluded),
+        len(requested),
+        len(returned),
+        len(missing),
+    )
 
 
 def audit_iex_asset_discovery(

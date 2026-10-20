@@ -307,6 +307,22 @@ drawdown is not a continuous maximum. This is a pure draft calculation, not an
 authenticated ledger adapter or actual study report. Source verification and
 runtime authority remain false; no descriptive value enters the verdict above.
 
+The source-backed discovery denominator is separately audited by
+`scanner_discovery_audit.audit_scanner_event_census`. It enumerates stored
+`alpaca_scanner_data` events through a fixed sequence horizon and decision cutoff,
+including unfinalized catalog/snapshot records, malformed manifests and
+explicitly excluded event kinds. Valid manifests retain their own denominators;
+shared raw batch/symbol identities count once in aggregate observations.
+Missing snapshots are not no-entry decisions, and unreferenced records are not
+proof of failed requests. This audit checks evidence identities and hashes,
+without modifying the journal.
+
+The event schemas do not establish formal origin, natural candidate identity,
+prospective enrollment or complete wall-clock coverage. This output therefore
+cannot fill `natural_candidate_ids`: that field remains unknown until the
+accepted stage/origin/enrollment evidence adapter exists. It cannot convert
+engineering or historical captures into formal witnesses or close release gates.
+
 ## Method references
 
 Checked by the coordinator 2026-10-15; source publication/version dates are not
