@@ -1,10 +1,15 @@
 # OCO-first execution feasibility proposal
 
-Status: **PARTIAL_ROUTE_NOT_ACCEPTED**, 2026-10-20 America/Los_Angeles.
-Proposed research identity: `OCO_FIRST_EXECUTION_RESEARCH_PROPOSAL_1`.
-This preserves the original candidate for comparison. It is neither a new
-accepted specification nor permission for broker requests, paper launch or live
-trading. The user's existing protection decision remains in force.
+Status: **USER_ACCEPTED_SEPARATE_RESEARCH_CANDIDATE**, 2026-10-20
+America/Los_Angeles. The user selected “Allow a separate OCO-first research
+candidate”. The [pinned research manifest](../evidence/oco-first-execution-research-v1.json)
+defines `OCO_FIRST_EXECUTION_RESEARCH_V1` and candidate
+`HYBRID_500_IEX_OCO_FIRST_RESEARCH_V1`, accepted from
+`OCO_FIRST_EXECUTION_RESEARCH_PROPOSAL_1`.
+Acceptance covers the separate candidate and provisional early-target behavior;
+it is not an executable release, protection/close qualification or permission
+for broker requests, formal paper or live trading. The original candidate and
+its P11 guard remain preserved. Existing protection requirements remain in force.
 
 ## The change in architecture
 
@@ -13,9 +18,9 @@ a standalone stop and later trying to convert it into OCO. Subsequent target
 changes would amend the existing OCO take-profit leg. No deliberate cancellation
 of an established valid stop is part of this proposed path.
 
-This is a proposed implementation route with unresolved contracts and a material
-exit-timing difference. It must not be represented as an equivalent implementation
-of accepted P11 or as a Ross rule.
+This is an independently accepted research direction with unresolved contracts
+and a material exit-timing difference. It must not be represented as an
+equivalent implementation of original P11 or as a Ross rule.
 
 ## Source-supported parts and limits
 
@@ -52,7 +57,10 @@ remain qualification requirements, not established facts.
    protection on rejection/uncertainty. This is **not** a complete deadline
    disposition: when bid is at/below `S`, a limit above `S` cannot be marketable.
 
-These are research steps, not an enabled dispatcher or frozen incident policy.
+These are research steps, not an enabled dispatcher or fully qualified incident
+policy. An early provisional exit does not authorize a replacement entry: own
+and reconcile any racing original-entry fills, retaining the one-attempt rule.
+The final average includes every entry execution, not just shares still held.
 
 ## What the arithmetic proves
 
@@ -70,7 +78,8 @@ monotonicity argument, not an assertion that finite cases establish all behavior
 ## Irreducible differences from the current policy
 
 - A provisional target can execute before entry termination/reconciliation.
-  The current incident owner explicitly rejects that state with
+  This behavior is now accepted for the separate research candidate only.
+  The original incident owner explicitly rejects that state with
   `TARGET_BEFORE_ENTRY_TERMINAL`. A better exit price does not make the timing
   equivalent. An early group exit can coexist with later racing entry fills.
 - First-fill detection, persistence, submission and broker acceptance take time.
@@ -90,16 +99,28 @@ monotonicity argument, not an assertion that finite cases establish all behavior
 | Stage | Required evidence | Current state |
 | --- | --- | --- |
 | Algebra and policy comparison | Exact bound, early-exit and close-topology counterexamples | Completed; not equivalent to current P11 |
-| Independent research version | Explicit treatment of provisional early exits, protection intervals, residuals and deadline failure | Not accepted; original rules unchanged |
-| Deterministic owner/model | Durable group allocation, timeout recovery, no double reservation and all six incident groups | Not implemented for this candidate |
+| Independent research version | Separate candidate/provisional early-exit decision; other qualification retained | User accepted research scope only; source/protection/close remain unqualified |
+| Deterministic owner/model | Durable group allocation, timeout recovery, no double reservation and all six incident groups | Exact declared allocation/target model verified; source/durable owner and complete candidate fault matrix remain open |
 | Broker mapping | OCO during pending entry/cancel, group reservations, exact residuals, target amendments and stop preservation | Unverified |
 | Bounded isolated API experiment | Qualified data/account, reviewed request manifest, safe supported cleanup and restart path | Not authorized for dispatch by this document |
 | Formal paper preregistration | Accepted release and all existing W3/W4 requirements | Blocked by prior stages |
 
-The next meaningful decision is whether to accept a separately specified
-research version with provisional early-exit behavior. That alone cannot close
-the broker/cleanup/data gates. If that behavior is rejected, this proposal must
-not enter the original runtime by calling it an engineering-only change.
+The provisional early-exit decision has been made for this separate candidate.
+It does not close broker/cleanup/data gates. Implementation must bind the new
+research manifest explicitly; it cannot enter the original runtime by calling
+the changed behavior an engineering-only change. This exit-allocation book is
+not a second cash/loss-risk allocator, and no entry-risk version binding is
+inferred from sharing the parent research inputs.
 
-No support submission is required by this proposal. No production policy,
-acceptance flag, credential, runtime state or broker order was changed.
+The research-only [allocation model](../src/alpaca_ross_bot/oco_research.py)
+and [synthetic tests](../tests/test_oco_research.py) now implement exact lot
+portions, unknown-acknowledgement retention, signed over-exit incidents,
+all-entry averages and terminal-census invalidation. Its observations and
+acknowledgements are declared inputs, not source-qualified facts. It has no
+durable journal or broker dispatcher; every operational authority remains false.
+Implementation verification is recorded in
+[Week 3 evidence](week3-evidence.md#oco-first-separate-research-acceptance--2026-10-20).
+
+No support submission is required by this proposal. Only the new research
+acceptance scope is granted. Credentials, runtime authorization, the original
+production gates and broker state remain unchanged.

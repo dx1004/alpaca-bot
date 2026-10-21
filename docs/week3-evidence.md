@@ -2299,3 +2299,98 @@ target replacement and a complete deadline disposition still require evidence.
 No whole-task support/contact prerequisite is introduced. No production code,
 order permission, broker state or accepted strategy was changed. Document and
 artifact checks are the relevant validation; no new pytest run is claimed.
+
+## OCO-first separate research acceptance — 2026-10-20
+
+The user selected **“Allow a separate OCO-first research candidate”** after the
+concrete early-target policy difference was presented. The immutable
+[research manifest](../evidence/oco-first-execution-research-v1.json) pins
+`OCO_FIRST_EXECUTION_RESEARCH_V1`, candidate
+`HYBRID_500_IEX_OCO_FIRST_RESEARCH_V1` and the original observation-age parent
+contract. Its SHA-256 is
+`fa6e29ede5a92428308ad19ba794be5e6e3f0b2a3c216818a54f3ffc9a112d80`.
+This accepts the separate research candidate and provisional target execution
+before entry termination/reconciliation. It does not accept a Ross-equivalent
+rule, the original P11 timing, a second cash/risk budget, runtime or orders.
+Original candidate bytes and `TARGET_BEFORE_ENTRY_TERMINAL` remain unchanged.
+
+The candidate keeps the original entry limit and structural stop. Every entry
+execution contributes to the final average, including executions whose shares
+already exited through a provisional target. Later fills remain owned facts;
+they never authorize a replacement entry to restore exited quantity. Group
+allocations must use disjoint exact lot portions. Unknown acknowledgements hold
+their allocation; fractional residuals are not rounded; over-exit evidence is
+retained as a signed position and a sticky incident. These are research
+semantics, not evidence of broker reservations or executable coverage.
+
+Source qualification, actual candidate entry-risk binding, provenance and durable
+group ownership, initial/late-fill protection, target-amendment stop continuity,
+exact residual eligibility, safe close/crash cleanup, isolated order cycles and
+release/final protocol freeze remain separate acceptance gates. All authority
+fields except research-semantics acceptance are false in the pinned manifest.
+`NOT_SIP_EQUIVALENT` remains in force.
+
+The four-page native-order documentation inventory remains a limited source
+scope. In particular, an SDK signature omitting group fields does not establish
+their absence from REST: the previously pinned
+[retail protection contract](../evidence/alpaca-retail-protection-contract-20261016.json)
+records `group_id`/`group_role` in Order and OrderLeg. Group identifiers, nested
+shape and acknowledgement alone still do not prove stop preservation or
+continuous executable protection. No source absence or broker guarantee is
+inferred from the narrower inventory.
+
+### Declared allocation and target model
+
+The new [pure research model](../src/alpaca_ross_bot/oco_research.py) validates
+the exact manifest and parent bytes before constructing a candidate. Immutable
+declared executions bind account reference, symbol, entry scope and execution
+identity. Identical observations deduplicate; conflicting identity reuse fails.
+Allocations name exact portions of observed entry lots; portions may split one
+lot across groups without exceeding its original quantity. Exited shares never
+become available for another allocation. Unknown acknowledgements keep their
+reservation and cannot release/replay it. A declared acknowledgement is not
+proof that a broker accepted a group or that its stop is live.
+
+The model preserves the identity
+`entry = exits + signed reserved residual + unallocated` with exact rational
+arithmetic. It retains fractional residuals without rounding and declared
+over-exits without clipping a negative position. Reverse inventory, group
+over-exit, entry-limit violations and invalid reconciled target topology retain
+incident evidence and block new group allocation. The final target uses every
+entry execution's quantity and price; an early exit cannot substitute the
+remaining inventory's average. A late entry invalidates a previously complete
+terminal census until a new exact census reconciles it. Repeating the old
+census cannot restore finalization.
+
+[Twenty-nine new tests](../tests/test_oco_research.py) cover these properties,
+including cross-account/symbol/entry-scope rejection, parent/manifest mutation,
+fractional executions, both exit roles, exact cent ceiling and the original
+P11 isolation. The implementer's related component run passed 106 tests.
+Independent read-only verification passed the 29 focused tests and checked 112
+additional split/allocation/exit states for conservation; it found no actionable
+issue. The coordinator inspected the frozen implementation and verified pinned
+manifest/parent integrity. Original incident and parent contract files have no
+working-tree changes.
+
+These checks validate declared arithmetic and reducer behavior. The module is
+not a source adapter, durable journal, crash-recovery owner or replacement for
+the canonical account-risk allocator. It implements no order/stop-cancellation,
+unknown-reservation release, price-amendment dispatch or close operation. The
+original P11 guard still rejects early targets. Source qualification, actual
+entry-risk binding, durable provenance and all broker/protection/cleanup gates
+remain unaccepted. W3-06/07/08 parents remain open, and no account access, order
+or formal paper start occurred for this increment.
+
+Final validation of the frozen code: **1,697 full offline tests passed**, with
+one existing websockets legacy deprecation warning. Ruff check and format
+(138 files), strict mypy (140 files), independent focused verification and diff
+checks passed. The full suite used tool-level escalation for the previously
+isolated sandbox asyncio limitation; no repository workaround or new environment
+fault was introduced. Commands from the repository:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-w306-oco-research-final tests
+rtk proxy .venv/bin/ruff check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/ruff format --check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-w306-oco-research-mypy src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```

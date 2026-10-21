@@ -1,0 +1,55 @@
+{
+  "acceptance_basis": {
+    "scope": "SEPARATE_RESEARCH_CANDIDATE_AND_PROVISIONAL_EARLY_TARGET_BEHAVIOR_ONLY",
+    "user_reply": "Allow a separate OCO-first research candidate"
+  },
+  "acceptance_timezone": "America/Los_Angeles",
+  "accepted_on": "2026-10-20",
+  "authority": {
+    "actual_source_qualification_accepted": false,
+    "broker_group_reservations_verified": false,
+    "entry_risk_version_binding_accepted": false,
+    "first_fill_protection_verified": false,
+    "formal_paper_authorized": false,
+    "order_authority": false,
+    "release_accepted": false,
+    "research_semantics_accepted": true,
+    "runtime_authorized": false,
+    "safe_close_accepted": false,
+    "sibling_stop_continuity_verified": false
+  },
+  "candidate_version": "HYBRID_500_IEX_OCO_FIRST_RESEARCH_V1",
+  "classification": "USER_ACCEPTED_INDEPENDENT_EXECUTION_ADAPTATION_NOT_ROSS_EQUIVALENT",
+  "coverage_label": "NOT_SIP_EQUIVALENT",
+  "open_gates": [
+    "SOURCE_AND_CONDITION_QUALIFICATION",
+    "ENTRY_RISK_CANDIDATE_VERSION_BINDING",
+    "PROVENANCE_AND_DURABLE_GROUP_OWNER",
+    "INITIAL_AND_LATE_FILL_PROTECTION",
+    "EXACT_RESIDUAL_ORDER_ELIGIBILITY",
+    "BROKER_GROUP_RESERVATIONS",
+    "STOP_CONTINUITY_DURING_TARGET_REPLACEMENT",
+    "SAFE_CLOSE_AND_CRASH_CLEANUP",
+    "ISOLATED_API_ORDER_CYCLE",
+    "RELEASE_AND_FORMAL_PROTOCOL_FREEZE"
+  ],
+  "parent_candidate_version": "HYBRID_500_IEX_OBSERVATION_AGE_RESEARCH_V1",
+  "parent_contract_path": "evidence/iex-snapshot-observation-age-research-v1.json",
+  "parent_contract_sha256": "f5439d49ac9354abbe56b7b1fcb603c915942dee647efedebf48060e63b49e8c",
+  "research_policy": {
+    "early_provisional_target_exit": "PERMITTED_BEFORE_ENTRY_TERMINAL_RECONCILIATION",
+    "entry_limit": "PARENT_L_UNCHANGED",
+    "final_target": "CEILING_CENT(3*F-2*S)_FROM_ALL_RECONCILED_ENTRY_EXECUTIONS",
+    "fractional_residual": "RETAIN_EXACT_UNQUALIFIED_NO_ROUNDING",
+    "group_allocation": "DISJOINT_EXACT_OWNED_LOT_PORTIONS_NOT_A_NEW_RISK_BUDGET",
+    "late_entry_after_early_exit": "RETAIN_OWN_AND_RECONCILE_NO_REENTRY_TO_REPLACE_EXITED_QUANTITY",
+    "late_entry_after_terminal_census": "INVALIDATE_FINALIZATION_UNTIL_NEW_EXACT_CENSUS_RECONCILES",
+    "over_exit": "RETAIN_SIGNED_LEDGER_AND_STICKY_INCIDENT_BLOCK_NEW_ALLOCATION",
+    "provisional_target": "CEILING_CENT(3*L-2*S)",
+    "structural_stop": "PARENT_S_UNCHANGED_NO_STOP_CANCELLATION_OR_WIDENING",
+    "timed_close": "UNRESOLVED_NO_DISPATCH_OR_OVERNIGHT_POLICY_CHANGE",
+    "unknown_acknowledgement": "ALLOCATION_REMAINS_RESERVED_NO_REPLAY_OR_TIMEOUT_RELEASE"
+  },
+  "schema_version": 1,
+  "version": "OCO_FIRST_EXECUTION_RESEARCH_V1"
+}

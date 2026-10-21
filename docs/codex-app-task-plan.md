@@ -49,6 +49,7 @@ Every scheduled chat must:
 - Persistent chat title: `Alpaca Bot W3 — Strategy Risk Execution`.
 - Dependency: Week 1 strategy version and Week 2 point-in-time data contracts.
 - October 20 user clarification: continue W3-06–08 from public API contracts and verifiable engineering work while preserving the original protection requirements. Do not make a support submission, email address or permission to contact Alpaca a prerequisite for the whole task. Unsupported individual execution paths remain unaccepted; this clarification neither waives their evidence nor authorizes orders or external messages.
+- October 20 execution-research decision: the user accepted a separate OCO-first research candidate and its provisional target executing before entry termination/reconciliation. Bind this opt-in to `evidence/oco-first-execution-research-v1.json`; preserve original P11. Source qualification, durable ownership, shared entry-risk binding, initial/late-fill protection, sibling-stop continuity, reservations, safe close and release remain independent gates. This decision authorizes research implementation, not broker dispatch or formal paper.
 - Completion: deterministic strategy/risk and paper execution gates pass; the four-week paper protocol is pre-registered.
 
 ## Task 4 — Integration, audit, and release freeze
