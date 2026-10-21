@@ -2503,3 +2503,111 @@ into the OCO scope; declared metadata plus a durable model do not establish it.
 Full source/condition admission and supported protection/close semantics are
 also still required before actual isolated order cycles or formal preregistration.
 W3-06/07/08 parents therefore remain open with their original acceptance scope.
+
+## OCO local entry receipt and candidate incident integration — 2026-10-20
+
+This increment completes local component linkage for the separately accepted
+`HYBRID_500_IEX_OCO_FIRST_RESEARCH_V1`; it does not accept the full W3-06/07/08
+parents. The original P11 and both pinned research manifests are unchanged.
+`NOT_SIP_EQUIVALENT`, source/runtime/protection/release refusal and engineering
+sample exclusion remain in force.
+
+### Original reservation and execution provenance
+
+The new [entry evidence adapter](../src/alpaca_ross_bot/oco_entry_evidence.py)
+derives a receipt from the immutable, decision-visible source prefix and the
+existing canonical account-risk owner. It requires a positive held reservation,
+qualified current observations, exact account/symbol/entry/contract identity,
+original L/S and reserved quantity, and agreement between per-execution activity,
+lifecycle and held fills. It uses execution quantity and price, not cumulative
+quantity as a new fill. Original parent entry IDs and the original shared risk
+budget are preserved. A zero/veto reservation attempt cannot become the receipt's
+origin: the adapter verifies the actual transition that created the positive
+held slot. A later occupied-slot attempt cannot replace that origin either.
+
+[OcoJournal.bind_entry_census](../src/alpaca_ross_bot/oco_journal.py) verifies the
+prior model, captures the source horizon and appends the receipt and projection
+under the existing private write transaction. Retries reuse the original receipt
+and horizon. Changed requests retain original facts and latch a conflict; prior
+entry facts cannot shrink or change. Newly observed entry fills invalidate a
+previous terminal census until exact reconciliation. Receipt availability cannot
+precede its decision or cited source visibility; both writer and immutable replay
+reject backdating. Regression cases cover the positive-origin and causal-time
+faults identified during independent review.
+
+The receipt explicitly says `LOCAL_REPORTED_ENTRY_CENSUS_NOT_SOURCE_ADMISSION`.
+Its intent origin is `ENGINEERING_TEST`, with `formal_sample_eligible=false`.
+No entry intent, risk slot, send attempt or runtime permission is created by
+binding this evidence. Positive cases use source-shaped synthetic engineering
+journals; no positive nonflat broker qualification was performed this increment.
+The supported seam requires whole-fill simple-equity ENTRY observations.
+Fractional individual source executions and native exit/group ownership remain
+unsupported; the separate declared arithmetic model still retains exact
+fractional quantities without implying source acceptance.
+
+### Explicit incident opt-in and six integrated fault cases
+
+The [incident policy](../src/alpaca_ross_bot/incident_state.py) accepts this full
+candidate only with both exact pinned contracts. Its inherited entry/data/risk
+binding remains separate from its explicit execution-research binding. Missing,
+mixed, forged or authority-enabled bindings fail closed. Default original and
+parent policy serialization and behavior remain compatible; an existing incident
+scope cannot be silently upgraded. Only the provisional target-before-entry-
+terminal reason changes under the new opt-in. Unknown acknowledgements,
+protection, cancellation, durability, closing, reverse inventory and double-exit
+obligations remain enforced. All operational acceptance flags remain false.
+
+[Six integration cases](../tests/test_oco_execution_integration.py) join the local
+source-entry receipt, canonical reservation, durable allocation book and explicit
+incident policy: unknown acknowledgement retry, active-session disconnect,
+failed derived-entry append after a new canonical fill, cancel/fill race,
+physical close/reopen and both declared exit roles filling. Rollback preserves
+previously committed raw source/risk evidence and cannot clear incident duties.
+Over-exits remain signed and block further allocation. Exits, groups and
+acknowledgements in these cases are declared, unqualified facts, and incident
+observations are assembled explicitly in the test. This is component/replay
+integration, not an automatic runtime incident observer, native protection proof
+or actual broker order-cycle evidence.
+
+### Validation and remaining acceptance
+
+The final frozen implementation passed 1,820 full offline tests, with one
+existing websockets legacy deprecation warning. Ruff check, format check (145
+files) and strict mypy (147 files) passed. Independent source recheck passed 51
+related tests and verified rejection of the original backdated-receipt
+counterexample without state changes. Independent incident review covered 64
+parent/OCO combinations; independent integration review passed all six cases.
+No actionable review finding remained in this supported component scope.
+Commands from the repository:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-w306-entry-incident-final tests
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff check --no-cache src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff format --check --no-cache src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/mypy --strict --cache-dir /tmp/alpaca-w306-entry-incident-mypy src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```
+
+The environment permission profile changed to read-only repository access during
+this increment (`ENV_FAULT`, permission-profile scope). Affected writes stopped;
+reviewed exact file patches and final Git mutations used tool-level escalation.
+The global permission policy was not changed or bypassed. Checks kept generated
+caches in `/tmp` or disabled them. The full suite also used approved execution
+for the previously isolated sandbox asyncio shutdown limitation. Original
+operations were verified; unrelated working-tree edits were preserved.
+
+A known recovery boundary remains explicit: after terminal-flat completion has
+moved the canonical held slot to completed history, a newly discovered late
+original-entry fill is preserved and vetoed by the source owner. This adapter
+refuses qualification rather than resurrecting a completed slot. Supported
+recovery/quarantine for that state remains open; pending-entry late-fill tests do
+not prove it. Automatic observation wiring, native exit/group provenance,
+fractional source execution handling and actual source/condition admission also
+remain unaccepted. Initial/late-fill protection, broker group reservations,
+sibling-stop continuity during target replacement and safe timed close still
+need supported execution evidence. Actual isolated API cycles and protected
+cleanup follow those gates. W3-08 additionally needs accepted dependencies,
+natural-candidate enrollment/reviewer provenance and final version/release freeze.
+The [protocol draft](w3-paper-protocol.md) now explicitly separates this candidate
+and engineering receipts without changing existing coverage minima or starting
+a window. No account access, broker write, formal paper or live activity occurred
+for this increment. W3-06/07/08 parents remain open.

@@ -5,9 +5,11 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from fractions import Fraction
+from pathlib import Path
 from typing import Any
 
 from .journal import Journal, JournalError
+from .oco_entry_evidence import derive_entry_census
 from .oco_research import (
     CANDIDATE,
     MANIFEST_SHA256,
@@ -136,6 +138,7 @@ class OcoJournalView:
     model: OcoResearchState
     conflict_keys: tuple[str, ...]
     watermark: int
+    entry_binding: dict[str, Any] | None = None
 
     @property
     def issues(self) -> tuple[str, ...]:
@@ -184,7 +187,9 @@ class OcoJournal:
         )
         self._record("BIND", {}, datetime.now(UTC))
 
-    def _operation_key(self, kind: str, operation: object) -> str:
+    def _operation_key(
+        self, kind: str, operation: object, *, pending: bool = False
+    ) -> str:
         if kind == "BIND":
             _object(operation, set())
             identity = "BIND"
@@ -211,6 +216,36 @@ class OcoJournal:
             ids = [_text(value) for value in _list(row["entry_execution_ids"])]
             if ids != sorted(set(ids)):
                 raise JournalError("canonical exact OCO terminal census required")
+        elif kind == "BOUND_ENTRY":
+            row = _object(
+                operation, {"request", "source_horizon", "receipt", "outcome"}
+            )
+            request = _object(row["request"], {"event_id", "decision_at", "fee_policy"})
+            identity = _text(request["event_id"])
+            stamp = datetime.fromisoformat(_text(request["decision_at"]))
+            if (
+                stamp.utcoffset() != timedelta(0)
+                or stamp.isoformat() != request["decision_at"]
+            ):
+                raise JournalError("canonical UTC entry-census request required")
+            path = Path(_text(request["fee_policy"]))
+            if not path.is_absolute() or str(path.resolve()) != request["fee_policy"]:
+                raise JournalError("canonical entry-census fee path required")
+            if pending:
+                if (
+                    row["outcome"] != "PENDING_DERIVATION"
+                    or row["source_horizon"] is not None
+                    or row["receipt"] is not None
+                ):
+                    raise JournalError("invalid pending entry-census request")
+            elif (
+                type(row["source_horizon"]) is not int
+                or row["source_horizon"] < 0
+                or type(row["receipt"]) is not dict
+                or row["outcome"]
+                not in {"BOUND_ENTRY_CENSUS", "REQUEST_IDENTITY_CONFLICT"}
+            ):
+                raise JournalError("invalid derived entry-census operation")
         else:
             raise JournalError("unsupported OCO research operation")
         return _json([self.initial.entry_scope, kind, identity]).decode()
@@ -282,13 +317,19 @@ class OcoJournal:
         )
 
     def _view(self, value: object) -> OcoJournalView:
+        base = {"schema", "binding", "model", "conflict_keys", "watermark", "authority"}
         row = _object(
             value,
-            {"schema", "binding", "model", "conflict_keys", "watermark", "authority"},
+            base
+            | (
+                {"entry_binding"}
+                if isinstance(value, dict) and value.get("schema") == 2
+                else set()
+            ),
         )
         if (
             type(row["schema"]) is not int
-            or row["schema"] != 1
+            or row["schema"] not in (1, 2)
             or row["binding"] != self.binding
         ):
             raise JournalError("OCO frozen binding or cache schema differs")
@@ -301,7 +342,62 @@ class OcoJournal:
         watermark = _integer(row["watermark"])
         if not watermark:
             raise JournalError("OCO cache watermark missing")
-        return OcoJournalView(model, conflicts, watermark)
+        binding = row.get("entry_binding")
+        if row["schema"] == 2 and type(binding) is not dict:
+            raise JournalError("source-bound entry projection missing")
+        return OcoJournalView(model, conflicts, watermark, binding)
+
+    def _bound_model(
+        self,
+        model: OcoResearchState,
+        operation: dict[str, Any],
+        prior: OcoJournalView | None,
+    ) -> OcoResearchState:
+        receipt = operation["receipt"]
+        if prior is not None and prior.entry_binding is not None:
+            old = prior.entry_binding
+            if (
+                receipt["decision_at"] < old["decision_at"]
+                or receipt["source_horizon"] < old["source_horizon"]
+                or receipt["capture_ref"][0] < old["capture_ref"][0]
+                or receipt["reservation_ref"] != old["reservation_ref"]
+                or receipt["entry"]["broker_order_id"]
+                != old["entry"]["broker_order_id"]
+            ):
+                raise JournalError(
+                    "entry-census source/decision/reservation regression"
+                )
+        executions = tuple(
+            _execution(
+                {key: value for key, value in row.items() if key != "transaction_time"}
+            )
+            for row in receipt["entry"]["executions"]
+        )
+        census = {execution.execution_id: execution for execution in executions}
+        if any(
+            census.get(execution.execution_id) != execution
+            for execution in model.executions
+            if execution.role == "ENTRY"
+        ):
+            raise JournalError("prior model entry census shrank or changed")
+        if (
+            not receipt["entry"]["terminal_observed"]
+            and model.entry_terminal_reconciled
+        ):
+            raise JournalError(
+                "declared terminal census contradicted by source partial entry"
+            )
+        for execution in executions:
+            model = observe_execution(model, execution)
+        if receipt["entry"]["terminal_observed"]:
+            census_id = (
+                "bound-entry:"
+                + _json(
+                    [operation["request"]["event_id"], operation["source_horizon"]]
+                ).decode()
+            )
+            model = reconcile_entry_terminal(model, census_id, tuple(sorted(census)))
+        return model
 
     def _reduce(
         self, old: object | None, item: dict[str, Any], conflict: bool, sequence: int
@@ -311,6 +407,7 @@ class OcoJournal:
         if prior is None and kind != "BIND":
             raise JournalError("OCO immutable binding missing")
         model = self.initial if prior is None else prior.model
+        entry_binding = None if prior is None else prior.entry_binding
         conflicts = set(() if prior is None else prior.conflict_keys)
         if conflict:
             conflicts.add(item["dedupe_key"])
@@ -332,23 +429,37 @@ class OcoJournal:
             model = reconcile_entry_terminal(
                 model, operation["census_id"], tuple(operation["entry_execution_ids"])
             )
+        elif kind == "BOUND_ENTRY":
+            if (
+                operation["outcome"] != "BOUND_ENTRY_CENSUS"
+                or not 0 <= operation["source_horizon"] < sequence
+            ):
+                raise JournalError("entry-census source horizon/outcome differs")
+            model = self._bound_model(model, operation, prior)
+            entry_binding = operation["receipt"]
         elif kind != "BIND":
             raise JournalError("unsupported OCO research operation")
-        return {
-            "schema": 1,
+        result: dict[str, object] = {
+            "schema": 1 if entry_binding is None else 2,
             "binding": self.binding,
             "model": self._model_dict(model),
             "conflict_keys": sorted(conflicts),
             "watermark": sequence,
             "authority": model.authority,
         }
+        if entry_binding is not None:
+            result["entry_binding"] = entry_binding
+        return result
 
-    def _verified_replay(self) -> tuple[object | None, dict[str, set[str]]]:
+    def _verified_replay(
+        self,
+    ) -> tuple[object | None, dict[str, set[str]], dict[str, dict[str, Any]]]:
         cached = self.journal.read_state(self.state_key)
         projected: object | None = None
         first: dict[str, str] = {}
         recorded: dict[str, set[str]] = {}
         expected_cache: dict[str, object] = {}
+        original_operations: dict[str, dict[str, Any]] = {}
         for event, payload in self.journal.read_oco_research_events():
             item = _object(
                 json.loads(payload),
@@ -377,11 +488,50 @@ class OcoJournal:
                 raise JournalError("OCO operation deduplication key differs")
             digest = "sha256:" + hashlib.sha256(payload).hexdigest()
             conflict = key in first and first[key] != digest
+            if item["kind"] == "BOUND_ENTRY":
+                operation = item["operation"]
+                if event.available_at < datetime.fromisoformat(
+                    operation["receipt"]["decision_at"]
+                ):
+                    raise JournalError(
+                        "entry-census event predates its receipt decision"
+                    )
+                if not 0 <= operation["source_horizon"] < event.sequence:
+                    raise JournalError(
+                        "entry-census source horizon exceeds derived event"
+                    )
+                if conflict:
+                    original = original_operations[key]
+                    if (
+                        operation["outcome"] != "REQUEST_IDENTITY_CONFLICT"
+                        or operation["request"] == original["request"]
+                        or _json(operation["receipt"]) != _json(original["receipt"])
+                        or operation["source_horizon"] != original["source_horizon"]
+                    ):
+                        raise JournalError(
+                            "entry-census conflict reinterprets original receipt"
+                        )
+                else:
+                    request = operation["request"]
+                    receipt = derive_entry_census(
+                        self.journal,
+                        self.initial,
+                        decision_at=datetime.fromisoformat(request["decision_at"]),
+                        through_sequence=operation["source_horizon"],
+                        fee_policy=Path(request["fee_policy"]),
+                    )
+                    if operation["outcome"] != "BOUND_ENTRY_CENSUS" or _json(
+                        receipt
+                    ) != _json(operation["receipt"]):
+                        raise JournalError(
+                            "entry-census receipt differs from original source replay"
+                        )
             if digest in recorded.get(key, set()):
                 raise JournalError("duplicate OCO immutable operation evidence")
             first.setdefault(key, digest)
             recorded.setdefault(key, set()).add(digest)
             expected_cache.setdefault(key, {"hash": digest, "sequence": event.sequence})
+            original_operations.setdefault(key, item["operation"])
             projected = self._reduce(projected, item, conflict, event.sequence)
         scoped: dict[str, object] = {}
         for key, value in self.journal.read_oco_research_evidence_cache(
@@ -402,14 +552,14 @@ class OcoJournal:
             raise JournalError(
                 "OCO projection or deduplication differs from immutable evidence"
             )
-        return projected, recorded
+        return projected, recorded, original_operations
 
     def _record(
         self, kind: str, operation: dict[str, object], at: datetime
     ) -> OcoJournalView:
         if type(at) is not datetime or at.utcoffset() != timedelta(0):
             raise JournalError("UTC OCO receipt clock required")
-        key = self._operation_key(kind, operation)
+        key = self._operation_key(kind, operation, pending=kind == "BOUND_ENTRY")
         item = {
             "schema": 1,
             "binding": self.binding,
@@ -422,8 +572,40 @@ class OcoJournal:
 
         def prepare(raw: bytes) -> bytes:
             nonlocal result
-            projected, recorded = self._verified_replay()
+            projected, recorded, originals = self._verified_replay()
             result = None if projected is None else self._view(projected)
+            if kind == "BOUND_ENTRY":
+                original = originals.get(key)
+                if original is not None:
+                    complete = dict(original)
+                    if operation["request"] != original["request"]:
+                        complete.update(
+                            request=operation["request"],
+                            outcome="REQUEST_IDENTITY_CONFLICT",
+                        )
+                else:
+                    horizon = self.journal.read_evidence_sequence()
+                    request = operation["request"]
+                    assert isinstance(request, dict)
+                    receipt = derive_entry_census(
+                        self.journal,
+                        self.initial,
+                        decision_at=datetime.fromisoformat(str(request["decision_at"])),
+                        through_sequence=horizon,
+                        fee_policy=Path(str(request["fee_policy"])),
+                    )
+                    complete = {
+                        "request": request,
+                        "source_horizon": horizon,
+                        "receipt": receipt,
+                        "outcome": "BOUND_ENTRY_CENSUS",
+                    }
+                item["operation"] = complete
+                if at < datetime.fromisoformat(complete["receipt"]["decision_at"]):
+                    raise JournalError(
+                        "entry-census receive time predates its receipt decision"
+                    )
+                raw = _json(item)
             digest = "sha256:" + hashlib.sha256(raw).hexdigest()
             if (
                 result is not None
@@ -462,6 +644,30 @@ class OcoJournal:
     def verify_rebuild(self) -> bool:
         self.view()
         return True
+
+    def bind_entry_census(
+        self,
+        event_id: str,
+        decision_at: datetime,
+        fee_policy: Path,
+        received_at: datetime,
+    ) -> OcoJournalView:
+        if type(decision_at) is not datetime or decision_at.utcoffset() != timedelta(0):
+            raise JournalError("UTC entry-census decision required")
+        return self._record(
+            "BOUND_ENTRY",
+            {
+                "request": {
+                    "event_id": event_id,
+                    "decision_at": decision_at.isoformat(),
+                    "fee_policy": str(fee_policy.resolve()),
+                },
+                "source_horizon": None,
+                "receipt": None,
+                "outcome": "PENDING_DERIVATION",
+            },
+            received_at,
+        )
 
     def observe_execution(
         self, execution: Execution, received_at: datetime

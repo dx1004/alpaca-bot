@@ -50,6 +50,7 @@ def selected(item: IncidentObservation) -> IncidentObservation:
 def test_original_policy_and_projection_keep_their_serialized_shape() -> None:
     legacy = asdict(POLICY)
     del legacy["observation_contract"]
+    del legacy["oco_contract"]
     legacy["rule_refs"] = list(POLICY.rule_refs)
     assert POLICY.to_dict() == legacy
     assert IncidentPolicy.from_dict(legacy) == POLICY

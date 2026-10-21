@@ -128,6 +128,20 @@ No unresolved field can be filled from observed paper returns. If an accepted
 candidate differs from the current research candidate, revise and independently
 review this draft before preregistration; never silently transfer its parameters.
 
+The separately accepted
+[OCO-first research candidate](../evidence/oco-first-execution-research-v1.json)
+has a material provisional-target timing difference and is not an accepted
+executable release. A freeze selecting it must bind its execution manifest
+separately from the inherited entry/data/risk identities. Its fidelity oracle
+must distinguish permitted provisional exits from original P11, include early
+exit followed by late entry, verify the final target against all entry fills,
+and check disjoint group ownership and protection-preserving incident duties.
+The natural-candidate identity contract must explain group/episode attribution;
+group IDs alone cannot establish extra natural candidates or a complete
+filled-to-flat lifecycle. Engineering-purpose entry receipts remain excluded
+from natural witnesses. Existing coverage minima and failure precedence remain
+unchanged, and this note does not freeze any missing field or start a window.
+
 ## 3. Natural census and minimum coverage
 
 Keep an append-only census of **every natural candidate** identified under the

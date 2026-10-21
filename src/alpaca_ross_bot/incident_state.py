@@ -8,6 +8,12 @@ from enum import StrEnum
 from typing import cast
 
 from .observation_admission import CANDIDATE_VERSION, ObservationContract
+from .oco_research import CANDIDATE as OCO_CANDIDATE
+from .oco_research import (
+    OcoResearchContract,
+    OcoResearchError,
+    load_oco_research_contract,
+)
 from .order_lifecycle import (
     LifecycleState,
     OrderObservation,
@@ -15,7 +21,7 @@ from .order_lifecycle import (
     reduce_order,
 )
 from .paper_order_contract import OrderSnapshot, PaperContractError
-from .research_risk_binding import OBSERVATION_IDENTITY
+from .research_risk_binding import OBSERVATION_IDENTITY, OCO_EXECUTION_IDENTITY
 from .strategy_features import FeatureUnavailable, research_candidate_version
 
 RESEARCH_POLICY_VERSION = "HYBRID_500_IEX_INTRADAY_RESEARCH_V1"
@@ -128,20 +134,37 @@ class IncidentPolicy:
     risk_acceptance_ref: str | None = None
     protection_acceptance_ref: str | None = None
     observation_contract: ObservationContract | None = None
+    oco_contract: OcoResearchContract | None = None
 
     def to_dict(self) -> dict[str, object]:
         item = asdict(self)
         del item["observation_contract"]
-        if self.observation_contract is not None or self.version == CANDIDATE_VERSION:
+        del item["oco_contract"]
+        if (
+            self.observation_contract is not None
+            or self.oco_contract is not None
+            or self.version in {CANDIDATE_VERSION, OCO_CANDIDATE}
+        ):
             _validate_policy(self)
+        if self.observation_contract is not None:
             item["candidate_binding"] = dict(OBSERVATION_IDENTITY)
+        if self.oco_contract is not None:
+            item["execution_research_binding"] = dict(OCO_EXECUTION_IDENTITY)
         return cast(dict[str, object], _encoded(item))
 
     @classmethod
     def from_dict(cls, value: object) -> "IncidentPolicy":
-        names = {f.name for f in fields(cls)} - {"observation_contract"}
+        names = {f.name for f in fields(cls)} - {"observation_contract", "oco_contract"}
         bound = isinstance(value, dict) and "candidate_binding" in value
-        item = _mapping(value, names | ({"candidate_binding"} if bound else set()))
+        execution_bound = (
+            isinstance(value, dict) and "execution_research_binding" in value
+        )
+        item = _mapping(
+            value,
+            names
+            | ({"candidate_binding"} if bound else set())
+            | ({"execution_research_binding"} if execution_bound else set()),
+        )
         contract = None
         if bound:
             identity = item["candidate_binding"]
@@ -152,6 +175,26 @@ class IncidentPolicy:
             ):
                 raise IncidentInputError("incident candidate/data/risk binding differs")
             contract = ObservationContract()
+        oco_contract = None
+        if execution_bound:
+            execution_identity = item["execution_research_binding"]
+            if (
+                not bound
+                or type(execution_identity) is not dict
+                or set(execution_identity) != set(OCO_EXECUTION_IDENTITY)
+                or any(
+                    type(execution_identity[key]) is not type(expected)
+                    or execution_identity[key] != expected
+                    for key, expected in OCO_EXECUTION_IDENTITY.items()
+                )
+            ):
+                raise IncidentInputError("incident OCO execution binding differs")
+            try:
+                oco_contract = load_oco_research_contract()
+            except (OSError, OcoResearchError) as exc:
+                raise IncidentInputError(
+                    "pinned incident OCO contract required"
+                ) from exc
         result = cls(
             _text(item["account_ref"]),
             _text(item["version"]),
@@ -168,6 +211,7 @@ class IncidentPolicy:
             if item["protection_acceptance_ref"] is None
             else _text(item["protection_acceptance_ref"]),
             contract,
+            oco_contract,
         )
         _validate_policy(result)
         return result
@@ -418,6 +462,21 @@ def _validate_policy(policy: IncidentPolicy) -> None:
         or not _reference(policy.evidence_ref)
     ):
         raise IncidentInputError("incident policy identity/evidence is invalid")
+    if policy.oco_contract is not None:
+        if (
+            type(policy.oco_contract) is not OcoResearchContract
+            or type(policy.observation_contract) is not ObservationContract
+            or policy.version != OCO_CANDIDATE
+        ):
+            raise IncidentInputError(
+                "explicit pinned incident OCO/parent contracts required"
+            )
+        try:
+            policy.oco_contract.__post_init__()
+        except OcoResearchError as exc:
+            raise IncidentInputError("pinned incident OCO contract required") from exc
+    elif policy.version == OCO_CANDIDATE:
+        raise IncidentInputError("explicit pinned incident OCO contract required")
     if policy.observation_contract is not None:
         try:
             version = research_candidate_version(policy.observation_contract)
@@ -426,7 +485,8 @@ def _validate_policy(policy: IncidentPolicy) -> None:
                 "pinned incident observation contract required"
             ) from exc
         if (
-            policy.version != version
+            policy.version
+            != (OCO_CANDIDATE if policy.oco_contract is not None else version)
             or policy.runtime_risk_accepted is not False
             or policy.protection_contract_accepted is not False
         ):
@@ -696,6 +756,7 @@ def reduce_incident(
     exits = [item for item in state.orders if item.role != OrderRole.ENTRY]
     if (
         bound
+        and policy.oco_contract is None
         and any(
             item.role == OrderRole.TARGET and _working(item.order) for item in exits
         )
