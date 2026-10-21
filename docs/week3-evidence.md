@@ -2273,3 +2273,29 @@ scope. No code or broker state changed; document links/scope and diff checks are
 the relevant validation, with no new pytest claim. The absence of a supported
 public mapping is an unresolved feasibility limit, not proof that an
 undocumented backend operation is impossible or a demand to contact support.
+
+## OCO-first alternative design — 2026-10-20
+
+The user requested finding a way to resolve the issue. The
+[concrete OCO-first proposal](w3-oco-first-execution-proposal.md) changes the
+architecture: establish native grouped exits for newly owned quantity, then
+amend take-profit prices rather than convert an existing standalone stop.
+This uses a documented order class and its wash exception, but does not establish
+the complete partial-entry, multi-group, amendment or close lifecycle.
+
+The provisional-target upper bound is proved by exact monotonic rounding and
+checked on deterministic rational inputs in the
+[feasibility record](../evidence/w3-oco-first-feasibility-20261020.json). It also
+retains an early-exit counterexample against current P11 and a deadline-price
+topology counterexample. Neither mathematical result grants broker or strategy
+acceptance. Independent local review verified the proposal's scope, inequality,
+counterexamples and lack of authority; it did not claim to prove native behavior.
+
+Current P11's `TARGET_BEFORE_ENTRY_TERMINAL` guard remains unchanged. This is a
+separately labeled potential route with a genuine early-exit policy difference,
+not a verified solution or drop-in implementation. Initial/late-fill protection,
+exact fractional residuals, disjoint group reservations, stop continuity during
+target replacement and a complete deadline disposition still require evidence.
+No whole-task support/contact prerequisite is introduced. No production code,
+order permission, broker state or accepted strategy was changed. Document and
+artifact checks are the relevant validation; no new pytest run is claimed.
