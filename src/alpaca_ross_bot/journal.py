@@ -659,6 +659,40 @@ class Journal:
     def read_capital_stage_evidence_cache(self, account_ref: str) -> dict[str, object]:
         return self._read_evidence_cache("capital_stage_evidence", account_ref)
 
+    def apply_oco_research_event(
+        self,
+        *,
+        account_ref: str,
+        state_key: str,
+        dedupe_key: str,
+        event_kind: str,
+        payload: bytes,
+        received_at: datetime,
+        reduce: Callable[[object | None, bool, int], object],
+        prepare_payload: Callable[[bytes], bytes],
+    ) -> EventEnvelope | None:
+        """Keep declared OCO ownership separate from runtime and risk evidence."""
+        return self._apply_private_event(
+            account_ref=account_ref,
+            state_key=state_key,
+            dedupe_key=dedupe_key,
+            event_kind=event_kind,
+            payload=payload,
+            received_at=received_at,
+            reduce=reduce,
+            prepare_payload=prepare_payload,
+            identity_payload=None,
+            namespace="oco_research",
+            source_id="ALPACA_OCO_RESEARCH",
+            dedupe_namespace="oco_research_evidence",
+        )
+
+    def read_oco_research_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        return self._read_private_events("ALPACA_OCO_RESEARCH", None)
+
+    def read_oco_research_evidence_cache(self, account_ref: str) -> dict[str, object]:
+        return self._read_evidence_cache("oco_research_evidence", account_ref)
+
     def read_order_send_started_at(self, client_order_id: str) -> str | None:
         row = self._db.execute(
             "SELECT started_at FROM order_send_attempts WHERE client_order_id=?",

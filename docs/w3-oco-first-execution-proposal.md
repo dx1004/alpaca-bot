@@ -100,7 +100,7 @@ monotonicity argument, not an assertion that finite cases establish all behavior
 | --- | --- | --- |
 | Algebra and policy comparison | Exact bound, early-exit and close-topology counterexamples | Completed; not equivalent to current P11 |
 | Independent research version | Separate candidate/provisional early-exit decision; other qualification retained | User accepted research scope only; source/protection/close remain unqualified |
-| Deterministic owner/model | Durable group allocation, timeout recovery, no double reservation and all six incident groups | Exact declared allocation/target model verified; source/durable owner and complete candidate fault matrix remain open |
+| Deterministic owner/model | Durable group allocation, timeout recovery, no double reservation and all six incident groups | Exact declared model and durable adapter verified; actual source/risk linkage and complete candidate fault matrix remain open |
 | Broker mapping | OCO during pending entry/cancel, group reservations, exact residuals, target amendments and stop preservation | Unverified |
 | Bounded isolated API experiment | Qualified data/account, reviewed request manifest, safe supported cleanup and restart path | Not authorized for dispatch by this document |
 | Formal paper preregistration | Accepted release and all existing W3/W4 requirements | Blocked by prior stages |
@@ -116,8 +116,13 @@ The research-only [allocation model](../src/alpaca_ross_bot/oco_research.py)
 and [synthetic tests](../tests/test_oco_research.py) now implement exact lot
 portions, unknown-acknowledgement retention, signed over-exit incidents,
 all-entry averages and terminal-census invalidation. Its observations and
-acknowledgements are declared inputs, not source-qualified facts. It has no
-durable journal or broker dispatcher; every operational authority remains false.
+acknowledgements are declared inputs, not source-qualified facts. A private
+[durable adapter](../src/alpaca_ross_bot/oco_journal.py) now preserves the model,
+unknown reservations and identity conflicts across restart. The shared risk
+owner separately records an explicit execution-contract opt-in while retaining
+the parent entry signal and original budget. Atomic provenance linkage between
+those components and actual broker sources remains unaccepted. There is no
+broker dispatcher; every operational authority remains false.
 Implementation verification is recorded in
 [Week 3 evidence](week3-evidence.md#oco-first-separate-research-acceptance--2026-10-20).
 

@@ -1,0 +1,28 @@
+{
+  "as_of_local": "2026-10-20",
+  "timezone": "America/Los_Angeles",
+  "scope": "PUBLIC_US_RETAIL_TRADING_API_SCHEMA_AND_ORDER_GROUP_CHANGELOG",
+  "schema_url": "https://raw.githubusercontent.com/alpacahq/alpaca-mcp-server/2a973a046607c42742bf141184b71f1990fa1809/src/alpaca_mcp_server/specs/trading-api.json",
+  "current_url": "https://raw.githubusercontent.com/alpacahq/alpaca-mcp-server/master/src/alpaca_mcp_server/specs/trading-api.json",
+  "changelog_url": "https://docs.alpaca.markets/us/changelog/2026-10-08-order-group-db02af7",
+  "api_version": "2.0.1",
+  "schema_sha256": "e67cf32d58cd5f918c593925e966bf737eff1e0f03f15c7c0ba467368eaa6d42",
+  "current_schema_byte_identical_to_pinned": true,
+  "group_addressed_paths_in_inspected_schema": [],
+  "patch_request_properties": [
+    "advanced_instructions",
+    "client_order_id",
+    "limit_price",
+    "notional",
+    "qty",
+    "stop_price",
+    "time_in_force",
+    "trail"
+  ],
+  "group_identity_and_role_metadata_documented": true,
+  "group_identity_includes_replacements": true,
+  "group_mutation_or_atomic_sibling_stop_continuity_established": false,
+  "absence_is_not_exhaustive_impossibility_proof": true,
+  "runtime_authorized": false,
+  "order_authority": false
+}

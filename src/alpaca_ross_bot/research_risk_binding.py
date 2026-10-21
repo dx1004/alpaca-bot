@@ -14,6 +14,16 @@ from .observation_admission import (
 from .observation_admission import (
     VERSION as DATA_CONTRACT_VERSION,
 )
+from .oco_research import (
+    CANDIDATE as OCO_CANDIDATE,
+)
+from .oco_research import (
+    MANIFEST_SHA256 as OCO_SHA256,
+)
+from .oco_research import (
+    VERSION as OCO_VERSION,
+)
+from .oco_research import OcoResearchContract, load_oco_research_contract
 from .research_spec import POLICY_SHA256, RESEARCH_SHA256
 from .scanner_contract import ACCEPTED_SHA256
 from .strategy_features import COVERAGE, Session, Trend, research_candidate_version
@@ -30,9 +40,41 @@ OBSERVATION_IDENTITY = {
     "volume_source_updated_at": "UNKNOWN",
     "source_admission_qualified": False,
 }
+OCO_EXECUTION_IDENTITY = {
+    "candidate_version": OCO_CANDIDATE,
+    "entry_candidate_version": CANDIDATE_VERSION,
+    "execution_contract_version": OCO_VERSION,
+    "execution_contract_sha256": OCO_SHA256,
+    "classification": "DECLARED_PARENT_ENTRY_SHARED_RISK_NOT_SOURCE_ACCEPTANCE",
+    "research_semantics_accepted": True,
+    "entry_risk_version_binding_accepted": False,
+    "source_admission_qualified": False,
+    "strategy_plan_qualified": False,
+    "runtime_authorized": False,
+    "order_authority": False,
+}
+
+
+def _check_execution_binding(declared: dict[str, Any]) -> None:
+    if "execution_research_binding" not in declared:
+        return
+    binding = declared["execution_research_binding"]
+    if (
+        declared.get("version") != CANDIDATE_VERSION
+        or type(binding) is not dict
+        or set(binding) != set(OCO_EXECUTION_IDENTITY)
+        or any(
+            type(binding[key]) is not type(value) or binding[key] != value
+            for key, value in OCO_EXECUTION_IDENTITY.items()
+        )
+    ):
+        raise JournalError("OCO research execution binding differs")
+    # Rebuild must check the same pinned artifacts as initial opt-in.
+    load_oco_research_contract()
 
 
 def _declared_version(declared: dict[str, Any]) -> str:
+    _check_execution_binding(declared)
     version = declared.get("version")
     if version == VERSION and not set(OBSERVATION_IDENTITY) & set(declared):
         return VERSION
@@ -151,6 +193,7 @@ def _research_declaration(
     decision: EntryDecision,
     *,
     observation_contract: ObservationContract | None = None,
+    oco_contract: OcoResearchContract | None = None,
 ) -> dict[str, Any]:
     version = research_candidate_version(observation_contract)
     if type(decision) is not EntryDecision or type(decision.state) is not EntryState:
@@ -217,4 +260,15 @@ def _research_declaration(
     }
     if version == CANDIDATE_VERSION:
         declared.update(OBSERVATION_IDENTITY)
+    if oco_contract is not None:
+        if (
+            type(oco_contract) is not OcoResearchContract
+            or version != CANDIDATE_VERSION
+        ):
+            raise JournalError(
+                "OCO research requires its explicit parent entry contract"
+            )
+        oco_contract.__post_init__()
+        declared["execution_research_binding"] = dict(OCO_EXECUTION_IDENTITY)
+        _check_execution_binding(declared)
     return declared

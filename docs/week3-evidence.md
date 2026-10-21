@@ -2394,3 +2394,112 @@ rtk proxy .venv/bin/ruff check src tests scripts/run_paper_engineering.py script
 rtk proxy .venv/bin/ruff format --check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
 rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-w306-oco-research-mypy src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
 ```
+
+## OCO execution identity bound to the shared research risk slot — 2026-10-20
+
+The separate candidate can now opt into the existing
+`AccountRiskOwner.reserve_research_decision` with the exact pinned
+`OcoResearchContract` and its required observation-age parent contract. The
+entry/trend/signal version and signal ID remain those of the parent entry
+reducer. A strict nested execution-research binding records the new full
+candidate and execution manifest identity separately. This does not rename
+parent observations, accept source inputs or represent the original P11 as
+allowing early targets.
+
+The binding and existing cash/loss-risk reservation commit in the same original
+account-risk event. There is no second slot, changed sizing formula, changed L/S,
+new order intent or consumed P06 attempt. Reusing an existing parent reservation
+identity with the new execution metadata records a conflict and vetoes the
+request; it cannot retrofit the held reservation. A positive retried result must
+match the complete held declaration, not only its signal ID. Immutable replay
+checks the execution binding's exact field set, value types, pinned artifacts
+and false operational acceptance flags. Default declarations omit the new field.
+
+The new `test_oco_risk_binding.py` and related entry/risk tests passed 54 focused
+cases. Independent read-only verification passed 74 related tests and rejected
+13 additional nested-identity mutations, including missing/extra fields and
+boolean/integer substitutions, with no actionable findings. Scoped Ruff and
+strict mypy passed. The tests include atomic commit-failure rollback, unchanged
+parent identity/prices, shared-slot exclusion and conflict/restart reconstruction.
+This is a declared research binding; actual source/entry-risk acceptance,
+protection, cleanup and formal release remain unaccepted. No account access or
+broker operation occurred.
+
+## Durable declared OCO allocation owner — 2026-10-20
+
+The new `OcoJournal` reuses the existing private journal transaction rather than
+creating another account-risk allocator or database. Three narrow wrappers
+separate `ALPACA_OCO_RESEARCH` events and deduplication from existing lifecycle,
+incident and risk evidence. The first immutable binding pins account, entry
+scope, symbol, L/S and the exact research contracts; a competing constructor
+cannot substitute another binding. Only an empty model can initialize a scope.
+
+Every view, reopen and mutation verifies the immutable event replay, projection
+and scoped deduplication under the same SQLite write lock. Canonical rational
+strings preserve exact quantities. Receipt timestamps do not change retry
+identity. Conflicting operation bytes are retained as evidence, keep original
+model facts, latch a durable conflict and block new allocation. Already-recorded
+conflict retries are idempotent through a private sentinel caught only after
+locked verification. Other errors propagate; there is no cache/history repair.
+Unknown acknowledgements and reservations survive physical close/reopen.
+
+Twenty-five new synthetic tests cover these guarantees, two-connection allocation
+and constructor races, append/commit failure rollback, corruption of raw bytes,
+hashes, schemas, rational encodings, projections and deduplication, and early-exit
+plus late-fill reconstruction. The implementer's combined component run passed
+70 tests. Independent verification passed 68 related tests and a separate
+two-scope physical-reopen experiment: identical execution/group names remained
+isolated with exact reservations and zero intents. No actionable finding was
+reported. Scoped Ruff and strict mypy passed; the coordinator inspected direct
+implementation and tests.
+
+The owner persists declared facts, not broker-qualified executions or stop
+coverage. Source provenance and atomic linkage from the shared risk reservation
+to this group's binding remain unaccepted; the two implementations do not imply
+that missing integration exists. The pinned research manifest and original P11
+remain unchanged. No dispatch, stop cancellation, reservation release, close or
+formal-paper authority was added. Actual source/condition qualification,
+initial/late-fill protection, broker group reservations, sibling-stop continuity,
+safe cleanup/close, isolated API cycles and final protocol freeze remain open.
+
+## Order-group interface recheck — 2026-10-20
+
+Independent primary-source retrieval and coordinator verification checked the
+[October 8 changelog](https://docs.alpaca.markets/us/changelog/2026-10-08-order-group-db02af7)
+and pinned/current official schema. The changelog documents group identifiers
+across replacements and role metadata. The inspected Trading API 2.0.1 schema
+contains no group-addressed path; current `master` was byte-identical to the
+previous pinned revision. The exact scope, hash and request properties are in
+[the public-source receipt](../evidence/w3-oco-group-api-recheck-20261020.json).
+These observations do not establish group mutation or sibling-stop continuity,
+and absence from these artifacts does not prove an undocumented operation
+impossible. No broker request or new capability acceptance follows.
+
+An initial sandbox public-fetch DNS failure was isolated as `ENV_FAULT` for that
+shell operation. The affected route stopped; the same read-only public fetch
+then succeeded with tool-level escalation and was independently verified. No
+global networking or application change was made; unaffected offline work
+continued safely. The affected public retrieval scope is resolved.
+
+### Combined validation of durability and shared-risk binding
+
+Final frozen-code regression passed **1,736 offline tests**, with one existing
+websockets legacy deprecation warning. Ruff check and format (141 files), strict
+mypy (143 files), the separate independent risk/durability reviews and diff
+checks passed. The full suite used tool-level escalation for the previously
+verified sandbox asyncio limitation, without an application workaround. No
+protected account inputs or broker state were accessed. Commands:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-w306-oco-durable-final tests
+rtk proxy .venv/bin/ruff check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/ruff format --check src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-w306-oco-durable-mypy src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```
+
+W3 completion remains unproven. The next engineering dependency is source-bound,
+atomic linkage of the original risk reservation and actual execution evidence
+into the OCO scope; declared metadata plus a durable model do not establish it.
+Full source/condition admission and supported protection/close semantics are
+also still required before actual isolated order cycles or formal preregistration.
+W3-06/07/08 parents therefore remain open with their original acceptance scope.

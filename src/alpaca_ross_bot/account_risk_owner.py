@@ -18,6 +18,7 @@ from .entry_strategy import EntryDecision
 from .equity_fees import planned_charge_bounds
 from .journal import Journal, JournalError
 from .observation_admission import ObservationContract
+from .oco_research import OcoResearchContract
 from .order_lifecycle import OrderProjection
 from .order_reconciliation import OrderReconciler
 from .owned_equity_ledger import audit_owned_equity
@@ -176,13 +177,18 @@ class AccountRiskOwner:
         client_order_id: str,
         decision: EntryDecision,
         observation_contract: ObservationContract | None = None,
+        oco_contract: OcoResearchContract | None = None,
     ) -> dict[str, object]:
         """Trace declared reducer L/S into one non-dispatch risk reservation.
 
         This neither admits source market inputs nor consumes the P06 attempt.
+        OCO opt-in records execution identity while preserving the parent signal
+        and this same account-risk owner; it grants no operational acceptance.
         """
         declared = _research_declaration(
-            decision, observation_contract=observation_contract
+            decision,
+            observation_contract=observation_contract,
+            oco_contract=oco_contract,
         )
         plan = EntryRiskPlan(**_declared_research_plan(client_order_id, declared, at))
         self._record(
@@ -194,9 +200,13 @@ class AccountRiskOwner:
             research_signal=declared,
         )
         result = self._reservation_result(client_order_id)
+        current = self.view()
+        held = current.get("held") if isinstance(current, dict) else None
         if result["quantity"] and (
             result.get("client_order_id") != client_order_id
             or result.get("signal_id") != declared["signal_id"]
+            or not isinstance(held, dict)
+            or held.get("research_signal") != declared
         ):
             result.update(quantity=0, reason="RESERVATION_NOT_CURRENT")
         result.update(
@@ -216,6 +226,10 @@ class AccountRiskOwner:
                         "source_admission_qualified",
                     )
                 }
+            )
+        if "execution_research_binding" in declared:
+            result["execution_research_binding"] = dict(
+                declared["execution_research_binding"]
             )
         return result
 
@@ -890,6 +904,10 @@ class AccountRiskOwner:
                             "source_admission_qualified",
                         )
                     }
+                )
+            if "execution_research_binding" in research_signal:
+                state["decision"]["execution_research_binding"] = dict(
+                    research_signal["execution_research_binding"]
                 )
 
     def _totals(self, state: dict[str, Any], vetoed: bool) -> None:
