@@ -100,7 +100,7 @@ monotonicity argument, not an assertion that finite cases establish all behavior
 | --- | --- | --- |
 | Algebra and policy comparison | Exact bound, early-exit and close-topology counterexamples | Completed; not equivalent to current P11 |
 | Independent research version | Separate candidate/provisional early-exit decision; other qualification retained | User accepted research scope only; source/protection/close remain unqualified |
-| Deterministic owner/model | Durable group allocation, timeout recovery, no double reservation and all six incident groups | Local entry receipt, explicit incident opt-in and six synthetic integration cases verified; native exit/group linkage, automatic observation and complete runtime acceptance remain open |
+| Deterministic owner/model | Durable group allocation, timeout recovery, no double reservation and all six incident groups | Local source-derived incident receipts, durable entry allocation and six synthetic fault groups verified; native protection/exit mapping, qualified recovery and continuous runtime acceptance remain open |
 | Broker mapping | OCO during pending entry/cancel, group reservations, exact residuals, target amendments and stop preservation | Unverified |
 | Bounded isolated API experiment | Qualified data/account, reviewed request manifest, safe supported cleanup and restart path | Not authorized for dispatch by this document |
 | Formal paper preregistration | Accepted release and all existing W3/W4 requirements | Blocked by prior stages |
@@ -125,11 +125,14 @@ original positive held reservation and immutable source-execution census under
 the private journal lock. Explicit candidate incident opt-in and six synthetic
 integration cases are verified. Receipt origin remains engineering-only and
 source admission remains false. Native exit/group facts are still declared;
-automatic incident observation, completed-slot late-fill recovery and actual
+continuous runtime supervision, qualified completed-slot recovery and actual
 broker protection/close acceptance remain open. There is no broker dispatcher;
-every operational authority remains false.
-Implementation verification and its limits are recorded in
-[Week 3 evidence](week3-evidence.md#oco-local-entry-receipt-and-candidate-incident-integration--2026-10-20).
+every operational authority remains false. Local source-derived incident receipts
+now retain scoped lifecycle/position facts and quarantine completed-scope late
+fills without restoring risk or accepting native protection. Manual and
+source-derived observations cannot mix in one scope. Implementation verification
+and its limits are recorded in
+[Week 3 evidence](week3-evidence.md#w3-06-source-derived-incident-observations-and-completed-scope-quarantine--2026-10-20).
 
 No support submission is required by this proposal. Only the new research
 acceptance scope is granted. Credentials, runtime authorization, the original

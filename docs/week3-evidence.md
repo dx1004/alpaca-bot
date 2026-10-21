@@ -2611,3 +2611,85 @@ The [protocol draft](w3-paper-protocol.md) now explicitly separates this candida
 and engineering receipts without changing existing coverage minima or starting
 a window. No account access, broker write, formal paper or live activity occurred
 for this increment. W3-06/07/08 parents remain open.
+
+## W3-06 source-derived incident observations and completed-scope quarantine — 2026-10-20
+
+The separate OCO-first research candidate now has a local source-derived incident
+observation path. This completes the reported-source monitor increment, not the
+original W3-06 parent: actual source/risk admission and supported native
+protection/close acceptance remain unmet. The original P11 and both pinned
+research manifests are unchanged; `NOT_SIP_EQUIVALENT` remains in force.
+
+The new [execution incident adapter](../src/alpaca_ross_bot/incident_execution.py)
+reads the canonical account-risk owner and lifecycle at the same decision time
+and exact source horizon. References identify original immutable events and
+hashes. Current held ownership or historically reconstructed completed ownership
+provides explicit roles; unknown/native group roles are not inferred. Baseline
+comes only from recorded baseline evidence. Stale, unavailable or disagreeing
+positions remain unknown. Disconnects, pending cancellation, daily stops,
+foreign/unowned evidence and fractional source limitations retain explicit
+quarantine. Intent-origin classification requires a visible risk-prefix census
+reference: an intent created after the horizon cannot rewrite an old receipt.
+
+[IncidentJournal.observe_execution](../src/alpaca_ross_bot/incident_journal.py)
+derives and commits the receipt and projection under the existing private write
+lock. The first source horizon remains fixed on retries. Changed requests retain
+the original receipt, latch a conflict and cannot replace old facts; already
+recorded conflicts deduplicate too. Availability must follow the original
+receipt decision. Replay rederives the receipt at its original horizon. Atomic
+append failure rolls back only the derived event/state, leaving committed source
+and risk history intact. Schema 3 retains the receipt and latched quarantine;
+original schema-1/2 paths remain compatible. Manual `OBSERVE` and source-derived
+`BOUND_EXECUTION` cannot mix in either direction within one incident scope,
+including during replay. This prevents declared protection flags from becoming
+apparent source evidence and preserves the prior scope on refusal.
+
+The pure adapter cannot attest durability. Only the existing atomic journal
+writer marks its committed observation durable, and no successful projection is
+returned on failed persistence. Source admission, data/reconciliation/recovery,
+native protection, dispatch, runtime and formal-sample authority remain false.
+A subscribed stream without a cleared gap is not reported as connected. Closing
+due is not guessed: its calendar qualification remains explicitly missing. This
+is deterministic local observation derivation, not a continuously deployed or
+release-qualified supervisor.
+
+The completed-slot regression records a terminal-flat round, then a later
+original-entry fill. The monitor retains entry/exit/reported-position quantities
+and the original role provenance, while the canonical risk owner keeps
+`held=None` and its unchanged completed history. It does not resurrect a slot,
+create an intent, release a reservation, cancel protection or grant recovery.
+Quarantine retains the discrepancy for reconciliation/escalation. This completes
+safe observation of that boundary, not qualified allocation recovery or native
+protection for the newly discovered quantity.
+
+Validation of the frozen code: 1,852 full offline tests passed, with the
+existing websockets legacy deprecation warning. Ruff check and format (148 files)
+and strict mypy (150 files) passed. Independent read-only verification passed all
+32 new source/journal cases and found no actionable issue in the four frozen
+implementation/test files. Cases cover original-horizon retries, origin ancestry,
+changed requests, causal timestamps, physical reopen, rollback, both mode-mixing
+directions, stale/invisible evidence, unknown position, fractional retention,
+explicit stop role without protection acceptance and completed-scope late fills.
+Commands from the repository:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-w306-source-incident-final tests
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff check --no-cache src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff format --check --no-cache src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/mypy --strict --cache-dir /tmp/alpaca-w306-source-incident-final-mypy src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```
+
+A bounded generic event-sourcing analysis ran through the configured Cloud route
+and returned `gemma4:31b`; no repository documents, code or protected account data
+were sent. Its checklist did not authorize reconciliation or broker actions.
+The full offline suite used tool-level escalation for the previously isolated
+sandbox asyncio limitation, with temporary caches and no repository workaround.
+No new environment repair, private-account access or broker operation was needed.
+
+W3-06 remains open. Required acceptance still includes actual qualified W3-02
+inputs, native protection of initial/racing fills, broker group reservations and
+exact residual eligibility, sibling-stop continuity during target amendment, and
+a supported protection-preserving timed close. Native exit/group source binding,
+qualified completed-slot recovery and continuous runtime verification also remain
+unaccepted. Synthetic success and local quarantine cannot supply those contracts.
+No order, cancellation, account reset, live mode or formal paper start occurred.
