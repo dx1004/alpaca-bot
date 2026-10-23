@@ -200,6 +200,91 @@ The developer may monitor operational health but cannot use holdout assessment
 or paper returns to tune this release. A semantic ambiguity that changes an
 enabled decision is a failed gate, not permission for a favorable interpretation.
 
+### Draft per-rule fidelity rubric — not frozen or assigned
+
+This matrix maps the existing [P01–P13 policy](no-leverage-pullback-research.md#decision-package-independent-intraday-adaptation-2026-10-15)
+to review evidence; it adds no threshold, enabled cell or executable acceptance.
+Bind the complete selected manifest chain. For the separately selected
+[observation-age candidate](../evidence/iex-snapshot-observation-age-research-v1.json),
+apply its changed P03/P13 acquisition-age basis, including required catalog and
+member pages. Cumulative-volume source update time remains unknown; recent
+receipt cannot restore the original source-age claim. Unchanged parent rules
+retain their definitions.
+
+| Rule | Independent calculation or transition | Required evidence and comparison |
+| --- | --- | --- |
+| P01 — account/stage | Reconstruct frozen E0, actual account capability, whole-share/no-borrowing and single open/reserved-position constraints. | Bound account/date/E0, funds, owned inventory and canonical reservations; a stated starting balance is not account/risk qualification. |
+| P02 — screen | Apply the pinned scanner price/RVOL/ranking/tie-break and non-veto preference rules independently. | Complete relevant catalog/request/return/missing census, raw current/prior/history inputs and contract digests; reported scanner results are comparison evidence, not the oracle. |
+| P03 — monitored set | Rebuild reserved-symbol-first allocation, ranked remaining slots, completed-sweep admission and acknowledged handoff; use the selected age contract. | Raw request/member/catalog clocks, capacity, subscription ACKs and from-open first-trade/setup/low continuity. DATA_NOT_MONITORED is not screen rejection; repaired gaps do not prove continuous coverage. |
+| P04 — features | Reconstruct expected RTH minute membership, completed open-anchored buckets and prescribed 100-bar EMA seed/recurrence using exact rational arithmetic. | Official calendar, raw as-observed minutes/daily closes, completion boundaries and revision availability; missing bars/minutes and later revisions cannot supply earlier features. |
+| P05 — setup | Calculate daily/hourly comparisons, freeze the hourly pair, check the first eligible RTH trade and replay above-to-inclusive-zone arming. | Ordered eligible trades from open and exact indicators; IEX prices are not consolidated official opening/closing prices. Missing setup history cannot be inferred. |
+| P06 — trigger/invalidation | Replay below-EMA21 invalidation, armed crossing above the previous completed bar high and the one-attempt rule consumed by durable intent reservation. | Eligible trade order, prior-bar identity, original intent horizon, cancellation/ACK and racing fills. Rejection/cancellation does not restore the allowance; cancel request is not terminal. |
+| P07 — entry clock | Apply the prescribed one-/five-minute intervals, exact endpoints/calendar clipping and trigger discard at the switch. | Session open/close, precise decision clock and completed-bar boundaries; no invented enabled cell or endpoint tolerance. |
+| P08 — limit | Calculate the next whole cent strictly above the trigger high; compare both triggering trade and contemporaneous ask with that limit. | Exact prices/grid, accepted condition policy and source/local clocks. Above-limit means the specified skip, never chase or market fallback. |
+| P09 — stop/risk | Reconstruct the then-known RTH low, floor-to-cent frozen stop, valid topology and prescribed E0-based all-in loss cap. | From-open low history, limit/stop inputs, charge-policy revision and remaining-risk evidence; a later low cannot rewrite the stop, and stop execution does not guarantee the cap. |
+| P10 — quantity | Solve both parent funds/loss inequalities for the largest feasible positive integer quantity, and verify the next integer is infeasible. | Exact spendable funds/holds, pending/open reserves, entry/stop charge bounds and original reservation prefix. Unknown charges/funds or no feasible integer rejects; an OCO allocation is not a new budget. |
+| P11 — exits | For the selected execution version, calculate owned entry/exit quantities, target basis, cancellation duties, topology and calendar-close-minus-five-minute obligation. | Per-execution facts, terminal entry census, exact ownership, ACK/replacement chains, continuous protection and approved close path. Formula or ACK success does not prove protective continuity or safe close. |
+| P12 — daily stop | Calculate net session P&L relative to E0, valid-bid open marks/accrued charges, daily allowance, pending/open reserves and remaining capacity; replay round-trip streak, latch and permitted date reset. | Complete owned ledger, funding/conflicts, marks/ages, fees, flat-to-flat attribution and orphan reconciliation. Zero does not reset streak; later profit cannot erase a dated latch; unknown marks/flows cannot grant capacity. |
+| P13 — data/incidents | Test selected contract ages, positive valid quote topology/sizes, condition policy, continuity and ownership vetoes. | Original clocks with retained precision, bar/revision lineage, feed/subscription state and incident ownership. Unknown evidence cannot validate eligibility; vetoing exposure must not abandon existing valid protection. |
+
+If the selected version is [OCO-first](../evidence/oco-first-execution-research-v1.json),
+bind that manifest and its observation-age parent separately. Independently
+calculate provisional `ceil_cent(3*L - 2*S)` and final
+`ceil_cent(3*F - 2*S)`, deriving final `F` from **all** reconciled entry
+executions. Early provisional target execution is permitted only for this
+separate candidate; original P11 is preserved. Review early exit followed by
+late entry, exact disjoint owned lot portions and signed residuals, with no
+re-entry to replace exited quantity. A late fill after terminal census
+invalidates finalization; unknown ACK retains allocation; fractional residuals
+remain exact and unqualified rather than rounded. First/late-fill protection,
+sibling-stop continuity during target amendments, broker reservations and safe
+timed close each need their own accepted evidence. Their unresolved gates cannot
+become MATCH from arithmetic, simulation or request/ACK binding alone.
+
+Every review must retain this immutable output/checklist; references include
+declared journal scope, exact sequence and payload hash, never naked sequence IDs:
+
+1. **Identity/origin:** review/case/session IDs; selected candidate, data, risk,
+   execution and build digests; enabled-cell reference or explicit unknown;
+   natural/engineering/research-exposed classification and its evidence.
+   Retain original first observation, enrollment record/availability and
+   pre-launch freeze. Unverified origin/enrollment stays unknown and cannot
+   contribute a natural witness. Repeated source observations are not episodes.
+2. **Masked package:** package digest, fixed horizon, reviewed decision instant,
+   raw-parent ancestry and each input's source/event, first-receipt,
+   processed/available clocks, missing/excluded inputs and corrections. Mask bot
+   verdicts, bot-calculated risk/size answers and information unavailable at that
+   instant, including later prices/P&L. Exit/incident reviews use separate
+   packages at their own action instants: then-known fills may enter those
+   packages, never the earlier entry decision. A retrospective result's payload
+   cutoff does not make its later computation available earlier.
+3. **Expected record sealed before unmasking:** reviewer identity and
+   independence/conflict declaration; rubric/independent-calculator version and
+   digest; calculation worksheet and precise seal time/receipt. For each rule
+   record applicability evidence, exact operands/units/rounding and expected
+   transition/verdict or reasoned abstention. Retain independent entry
+   eligible/ineligible/unavailable verdict and applicable risk, size, limit,
+   stop, target, ownership/residual and incident/close calculations. Production
+   outputs cannot supply expected values.
+4. **Post-seal comparison:** unmask time and bot-trace reference; per-rule
+   `MATCH`, `MISMATCH` or `ABSTAIN`, expected/observed values, first divergent
+   transition and evidence. Non-applicability requires its rule-based reason and
+   is not an extra witness. Missing evidence, unresolved source gate or
+   undecidable rule yields ABSTAIN, not MATCH. Preserve disagreements, impacted
+   cell/candidate/protocol verdict and append-only explanations; never replace
+   the sealed expected record after seeing the bot answer or return.
+5. **Disposition:** second-check/adjudication reference, unresolved findings and
+   masking/enrollment/freeze violations. Apply the existing failure rules; no
+   favorable exclusion, relabeling or paper-driven rule change repairs the
+   original holdout. P&L remains descriptive and outside fidelity verdicts.
+
+Reviewer assignments/independence approval, masking/package mechanism,
+independent calculation implementation, adjudication responsibility, accepted
+identity/stage/enrollment contract, enabled cells, executable dependencies and
+final rubric/version/hash seal remain **PENDING**. This draft appoints no
+reviewer, certifies no independence, starts no window and admits no exposed
+archive as formal holdout.
+
 ## 5. Six mandatory engineering scenarios, separate from natural samples
 
 All six scenario groups must pass against the exact release before launch.

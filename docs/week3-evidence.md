@@ -2938,3 +2938,42 @@ HTTP `daed65c40bd6a579ed5d05097ade7bc3acefe1c753d202236d5df98cf5017885`;
 source stages `cec6dae4cc0ede641b1ec205e8f27d65fc903d5e7277d2e6cc4f4f1a12ea13df`.
 The archive compatibility report hash is
 `74e20ff863f4dd45e4543261719c937606cb6f6022329fbbcd0107d160d4a9f6`.
+
+## Actual-trigger qualification source audit — 2026-10-22
+
+After committing the validated increment as `e2b4d3a`, independent public-source
+retrieval narrowed the unresolved upstream admission facts rather than
+reimplementing the risk owner or rerunning saved captures. The coordinator
+checked the official IEX specification directory, TOPS v1.66 and UTP input
+v4.0a. The [source-scoped admission inventory](w3-data-admission-proposal.md#iex-normalization-and-completeness-evidence-boundary)
+records the precise versions and limitations.
+
+Native TOPS has sequenced delivery and gap fills, but no inspected public
+interface established that Alpaca forwards these guarantees or maps native
+quote flags to its condition/tape fields. UTP's R definition is SIP-scoped,
+not a verified IEX normalization. Historical pagination does not itself supply
+original-delivery or revision-finality evidence. These are specific unknowns,
+not a claim that the provider cannot offer supporting evidence. No whitelist,
+source switch, provider completeness assumption or new risk owner was adopted.
+There was no account access, new capture, broker write or formal paper start.
+
+## W3-08 draft fidelity review matrix — 2026-10-22
+
+The [protocol's concrete review rubric](w3-paper-protocol.md#draft-per-rule-fidelity-rubric--not-frozen-or-assigned)
+now maps P01–P13 to independent calculations and source evidence, with the
+observation-age and OCO-first differences separated from their parents. It
+specifies scoped evidence references, prospective origin/enrollment, masked
+decision-time packages, independently sealed expected calculations before
+unmasking, per-rule MATCH/MISMATCH/ABSTAIN and append-only adjudication.
+Exit reviews use their own action instants; later fills cannot leak into entry
+expectations. Missing or unresolved evidence cannot become a positive witness.
+
+The coordinator compared the matrix against the authoritative P01–P13 table
+and both accepted research manifests. No numerical rule, enabled cell, manifest
+or acceptance gate changed. Reviewer identities/independence, the masking
+mechanism, independent calculator, adjudication owner, natural episode/stage/
+enrollment contract and executable release/final seal remain pending. This is
+a completed draft-review specification increment, not reviewer appointment,
+formal enrollment, W3-08 acceptance or a paper start. Documentation-only changes
+were checked for whitespace, local links and all thirteen rule rows; the prior
+2050-test run was not repeated because no executable bytes changed.

@@ -163,3 +163,23 @@ claims do not authenticate actual data or prove that any stream is active.
 No credentials, local code or account evidence were exported. No runtime gate,
 strategy rule or original source-age contract changed. `NOT_SIP_EQUIVALENT`
 remains mandatory.
+
+### IEX normalization and completeness evidence boundary
+
+Further first-party retrieval checked on 2026-10-22:
+
+| Evidence | What it establishes | What it does not establish |
+| --- | --- | --- |
+| [IEX official specification directory](https://www.iex.io/resources/trading/market-data), TOPS v1.66 | Identifies the native IEX specification and direct-feed access process | Alpaca exposes the same transport guarantees or native fields |
+| [TOPS v1.66](https://storage.googleapis.com/assets-bucket/exchange/assets/IEX%20TOPS%20Specification%20v1.66.pdf), updated 2021-10-19, pp. 3, 16–17 and 26 | Native IEX-TP has sequenced delivery/gap-fill support; quote messages have native status/session flags | A mapping from those flags to Alpaca quote condition arrays/tapes, or native sequence availability through Alpaca WebSocket |
+| [UTP input v4.0a](https://www.utpplan.com/DOC/UtpBinaryInputSpec.pdf), July 2026, section 4.2 | Defines quote condition R within that SIP protocol | That SIP definition is a verified Alpaca-IEX normalization or a strategy whitelist |
+| [Alpaca historical trades](https://docs.alpaca.markets/us/reference/stocktradesingle-1) | Query boundaries, feed selection and pagination interface | Immutable original delivery history, a complete-session watermark, or revision incorporation timing |
+
+The absence claim is limited to inspected public interfaces. A finite successful
+GET, metadata name or matching observed price cannot prove the missing mapping
+or completeness guarantee. Native IEX protocol capabilities are a research lead,
+not an available entitlement or permission to switch the selected Alpaca source.
+No subscription, direct-feed connection, new condition policy or runtime gate
+change is authorized or performed. A qualified mapping/history contract remains
+necessary before implementing a positive actual-trigger admission path; local
+health/provenance work cannot silently substitute for it.
