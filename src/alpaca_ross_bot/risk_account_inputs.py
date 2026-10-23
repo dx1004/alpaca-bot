@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
@@ -11,6 +12,7 @@ from .journal import Journal
 from .paper_order_contract import decode_broker_json, paper_account_ref
 
 SCHEMA = "PAPER_RISK_INPUT_CAPTURE_V1"
+SCHEMA_V2 = "PAPER_RISK_INPUT_CAPTURE_V2"
 SOURCE = "ALPACA_PAPER_RISK_HTTP"
 KIND = "ACCOUNT_INPUT_CAPTURE"
 ENDPOINT = "https://paper-api.alpaca.markets"
@@ -101,20 +103,35 @@ def inspect_account_inputs(
     if stored is None:
         raise ValueError("capture evidence is missing")
     event, raw = stored
+    if event.payload_ref != "sha256:" + hashlib.sha256(raw).hexdigest():
+        raise ValueError("account capture payload hash differs")
     if (event.source_id, event.feed, event.event_kind) != (SOURCE, "paper", KIND):
         raise ValueError("capture source is not qualified")
     if not event.visible_at(decision_at) or event.external_clock_conflict:
         raise ValueError("capture evidence is unavailable at decision time")
     capture = decode_broker_json(raw)
-    if not isinstance(capture, dict) or set(capture) != {
+    fields = {
         "schema",
         "account_ref",
         "endpoint",
         "requests",
-    }:
+    }
+    if not isinstance(capture, dict):
         raise ValueError("capture envelope is invalid")
-    if (capture["schema"], capture["account_ref"], capture["endpoint"]) != (
-        SCHEMA,
+    schema = capture.get("schema")
+    if type(schema) is not str or schema not in {SCHEMA, SCHEMA_V2}:
+        raise ValueError("capture schema is unsupported")
+    if schema == SCHEMA_V2:
+        fields.add("transport_origin")
+        origin = capture.get("transport_origin")
+        if type(origin) is not str or origin not in {
+            "BUILTIN_PAPER_HTTPS",
+            "INJECTED_EXCHANGE",
+        }:
+            raise ValueError("account capture transport origin is invalid")
+    if set(capture) != fields:
+        raise ValueError("capture envelope is invalid")
+    if (capture["account_ref"], capture["endpoint"]) != (
         account_ref,
         ENDPOINT,
     ):

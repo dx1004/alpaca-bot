@@ -21,7 +21,7 @@ from alpaca_ross_bot.journal import Journal
 from alpaca_ross_bot.local_credentials import load_paper_credentials
 from alpaca_ross_bot.market_input_checks import assess_market_record
 from alpaca_ross_bot.paper_order_contract import paper_account_ref
-from alpaca_ross_bot.risk_account_inputs import inspect_account_inputs
+from alpaca_ross_bot.risk_account_inputs import SCHEMA_V2, inspect_account_inputs
 from alpaca_ross_bot.risk_baseline import freeze_baseline
 from alpaca_ross_bot.risk_evidence_request import IncidentRiskRequest
 from alpaca_ross_bot.risk_input_evidence import inspect_risk_inputs
@@ -65,8 +65,23 @@ def get_record(url: str, headers: dict[str, str]) -> dict[str, object]:
     }
 
 
+_BUILTIN_GET_RECORD = get_record
+_BUILTIN_BOUNDED_GET = bounded_alpaca_get
+
+
+def account_transport_origin() -> str:
+    """Record configured transport identity, not a claim of actual API evidence."""
+    return (
+        "BUILTIN_PAPER_HTTPS"
+        if get_record is _BUILTIN_GET_RECORD
+        and bounded_alpaca_get is _BUILTIN_BOUNDED_GET
+        else "INJECTED_EXCHANGE"
+    )
+
+
 async def capture(args: argparse.Namespace) -> dict[str, Any]:
     check_collection_window(args, datetime.now(UTC))
+    transport_origin = account_transport_origin()
     root = args.runtime_root.resolve()
     if (
         getattr(args, "require_bound_account", False)
@@ -162,8 +177,11 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
                 raise ValueError("activity pagination identity is unavailable")
             token = next_token
         at = datetime.now(UTC)
+        if account_transport_origin() != transport_origin:
+            raise ValueError("account transport changed during capture")
         payload = {
-            "schema": "PAPER_RISK_INPUT_CAPTURE_V1",
+            "schema": SCHEMA_V2,
+            "transport_origin": transport_origin,
             "account_ref": account_ref,
             "endpoint": base,
             "requests": requests,
@@ -244,6 +262,8 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
             "baseline_status": baseline_status,
         }
         report["account"] = {
+            "capture_schema": SCHEMA_V2,
+            "transport_origin": transport_origin,
             "capture_sequence": event.sequence,
             "calendar_sequence": calendar_event.sequence,
             "available_profile": facts.available_profile,

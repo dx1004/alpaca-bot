@@ -72,10 +72,20 @@ def test_get_record_retains_raw_body_and_only_uses_bounded_get(
         return b'{"private":"synthetic"}'
 
     monkeypatch.setattr(module, "bounded_alpaca_get", get)
+    assert module.account_transport_origin() == "INJECTED_EXCHANGE"
     result = module.get_record("https://paper-api.alpaca.markets/v2/account", {})
     assert result["method"] == "GET" and result["status"] == 200
     assert result["body"] == '{"private":"synthetic"}'
     assert calls == ["https://paper-api.alpaca.markets/v2/account"]
+
+
+def test_transport_origin_inspection_never_calls_network(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = collector()
+    assert module.account_transport_origin() == "BUILTIN_PAPER_HTTPS"
+    monkeypatch.setattr(module, "get_record", lambda *_args: None)
+    assert module.account_transport_origin() == "INJECTED_EXCHANGE"
 
 
 @pytest.mark.parametrize("short_first_page", [False, True])
@@ -90,8 +100,12 @@ def test_capture_private_account_and_stream_with_redacted_summary(
     freeze_requested: bool,
     owner_mode: str,
     include_statuses: bool = False,
+    origin_drift: bool = False,
 ) -> None:
     module = collector()
+    if origin_drift:
+        origins = iter(("INJECTED_EXCHANGE", "BUILTIN_PAPER_HTTPS"))
+        monkeypatch.setattr(module, "account_transport_origin", lambda: next(origins))
     private = tmp_path / "private"
     observed_at = datetime(
         2026, 10, 19 if owner_mode == "prior_session" else 16, 13, 35, tzinfo=UTC
@@ -276,6 +290,8 @@ def test_capture_private_account_and_stream_with_redacted_summary(
             assert old_state is not None and old_state["e0"] == "500"
         report = asyncio.run(module.capture(args))
     assert report["broker_writes_performed"] is False
+    assert report["account"]["capture_schema"] == "PAPER_RISK_INPUT_CAPTURE_V2"
+    assert report["account"]["transport_origin"] == "INJECTED_EXCHANGE"
     assert report["account"]["starting_equity_matches_500"]
     assert report["account"]["pre_session_baseline_frozen"] is False
     assert report["market"]["assessed_records"] == 1
@@ -331,6 +347,11 @@ def test_capture_private_account_and_stream_with_redacted_summary(
     assert "reported_equity" not in capital and "reported_multiplier" not in capital
     journal = Journal.open_private(private / "journal.sqlite3", private)
     try:
+        captured = journal.read_event(report["account"]["capture_sequence"])
+        assert captured is not None
+        capture_payload = json.loads(captured[1])
+        assert capture_payload["schema"] == "PAPER_RISK_INPUT_CAPTURE_V2"
+        assert capture_payload["transport_origin"] == "INJECTED_EXCHANGE"
         events = journal.read_account_risk_events()
         assert len(events) == (2 if owner_mode == "prior_session" else 1)
         assert events[-1][0].event_kind == "OBSERVE"
@@ -365,6 +386,33 @@ def test_capture_private_account_and_stream_with_redacted_summary(
             stage["selection"]["calendar_sequence"]
             == report["account"]["calendar_sequence"]
         )
+    finally:
+        journal.close()
+
+
+def test_origin_drift_cannot_commit_account_capture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    with pytest.raises(ValueError, match="transport changed"):
+        test_capture_private_account_and_stream_with_redacted_summary(
+            tmp_path,
+            monkeypatch,
+            short_first_page=False,
+            freeze_requested=False,
+            owner_mode="off",
+            origin_drift=True,
+        )
+    root = tmp_path / "private"
+    journal = Journal.open_private(root / "journal.sqlite3", root)
+    try:
+        assert (
+            journal._db.execute(
+                "SELECT COUNT(*) FROM events WHERE source_id='ALPACA_PAPER_RISK_HTTP' "
+                "AND event_kind='ACCOUNT_INPUT_CAPTURE'"
+            ).fetchone()[0]
+            == 0
+        )
+        assert journal.read_order_intent_ids() == ()
     finally:
         journal.close()
 

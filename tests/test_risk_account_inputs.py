@@ -1,11 +1,13 @@
 """Synthetic account snapshots; no broker access or financial value disclosure."""
 
 import json
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 
+from alpaca_ross_bot.events import EventEnvelope
 from alpaca_ross_bot.journal import Journal
 from alpaca_ross_bot.paper_order_contract import paper_account_ref
 from alpaca_ross_bot.risk_account_inputs import (
@@ -13,6 +15,7 @@ from alpaca_ross_bot.risk_account_inputs import (
     KIND,
     MONEY_FIELDS,
     SCHEMA,
+    SCHEMA_V2,
     SOURCE,
     AccountInputFacts,
     inspect_account_inputs,
@@ -91,6 +94,45 @@ def test_zero_is_observed_but_not_funds_authority(tmp_path: Path) -> None:
     assert "ONE_X_FLAT_AVAILABLE_PROFILE_UNQUALIFIED" in facts.reasons
     assert not facts.runtime_authorized
     assert "11111111" not in repr(facts)
+
+
+@pytest.mark.parametrize("origin", ["BUILTIN_PAPER_HTTPS", "INJECTED_EXCHANGE"])
+def test_v2_capture_retains_account_facts_without_granting_authority(
+    tmp_path: Path, origin: str
+) -> None:
+    payload = capture() | {"schema": SCHEMA_V2, "transport_origin": origin}
+    facts = inspect(tmp_path, payload)
+    assert dict(facts.money)["cash"] == 0
+    assert facts.active_usd_flags_clear and facts.before_session_open
+    assert facts.available_profile == "UNQUALIFIED"
+    assert facts.runtime_authorized is False
+
+
+@pytest.mark.parametrize("origin", [None, ["INJECTED_EXCHANGE"], "UNKNOWN"])
+def test_v2_invalid_origin_cannot_qualify(tmp_path: Path, origin: object) -> None:
+    with pytest.raises(ValueError, match="transport origin"):
+        inspect(tmp_path, capture() | {"schema": SCHEMA_V2, "transport_origin": origin})
+
+
+def test_legacy_capture_cannot_be_relabelled_with_origin(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="envelope"):
+        inspect(tmp_path, capture() | {"transport_origin": "BUILTIN_PAPER_HTTPS"})
+
+
+def test_account_capture_hash_mismatch_is_not_accepted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original = Journal.read_event
+
+    def damaged(self: Journal, sequence: int) -> tuple[EventEnvelope, bytes] | None:
+        stored = original(self, sequence)
+        if stored is not None and stored[0].event_kind == KIND:
+            return replace(stored[0], payload_ref="sha256:" + "0" * 64), stored[1]
+        return stored
+
+    monkeypatch.setattr(Journal, "read_event", damaged)
+    with pytest.raises(ValueError, match="payload hash differs"):
+        inspect(tmp_path, capture())
 
 
 def test_missing_is_not_zero_and_midday_not_baseline(tmp_path: Path) -> None:

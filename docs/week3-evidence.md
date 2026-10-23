@@ -4075,3 +4075,22 @@ exit tests `35573d7248a2`, capture tests `e904703c06dc`. All finite test process
 completed. The public-only Cloud analysis route was verified, but unsupported
 suggestions about signed server timestamps or broker-side automatic retry
 semantics were not adopted; broker facts above come from primary sources.
+
+### 2026-10-23 — account-capture origin prerequisite for native accounting
+
+The collector now writes `PAPER_RISK_INPUT_CAPTURE_V2` with a transport-origin
+label. The built-in HTTPS path and injected test exchange remain distinct; a
+transport change during collection prevents an account capture from being
+persisted. This label identifies the configured transport and does not alone
+prove broker ownership or qualify risk. Existing V1 captures retain their exact
+legacy shape and remain readable; adding an origin field cannot upgrade V1.
+The account-input inspector also verifies the raw capture hash before decoding.
+
+Validation: the complete `tests/test_risk_account_inputs.py` and
+`tests/test_risk_input_capture.py` run passed 107 tests in 14.54s (one existing
+upstream websockets deprecation warning). This includes origin drift, invalid
+origin, legacy-shape and raw-hash rejection cases. Ruff check, format check and
+mypy passed for these two tests, `scripts/qualify_risk_inputs.py` and
+`src/alpaca_ross_bot/risk_account_inputs.py`. Tests used synthetic inputs only;
+no account connection or broker operation occurred. Native risk-owner integration
+is still in progress, and no W3 parent acceptance or runtime gate changes here.
