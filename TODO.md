@@ -236,6 +236,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   Observed ledger attribution increment 2026-10-22: raw activity variants, exact amounts/timestamps and explicit simple engineering roundtrip ownership now join the existing risk owner and reconciled order census at one fixed prefix. Eighteen focused cases and two independent integration cases passed, with strict type/lint/format checks. [Evidence and limits](docs/week3-evidence.md#observed-ledger-and-engineering-roundtrip-attribution--2026-10-22). Native/formal ownership, study/day census, posting finality and complete performance-input conversion remain unaccepted; no new risk owner, runtime or paper authority is created.
 
+  Declared review receipt increment 2026-10-22: exact package/expected/unmask/comparison documents now persist in the existing bound private journal, with original retry clocks, scoped horizons, sealed calculator/reviewer declarations, immutable comparison bytes and conflict-preserving historical replay. Nineteen focused cases, five independent integrations and the combined 98-case Journal/report regression pass, with scoped Ruff/format and strict mypy. [Evidence and limits](docs/week3-evidence.md#declared-review-receipt-workflow--2026-10-22). Actual masking, independence, source authenticity and natural enrollment remain uncertified; no formal witness/report acceptance or runtime authority follows. Parent remains open.
+
 ## Week 4 — Integration, audit, and release freeze
 
 - [ ] **W4-01 [P0] End-to-end deterministic replay**  

@@ -807,6 +807,43 @@ class Journal:
     ) -> dict[str, object]:
         return self._read_evidence_cache("native_oco_attempt_evidence", account_ref)
 
+    def apply_declared_review_event(
+        self,
+        *,
+        account_ref: str,
+        state_key: str,
+        dedupe_key: str,
+        event_kind: str,
+        payload: bytes,
+        received_at: datetime,
+        reduce: Callable[[object | None, bool, int], object],
+        identity_payload: bytes,
+        prepare_payload: Callable[[bytes], bytes] | None = None,
+    ) -> EventEnvelope | None:
+        """Append declared review receipts, never masking/enrollment certification."""
+        return self._apply_private_event(
+            account_ref=account_ref,
+            state_key=state_key,
+            dedupe_key=dedupe_key,
+            event_kind=event_kind,
+            payload=payload,
+            received_at=received_at,
+            reduce=reduce,
+            identity_payload=identity_payload,
+            prepare_payload=prepare_payload,
+            namespace="declared_review",
+            source_id="ALPACA_DECLARED_REVIEW",
+            dedupe_namespace="declared_review_evidence",
+        )
+
+    def read_declared_review_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        return self._read_private_events("ALPACA_DECLARED_REVIEW", None)
+
+    def read_declared_review_evidence_cache(
+        self, account_ref: str
+    ) -> dict[str, object]:
+        return self._read_evidence_cache("declared_review_evidence", account_ref)
+
     def _native_oco_request_client_ids(self) -> set[str]:
         """Conservatively reserve immutable native command/receipt identities.
 

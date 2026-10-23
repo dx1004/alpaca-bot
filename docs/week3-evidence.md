@@ -3153,3 +3153,52 @@ and `fa6e29ede5a92428308ad19ba794be5e6e3f0b2a3c216818a54f3ffc9a112d80`.
 `rtk git diff --check` passed. This documentation-only increment reuses prior
 source research and test evidence; no test rerun, capture, account operation,
 policy acceptance or W3 parent completion is claimed.
+
+## Declared review receipt workflow — 2026-10-22
+
+The W3-08 local review receipt chain is implemented in
+`src/alpaca_ross_bot/declared_review.py`, with only additive Journal namespace
+wrappers. PACKAGE → EXPECTED → UNMASK → COMPARISON preserves exact bounded
+strict-JSON bytes and original receipt clocks. Expected records bind declared
+calculator/version/digest, worksheet and reviewer statements. Unmask receipts
+pin a scoped bot reference and exact observed-document hash. Comparisons retain
+declared per-rule text equality, mismatches and abstentions without computing
+trading rules. Exact retries verify source/projection/dedupe consistency under
+the write lock; changed steps persist a conflict and invalidate the current
+verdict, while earlier prefixes retain original results.
+
+Independent review corrected retry-cache bypass, missing pre-unmask declaration
+binding, future local reference admission and ambiguous current conflict
+results. Five separate integration tests verify cross-connection visibility of
+committed seals, physical reopen/original retries, immutable historical results,
+forged external-reference boundaries and rollback after an injected write error.
+Caller-owned transactions are refused rather than rolled back by this writer.
+No remaining material finding was reported within this declared-only scope.
+
+Final combined verification:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-declared-review-final-20261022 tests/test_declared_review.py tests/test_declared_review_integration.py tests/test_journal.py tests/test_paper_report.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/mypy --strict --cache-dir /tmp/alpaca-declared-review-final-mypy src/alpaca_ross_bot/declared_review.py src/alpaca_ross_bot/journal.py tests/test_declared_review.py tests/test_declared_review_integration.py
+```
+
+The combined suite passed **98 tests in 1.89 seconds**; strict mypy passed all
+four files. Scoped Ruff and format checks passed. Existing unrelated full-suite
+evidence is reused, not represented as a new full-suite run. Final SHA-256:
+module `c9573ccee742ebe037fa6f7a85740e361d3cf331d821f03724eedd5b3a062555`;
+Journal `cb70fe047168f151ca7071882f12712211909989009923efbde0939374bd5025`;
+focused tests `bac914c9136d2992847a6441f9dfe2a8ebf79cb02461a74f9d80a520b51e0a02`;
+independent integrations `c45f80d2a172fe64be7c8385370febff003827685cba0154ab26b7256736412a`.
+
+Cloud `gemma4:31b` responded to a public generic append-only review-workflow
+question; no local documents or private/account inputs were exported. A missing
+optional `python` alias affected one fixture-update command; using the existing
+project `.venv/bin/python` verified the operation without global changes.
+
+This is durable local recorded order, not proof of actual masking, reviewer
+independence, external-source authenticity or unseen natural enrollment. All
+such certifications, formal eligibility and runtime authority remain false.
+Actual package construction/masking, independent calculations, reviewer
+assignment, prospective origin/enrollment, executable dependencies and final
+freeze remain open. No source-policy acceptance, account operation, broker
+action or formal paper start occurred; W3-06/07/08 parents remain open.

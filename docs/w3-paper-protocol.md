@@ -285,6 +285,29 @@ final rubric/version/hash seal remain **PENDING**. This draft appoints no
 reviewer, certifies no independence, starts no window and admits no exposed
 archive as formal holdout.
 
+### Declared review receipt workflow — engineering component, 2026-10-22
+
+`src/alpaca_ross_bot/declared_review.py` now retains the local sequence
+PACKAGE → EXPECTED → UNMASK → COMPARISON in the existing bound private journal.
+It preserves exact strict-JSON documents, original retry clocks, calculator
+and reviewer declarations, scoped declared evidence horizons and the exact
+observed-document digest. A changed step creates a persistent conflict rather
+than replacing a seal. Historical prefixes remain reproducible; current
+conflicted cases return `INVALID_CONFLICT`. Projection/deduplication caches are
+checked against immutable receipts before writes, including identical retries.
+
+Per-rule comparisons preserve declared text equality, disagreements and
+abstentions; they do not independently calculate strategy quantities or certify
+the declared answers. A matching high-level declared verdict is not an aggregate
+PASS when individual rules mismatch or abstain. Hashes and local receipt order
+do not prove that a reviewer never saw outputs, that an external reference is
+authentic, or that a package actually masks all forbidden content. The component
+therefore keeps masking, independence, source authenticity, natural enrollment,
+formal eligibility and runtime flags false. It appoints no reviewer, connects
+no source, and cannot feed formal witnesses into the draft report. Actual
+package construction/masking, reviewer approval, independent calculations,
+prospective origin/enrollment and final freeze remain pending.
+
 ## 5. Six mandatory engineering scenarios, separate from natural samples
 
 All six scenario groups must pass against the exact release before launch.
