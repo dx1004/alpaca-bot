@@ -3411,7 +3411,7 @@ admission, exact native group accounting, source atomicity or continuity of the
 new quantity. The discussion's user reply about multiple OCOs is not treated
 as an additional staff guarantee.
 
-The [concrete independent proposal](w3-oco-first-execution-proposal.md#crossed-stop-new-fill-disposition-decision--pending-user-choice-2026-10-23)
+The [concrete independent proposal](w3-oco-first-execution-proposal.md#crossed-stop-new-fill-disposition-decision--reviewed-acceptance-2026-10-23)
 pins a proposed trigger (fresh qualified reported IEX bid at/below S on a new
 owned quantity lacking verified protection), preserves old valid exits and S,
 requires a terminal entry/all conflicting-buy reconciliation, and proposes a
@@ -3433,3 +3433,29 @@ The latter widens frozen S and the former changes retained coverage acceptance.
 No local/private content was exported. Validation is primary-source review,
 independent requirements review and documentation diff checks; no unrelated
 test suite, account request, broker write or contact was performed.
+
+## Crossed-stop conditional acceptance review — 2026-10-23
+
+The user requested review and authorized confirmation if clean. Fresh Editorial,
+Boardroom and Synthesis review found one actionable omission: a market exit
+after regular-session close could queue to the following session. The official
+[order guide](https://docs.alpaca.markets/us/docs/orders-at-alpaca) confirms the
+session distinction. Step 4 now requires fresh official calendar/clock and
+source-qualified asset/session eligibility at future dispatch; closed, stale,
+unknown and halted states retain the incident. A pre-send check cannot promise
+execution before close. No overnight fallback or numerical grace was introduced.
+The current [wash table](https://docs.alpaca.markets/us/docs/user-protection)
+also remains consistent with requiring terminal conflicting buys before the
+simple market-exit candidate; it does not prove actual admission.
+
+Independent current-byte review after correction found no remaining actionable
+design defect in this scope. Exact ownership, UNKNOWN ACK reservations, durable
+single attempts, partial exits, late-fill census invalidation and preservation
+of older valid stops remain mandatory. The user's conditional authorization is
+therefore recorded as acceptance for a separately versioned implementation and
+validation of the disclosed uncovered-interval policy only. This supersedes the
+earlier pending-choice status, not its historical evidence. The original and
+pinned OCO-first manifests are unchanged; a separate version binding is still
+required. No code, broker qualification, continuous protection, W3 parent
+completion, order permission or formal-paper acceptance follows from this
+review. Validation: scoped diff checks and review-bundle integrity/format checks.

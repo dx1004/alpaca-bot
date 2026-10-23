@@ -309,13 +309,17 @@ research item; another fake dispatcher, a successful target amendment or a
 whole-share-only observation cannot close it. No broker request was made and
 no contact with Alpaca was sent or made a universal prerequisite.
 
-## Crossed-stop new-fill disposition decision — pending user choice, 2026-10-23
+## Crossed-stop new-fill disposition decision — reviewed acceptance, 2026-10-23
 
 Proposal ID: `CROSSED_STOP_UNCOVERED_RESIDUAL_EXIT_PROPOSAL_1`.
-Status: **PROPOSAL_NOT_ACCEPTED — NO IMPLEMENTATION OR ORDER AUTHORITY**.
-This proposes an independent emergency-disposition version for research and
-validation. It preserves the original continuously protected candidate and
-does not silently extend the accepted OCO-first contract.
+Status: **ACCEPTED_FOR_SEPARATE_IMPLEMENTATION_AND_VALIDATION_ONLY**.
+The user authorized confirmation conditional on a clean review on 2026-10-23.
+The review corrected the session-eligibility omission below; independent final
+review is recorded in Week 3 evidence. This accepts the explicitly disclosed
+uncovered interval solely for this independent emergency-disposition version,
+not as equivalent continuous protection. The original candidate and the pinned
+OCO-first manifest remain unchanged. Bind a separate version before implementing
+this behavior; this decision is not an executable release or broker authority.
 
 ### Source result and excluded shortcuts
 
@@ -369,6 +373,13 @@ every possible broker architecture is impossible.
    quantity, with its own durable client ID, original lot attribution and
    single-attempt marker. This is a candidate broker mapping, not already
    verified admission. Do not use whole-position/percentage liquidation.
+   Require fresh official calendar/clock and source-qualified asset/session
+   eligibility at any future dispatch: this route is restricted to the regular
+   session in which a market order is eligible to execute. Closed, unknown,
+   stale or halted states retain the incident; queued next-session orders are
+   not emergency-disposition success. Do not infer extended-hours eligibility
+   or an overnight policy. A pre-send check cannot guarantee execution before
+   the session closes; that boundary remains a qualification/failure case.
 5. Preserve partial exits and unknown acknowledgments across restart; reconcile
    the original client/order identities before further action. Newly observed
    late fills invalidate an earlier complete census and require fresh disjoint
@@ -377,7 +388,7 @@ every possible broker architecture is impossible.
    retains incident status and existing valid protection; it is not recovery
    clearance or automatic authority to alter those orders.
 
-### Material difference requiring user choice
+### Accepted material difference and retained qualification gates
 
 This rule **does not give the new quantity broker-stop coverage while waiting
 for entry cancellation/reconciliation and market-exit execution**. Published
@@ -388,10 +399,12 @@ The rule therefore changes the retained protection acceptance for this emergency
 state. It cannot be implemented as a mere clarification or marked equivalent to
 P11. There is no approved grace period or automatic overnight policy.
 
-Acceptance would permit a separately pinned research/implementation version
+This conditional user acceptance permits a separately pinned research/implementation version
 of this emergency rule, with the exposure interval explicitly accepted as a
 research-policy difference. Actual broker admission, safe cleanup, source/risk
 binding and release still require independent validation; acceptance authorizes
-no orders or formal paper. If the user retains continuous protection for every
-new quantity, keep this proposal unaccepted and the entry path blocked until a
-supported native mapping or a separately reviewed architecture is established.
+no orders or formal paper. The original continuous-protection candidate stays
+blocked on its own mapping. The independent version also stays broker-disabled
+until its version binding, deterministic fault tests, broker eligibility and
+all remaining source/risk/protection/release gates pass. Review acceptance does
+not establish that any actual market exit will be admitted or filled.
