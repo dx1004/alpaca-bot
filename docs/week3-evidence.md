@@ -3277,3 +3277,75 @@ pending reported-price policy decision is a separate source/entry prerequisite;
 accepting it would not resolve these execution requirements. Original accepted
 manifests, runtime flags and W3 parent status remain unchanged. Documentation
 diff checks passed; no account access, broker request or formal paper occurred.
+
+## Reported-price policy acceptance and raw-record implementation — 2026-10-22
+
+The user explicitly accepted the three concrete source-policy choices with
+“好的，我接受”. The [accepted decision record](w3-data-admission-proposal.md#concrete-reported-price-policy--accepted-for-implementation)
+and new `evidence/alpaca-reported-intraday-price-policy-v1.json` preserve
+this scope: implementation/validation of minute-price eligibility, the affected
+symbol's extended-hours/RTH conflict veto and the regular-R entry quote profile.
+The manifest SHA-256 is
+`8877ee66435684584a89f5b572cb94f5e3bbdf6950ccdaac5b3d6e0e905f6879`.
+Both accepted observation-age/OCO parent manifests remain byte-identical.
+
+Independent Sol Low retrieval and coordinator inspection checked the published
+Alpaca minute-condition table on 2026-10-22, including A/B literal U+0020,
+tape-C @, tape-dependent B, minute/daily differences and strictest per-field
+combination. Independent deterministic review matched all A/B/C rows against
+those primary-source groups. The policy pins the provider's simplified reported
+matrix; it does not claim native-protocol equivalence. Actual quote metadata
+still requires retained source evidence, not a name inferred from public docs.
+
+`reported_price_policy.py` loads exact policy/parent bytes and rejects a forged
+derived matrix. It classifies minute price and volume fields separately and
+checks raw stream records at a fixed immutable horizon with scoped hash/index
+references, nanosecond event/local-receipt ages and a visible declared Session.
+Trade T/U conflicts apply only to the affected trade/symbol; quote codes do not
+inherit trade meanings. Corrections/updated bars are not new live trigger prints.
+The entry-quote branch reuses the existing latest-local-quote and observed
+metadata verifier within one read snapshot. Existing valuation and unqualified
+baseline APIs remain unchanged.
+
+Raw-record component success is not from-open history or whole-source admission.
+The supplied calendar is still declared, not authenticated by this component.
+History, source/entry-risk binding, strategy, runtime, order and formal-paper
+authority remain false; no current input is promoted to an executable signal.
+Future history/revision reconciliation and actual candidate binding must use
+the pinned policy explicitly. The separate protection/close blockers persist.
+
+The required Cloud route responded as `gemma4:31b` to a public-only generic
+classifier question. Its regular-only, odd-lot volume exclusion and @ delimiter
+claims contradicted primary evidence and were rejected; the implementation
+uses the independently verified pinned table. No local/private content was
+exported and no model output selected policy or authorized a trade.
+
+Independent implementation review corrected trade T/U meanings being applied
+to quotes and retained visible, hash-valid metadata references on semantic
+refusal. Missing, future or hash-invalid metadata is never presented as valid
+decision-visible evidence. Thirteen separate integration cases cover A/B literal
+space, mixed unknown conditions, affected-symbol T/U conflicts, quote freshness,
+latest-versus-historical prefixes, concurrent read snapshots, metadata damage,
+nanosecond age boundaries and early-close exclusion. Independent final review
+reported no remaining material finding in this raw-record component scope.
+
+Final frozen-byte verification:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-reported-policy-frozen-20261022 tests/test_reported_price_policy.py tests/test_reported_price_policy_integration.py tests/test_market_input_checks.py tests/test_risk_marks.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/mypy --strict --cache-dir /tmp/alpaca-reported-policy-final-mypy src/alpaca_ross_bot/reported_price_policy.py tests/test_reported_price_policy.py tests/test_reported_price_policy_integration.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff check --no-cache src/alpaca_ross_bot/reported_price_policy.py tests/test_reported_price_policy.py tests/test_reported_price_policy_integration.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff format --check --no-cache src/alpaca_ross_bot/reported_price_policy.py tests/test_reported_price_policy.py tests/test_reported_price_policy_integration.py
+```
+
+The combined suite passed **179 tests in 2.12 seconds**, including the 96 new
+focused and 13 independent integration cases; strict mypy passed three files,
+and Ruff/format passed. SHA-256: module
+`9487db0c6f938ef49207fb1b83075081066924fd2ce90b66a8b324827c567c3a`;
+focused tests `e24fa8cc89d669e4e411841ee5329970404a4a7c80374fa1f61f059d59011a31`;
+independent integrations
+`09831c4fd466c35528f4c20cd296a1d757fd71e17e5c2a9082b0c24b69be5971`.
+No full-suite rerun or actual market/account capture was needed for this
+increment. It resolves the pending source-policy choice, not the remaining
+history/source-admission, binding, protection, order-cycle or release gates.
+No W3 parent is checked complete and no broker action or formal paper occurred.

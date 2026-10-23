@@ -223,22 +223,31 @@ rechecked the FAQ matrix. This inventory selects no new trading/quote policy.
 The next concrete contract must separate source-documented facts from any
 remaining eligibility choice, so only genuine policy decisions reach the user.
 
-## Concrete reported-price policy proposal — pending acceptance
+<a id="concrete-reported-price-policy-proposal--pending-acceptance"></a>
+
+## Concrete reported-price policy — accepted for implementation
 
 Proposal ID: `ALPACA_REPORTED_INTRADAY_PRICE_POLICY_PROPOSAL_1`.
-Status: **DRAFT — USER POLICY ACCEPTANCE AND INDEPENDENT VALIDATION REQUIRED**.
+Status: **USER_ACCEPTED_POLICY — IMPLEMENTATION AND VALIDATION AUTHORIZED**,
+2026-10-22 America/Los_Angeles. The user replied “好的，我接受” to the three
+source-eligibility choices below. The history/revision requirements remain
+retained dependencies, not newly proved history. The separately versioned
+[policy manifest](../evidence/alpaca-reported-intraday-price-policy-v1.json)
+pins the accepted semantics and the independently checked minute-condition
+matrix. Its SHA-256 is
+`8877ee66435684584a89f5b572cb94f5e3bbdf6950ccdaac5b3d6e0e905f6879`.
 This fills the currently undefined source-eligibility rule; it is not a Ross
 rule, executable acceptance or an order authorization. Preserve the existing
 observation-age/OCO-first parent versions and both accepted manifest bytes.
 
-### Proposed source-eligibility decisions
+### Accepted source-eligibility decisions
 
 1. **Intraday price events:** use the published Alpaca **minute** price-update
    rules, by reported tape and every reported trade condition, for the first
    eligible RTH trade, setup/invalidation/trigger prices and the RTH low. The
    published minute open/close and high/low flags agree; volume-only trades do
    not become price events. Apply the strictest applicable condition per field.
-   This is a proposed strategy-use mapping of documented aggregation facts,
+   This is an accepted strategy-use mapping of documented aggregation facts,
    not a claim that Alpaca prescribes trading triggers. Daily trend and prior
    daily close still use the unchanged observed provider daily bars; do not
    substitute minute rules for daily aggregation or recompute scanner volume.
@@ -258,7 +267,7 @@ observation-age/OCO-first parent versions and both accepted manifest bytes.
    units; do not manufacture share depth. Reuse the source-verification checks
    of `ALPACA_IEX_REPORTED_REGULAR_BID_V1` without treating its earlier valuation
    acceptance as entry-policy approval. Extending this restriction to entry is
-   a new proposed policy choice. It asserts no NBBO, firm liquidity, native IEX
+   a separately accepted policy choice. It asserts no NBBO, firm liquidity, native IEX
    flag mapping or fill guarantee. Other quote conditions remain unavailable
    for this profile, not negative strategy witnesses.
 4. **History/revisions:** require decision-visible raw trade history from open,
@@ -277,7 +286,7 @@ observation-age/OCO-first parent versions and both accepted manifest bytes.
 
 ### Review cases fixed before implementation
 
-| Reported input | Proposed handling | Why it matters |
+| Reported input | Accepted handling | Why it matters |
 | --- | --- | --- |
 | Nasdaq `@` plus `I`, price above trigger high | Retain volume-only observation; no price trigger | A high odd-lot print does not update the provider minute price |
 | Condition B on tape C versus tape A/B | Apply the different published tape rules | A regular-sale-only shortcut would discard documented price events; a tape-blind rule can admit an average-price event |
@@ -286,9 +295,11 @@ observation-age/OCO-first parent versions and both accepted manifest bytes.
 | Latest quote carries an unsupported condition | Unavailable quote; preserve the observation | No older qualifying quote may be cherry-picked to replace it |
 | History begins after open or a distinct-price timestamp tie can change the setup result | No positive admission for the affected derivation | Neither a fresh quote nor a later download proves a missing or ambiguous setup path; order-independent calculations need no invented sequence |
 
-Approval would authorize a separate versioned source-policy implementation and
-validation of these choices. It would not qualify actual inputs, change risk
+Acceptance authorizes a separate versioned source-policy implementation and
+validation of these choices. It does not qualify actual inputs, change risk
 amounts/entry windows, approve a protection gap, enable broker calls or start
 formal paper. The original Ross baseline and source-age baseline remain
-preserved. A rejected or unresolved policy leaves the current source gate open;
-metadata names alone will not be used to fill it silently.
+preserved. Policy acceptance alone leaves actual source qualification open;
+metadata names alone will not be used to fill it silently. Existing historical
+research assertions and accepted parent manifests are not rewritten as source
+admission or an executable release by this acceptance.

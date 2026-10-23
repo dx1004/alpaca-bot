@@ -1,0 +1,616 @@
+{
+  "acceptance_basis": {
+    "path": "docs/w3-data-admission-proposal.md",
+    "proposal_id": "ALPACA_REPORTED_INTRADAY_PRICE_POLICY_PROPOSAL_1",
+    "scope": "REPORTED_PRICE_POLICY_CHOICES_AND_VERSIONED_IMPLEMENTATION_NOT_ACTUAL_SOURCE_OR_RELEASE_ACCEPTANCE",
+    "user_reply": "好的，我接受"
+  },
+  "acceptance_timezone": "America/Los_Angeles",
+  "accepted_on": "2026-10-22",
+  "authority": {
+    "actual_source_qualification_accepted": false,
+    "entry_risk_binding_accepted": false,
+    "formal_paper_authorized": false,
+    "order_authority": false,
+    "policy_semantics_accepted": true,
+    "protection_accepted": false,
+    "release_accepted": false,
+    "runtime_authorized": false
+  },
+  "classification": "USER_ACCEPTED_INDEPENDENT_REPORTED_SOURCE_POLICY_NOT_ROSS_EQUIVALENT",
+  "combination": "STRICTEST_PER_FIELD_UNKNOWN_CODE_OR_TAPE_UNAVAILABLE",
+  "coverage_label": "NOT_SIP_EQUIVALENT",
+  "entry_quote": {
+    "conditions_exact": [
+      "R"
+    ],
+    "latest": "LATEST_LOCALLY_VISIBLE_RAW_QUOTE_NO_OLDER_CHERRY_PICK",
+    "required_observed_metadata": {
+      "R": "Regular Market Maker Open"
+    },
+    "sizes": "PRESERVE_REPORTED_UNITS_NO_SHARE_DEPTH_INFERENCE",
+    "source_verifier_profile": "ALPACA_IEX_REPORTED_REGULAR_BID_V1",
+    "tapes": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  "intraday_price_purposes": [
+    "FIRST_ELIGIBLE_RTH_TRADE",
+    "SETUP",
+    "INVALIDATION",
+    "TRIGGER",
+    "RTH_LOW"
+  ],
+  "minute_condition_rows": [
+    {
+      "code": " ",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "E",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "F",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "K",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "L",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "O",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "T",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "X",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "5",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "6",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "B",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "C",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "H",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "I",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "N",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "P",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "R",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "U",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "V",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "Z",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "4",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "7",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": true
+    },
+    {
+      "code": "M",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": false
+    },
+    {
+      "code": "Q",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": false
+    },
+    {
+      "code": "9",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "A",
+        "B"
+      ],
+      "volume": false
+    },
+    {
+      "code": "@",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "A",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "B",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "D",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "F",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "K",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "L",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "O",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "T",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "X",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "Y",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "5",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "6",
+      "minute_high_low": true,
+      "minute_open_close": true,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "C",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "G",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "H",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "I",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "N",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "P",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "R",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "U",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "V",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "W",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "Z",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "4",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "7",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": true
+    },
+    {
+      "code": "M",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": false
+    },
+    {
+      "code": "Q",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": false
+    },
+    {
+      "code": "9",
+      "minute_high_low": false,
+      "minute_open_close": false,
+      "tapes": [
+        "C"
+      ],
+      "volume": false
+    }
+  ],
+  "parents": [
+    {
+      "path": "evidence/iex-snapshot-observation-age-research-v1.json",
+      "sha256": "f5439d49ac9354abbe56b7b1fcb603c915942dee647efedebf48060e63b49e8c"
+    },
+    {
+      "path": "evidence/oco-first-execution-research-v1.json",
+      "sha256": "fa6e29ede5a92428308ad19ba794be5e6e3f0b2a3c216818a54f3ffc9a112d80"
+    }
+  ],
+  "remaining_gates": [
+    "FEATURE_HISTORY_AND_REVISIONS",
+    "FROM_OPEN_CONTINUITY_AND_FIRST_TRADE",
+    "ENTRY_RISK_VERSION_BINDING",
+    "ACCOUNT_AND_RISK_QUALIFICATION",
+    "CONTINUOUS_PROTECTION",
+    "BROKER_ORDER_CYCLE",
+    "EXECUTABLE_RELEASE_FREEZE",
+    "FORMAL_PAPER_PROTOCOL"
+  ],
+  "retained_contract": {
+    "corrections": "NOT_NEW_LIVE_TRIGGER_NO_RETROACTIVE_DECISION_REWRITE_OR_ATTEMPT_RESET",
+    "daily_bars": "UNCHANGED_PROVIDER_DAILY_BARS",
+    "event_and_receipt_age_ms": 1000,
+    "history": "DECISION_VISIBLE_FROM_OPEN_RAW_RANGES_PAGES_STREAM_REVISIONS",
+    "snapshot_acquisition_age_seconds": 300,
+    "timestamp_ties": "BLOCK_ONLY_ORDER_SENSITIVE_AMBIGUITY",
+    "volume_source_age": "UNKNOWN"
+  },
+  "rth_policy": {
+    "conflict": "BLOCK_AFFECTED_SYMBOL_DERIVATION_NOT_GLOBAL_LATCH",
+    "extended_hours_codes": [
+      "T",
+      "U"
+    ],
+    "interval": "CALENDAR_REPORTED_TIME_LEFT_INCLUSIVE_RIGHT_EXCLUSIVE"
+  },
+  "schema_version": 1,
+  "sources": [
+    {
+      "retrieved_on": "2026-10-22",
+      "scope": "SIMPLIFIED_ALPACA_MINUTE_CONDITION_MATRIX_NOT_NATIVE_PROTOCOL_EQUIVALENCE",
+      "url": "https://docs.alpaca.markets/us/docs/market-data-faq#how-are-bars-aggregated"
+    },
+    {
+      "retrieved_on": "2026-10-22",
+      "scope": "SINGULAR_TRADE_QUOTE_METADATA_ENDPOINT_NOT_AUTOMATIC_ELIGIBILITY",
+      "url": "https://docs.alpaca.markets/us/reference/stockmetaconditions-1"
+    },
+    {
+      "retrieved_on": "2026-10-22",
+      "scope": "REPORTED_EVENTS_AND_REVISION_TYPES_NOT_REVISION_FINALITY",
+      "url": "https://docs.alpaca.markets/us/docs/real-time-stock-pricing-data"
+    }
+  ],
+  "status": "USER_ACCEPTED_POLICY_IMPLEMENTATION_AND_VALIDATION_AUTHORIZED",
+  "version_id": "ALPACA_REPORTED_INTRADAY_PRICE_POLICY_V1"
+}
