@@ -3667,3 +3667,56 @@ source-to-broker ACK/execution mapping, old-protection continuity and real
 disposal/crash cleanup remain unaccepted. W3-06 and W3-07 parents remain open;
 no real account, broker order/cancel, market capture or formal paper was accessed
 or started. NOT_SIP_EQUIVALENT and runtime refusal remain controlling.
+### 2026-10-23 — Unsupported fractional execution observation quarantine
+
+Scope: W3-06 defensive risk bookkeeping only. No broker requests, orders,
+cancels, protection claims, or W3 parent acceptance result from this increment.
+
+Primary evidence: [Alpaca Paper Trading](https://docs.alpaca.markets/us/docs/paper-trading),
+checked 2026-10-23, describes randomly sized partial fills but does not specify
+that whole-share requests always receive integer partial fills. This motivates
+an unsupported-input test; it does not establish that fractional fills occurred
+in the dedicated account.
+
+Synthetic source-shaped reproduction found two boundaries. A fractional open
+position was already durably rejected by the reported-input qualification layer.
+However, a fractional terminal entry followed by an offsetting exit and flat
+account reached `_sync_held` and raised, rolling back that risk observation.
+Separately, a fractional observation followed by whole cumulative entry/exit
+totals could erase the unsupported-quantity history and complete the slot.
+
+New events carry `LATCH_UNSUPPORTED_FRACTION_V1`. A structured lifecycle snapshot
+showing fractional current-entry cumulative fills or owned current-symbol quantity
+latches the first exact diagnostic and its original selection/time, even when
+the snapshot is otherwise unqualified. This is veto evidence only. Existing
+reservation fields remain frozen, capacity is zero, and later whole/flat/stale
+snapshots cannot release the slot or complete the round. Frozen reserve totals
+are the last supported reservation, not a claim of current exposure or sufficient
+protection. There is deliberately no automatic recovery/unlatch operation.
+No fractional sizing, protective allocation or source admission is granted.
+
+The event marker is prepared only after historical retry matching and excluded
+from caller retry identity. Legacy immutable events retain their original reducer
+semantics; history is not migrated. Independent SDET probes reproduced the
+whole-aggregate bypass before repair and verified the repair, plus old-code event
+generation → new-code rebuild → exact old retry → new-policy observation.
+Cloud `gemma4:31b` returned a verified generic design analysis; no local source,
+account data or credentials were included, and its output granted no authority.
+
+Validation: the two source-shaped regression cases cover fractional terminal
+quantity and later whole aggregate, exact first-observation retention, flat and
+stale follow-ups, restart/rebuild, and legacy reducer behavior. Relevant suite and
+static-check results are recorded below after final-byte verification.
+
+Final-byte verification:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/pytest -q -p no:cacheprovider tests/test_account_risk_owner.py tests/test_crossed_stop_risk_binding.py tests/test_crossed_stop_source.py tests/test_oco_entry_evidence.py`: 82 passed (103.27s).
+- Ruff check and format check on the two modified Python files passed.
+- `rtk proxy .venv/bin/mypy --cache-dir /tmp/alpaca-fractional-mypy src/alpaca_ross_bot/account_risk_owner.py tests/test_account_risk_owner.py`: no issues in two files.
+- Independent whole-aggregate bypass and legacy-prefix/retry probes passed.
+- Reviewed Python SHA-256: owner `473aa53cd4de4ed128a08771b03b2c86705a2a9506973e19a153274e5e52d6b5`; tests `c6bbb1f8407a3aaab89ffb4d10678e920fa87bf617058627288991d87d26ee03`.
+
+W3-06/07/08 parents remain open. Real protected ownership, broker partial-fill
+protection/continuity, cleanup qualification and permitted actual order cycles
+remain separate dependencies. `runtime_authorized=false`; IEX remains
+`NOT_SIP_EQUIVALENT`. No recovery policy was invented for quarantined quantities.

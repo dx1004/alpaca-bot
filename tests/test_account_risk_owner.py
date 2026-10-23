@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from dataclasses import replace
 from datetime import datetime, timedelta
+from decimal import Decimal
 from fractions import Fraction
 from pathlib import Path
 from threading import Barrier
@@ -78,7 +79,7 @@ class SourceAccount:
         return body
 
     def order(
-        self, cid: str, at: datetime, status: str, filled: int
+        self, cid: str, at: datetime, status: str, filled: int | Decimal
     ) -> dict[str, object]:
         intent = self.journal.read_order_intent(cid)
         assert isinstance(intent, dict)
@@ -95,7 +96,7 @@ class SourceAccount:
         self.orders[cid] = order
         return cast(dict[str, object], order)
 
-    def fill(self, cid: str, at: datetime, qty: int, price: str) -> None:
+    def fill(self, cid: str, at: datetime, qty: int | Decimal, price: str) -> None:
         self.fills.append(
             {
                 "id": "execution-" + str(len(self.fills)),
@@ -115,7 +116,7 @@ class SourceAccount:
         *,
         cash: str = "500",
         power: str | None = None,
-        position: int = 0,
+        position: int | Decimal = 0,
         bid: str = "10",
     ) -> IncidentRiskRequest:
         positions: tuple[dict[str, object], ...] = (
@@ -443,6 +444,90 @@ def test_partial_fill_retains_pending_risk_without_double_counting_broker_hold(
         assert Fraction(state["pending_open_loss_reserve"]) == Fraction(205, 100)
         assert Fraction(state["additional_local_cash_hold"]) == Fraction(1, 100)
         assert Fraction(state["last_snapshot"]["funds"]) == 460
+        assert owner.verify_rebuild()
+
+
+@pytest.mark.parametrize("later_whole", [False, True])
+def test_fractional_partial_observation_is_durable_and_latches_slot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, later_whole: bool
+) -> None:
+    with account_sources(tmp_path, monkeypatch) as (source, owner):
+        owner.reserve("first", source.selection(NOW), NOW, PLAN)
+        before = view(owner)
+        at = NOW + timedelta(seconds=1)
+        source.intent(PLAN.client_order_id, at)
+        source.order(PLAN.client_order_id, at, "partially_filled", Decimal("0.5"))
+        source.fill(PLAN.client_order_id, at, Decimal("0.5"), "10")
+        selection = source.selection(
+            at, cash="495", power="460", position=Decimal("0.5")
+        )
+        owner.observe("fractional", selection, at)
+        state = view(owner)
+        assert state["watermark"] > before["watermark"]
+        assert not state["source_snapshot_qualified"]
+        assert "REPORTED_INPUTS_UNQUALIFIED" in state["issues"]
+        assert state["capacity"] == "0"
+        assert {
+            key: value
+            for key, value in state["held"].items()
+            if key != "quantity_incident"
+        } == before["held"]
+        assert not state["held"]["quantity_incident"]["source_snapshot_qualified"]
+        assert state["last_snapshot"]["positions"] == {"AAPL": "1/2"}
+        event, raw = source.journal.read_account_risk_events()[-1]
+        legacy = json.loads(raw)
+        assert legacy.pop("quantity_incident_policy") == "LATCH_UNSUPPORTED_FRACTION_V1"
+        historical = owner._reduce(before, legacy, False, event.sequence)
+        assert "quantity_incident" not in historical["held"]
+        assert historical["held"] == before["held"]
+        assert owner.verify_rebuild()
+        # Even after the fractional shares exit and account becomes flat,
+        # unsupported entry quantity must not discard the risk observation.
+        later = at + timedelta(seconds=1)
+        final_qty = 4 if later_whole else Decimal("0.5")
+        final_cash = "498" if later_whole else "499.75"
+        source.order(
+            PLAN.client_order_id,
+            later,
+            "filled" if later_whole else "canceled",
+            final_qty,
+        )
+        if later_whole:
+            source.fill(PLAN.client_order_id, later, Decimal("3.5"), "10")
+        source.intent(
+            "stop-fraction", later, side="sell", order_type="stop", price="9.50"
+        )
+        owner.bind_exit("bind-fraction-stop", later, "stop-fraction", "STOP")
+        source.order(
+            "stop-fraction", later, "filled" if later_whole else "canceled", final_qty
+        )
+        source.fill("stop-fraction", later, final_qty, "9.50")
+        owner.observe(
+            "fractional-flat", source.selection(later, cash=final_cash), later
+        )
+        state = view(owner)
+        assert state["source_snapshot_qualified"]
+        assert "UNSUPPORTED_FRACTIONAL_RISK_QUANTITY" in state["issues"]
+        assert state["held"]["quantity_incident"]["filled_quantity"] == "1/2"
+        assert state["held"]["quantity_incident"]["open_quantity"] == "1/2"
+        assert state["capacity"] == "0" and state["completed"] == {}
+        incident = state["held"]["quantity_incident"]
+        frozen_held = state["held"]
+        for seconds in (1, 60):
+            owner.observe(
+                "after-fraction-" + str(seconds),
+                selection
+                if seconds == 60
+                else source.selection(later, cash=final_cash),
+                later + timedelta(seconds=seconds),
+            )
+            state = view(owner)
+            assert state["capacity"] == "0" and state["completed"] == {}
+            assert state["held"] == frozen_held
+            assert state["held"]["quantity_incident"] == incident
+            assert "UNSUPPORTED_FRACTIONAL_RISK_QUANTITY" in state["issues"]
+        restarted = AccountRiskOwner(source.journal, REF, POLICY)
+        assert restarted.view() == state and restarted.verify_rebuild()
         assert owner.verify_rebuild()
 
 

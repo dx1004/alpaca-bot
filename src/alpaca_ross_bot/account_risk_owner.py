@@ -549,7 +549,13 @@ class AccountRiskOwner:
                     key: value
                     for key, value in saved.items()
                     if key
-                    not in {"census", "snapshot", "exit_request", "source_horizon"}
+                    not in {
+                        "census",
+                        "snapshot",
+                        "exit_request",
+                        "source_horizon",
+                        "quantity_incident_policy",
+                    }
                 }
                 if _bytes(caller) == _bytes(item):
                     if not first_for_key:
@@ -560,6 +566,7 @@ class AccountRiskOwner:
                 first_for_key = False
             item["census"] = self._census()
             item["source_horizon"] = self.journal.read_evidence_sequence()
+            item["quantity_incident_policy"] = "LATCH_UNSUPPORTED_FRACTION_V1"
             if selection is not None:
                 item["snapshot"] = self._snapshot(item)
             if kind == "BIND_EXIT":
@@ -668,6 +675,8 @@ class AccountRiskOwner:
             )
             return state
         held = state["held"]
+        if held is not None and "quantity_incident" in held:
+            reasons.add("UNSUPPORTED_FRACTIONAL_RISK_QUANTITY")
         kind = item["kind"]
         if kind == "BIND_EMERGENCY_POLICY":
             reasons.update(state.get("issues", []))
@@ -756,6 +765,31 @@ class AccountRiskOwner:
             snapshot = self._snapshot(item)
             if snapshot != item["snapshot"]:
                 raise JournalError("source risk snapshot differs from immutable replay")
+            if (
+                held is not None
+                and item.get("quantity_incident_policy")
+                == "LATCH_UNSUPPORTED_FRACTION_V1"
+            ):
+                entry = snapshot.get("orders", {}).get(held["client_order_id"])
+                if entry is not None and "quantity_incident" not in held:
+                    filled = Fraction(entry["filled_quantity"])
+                    open_quantity = Fraction(
+                        snapshot["positions"].get(held["symbol"], "0")
+                    )
+                    if filled.denominator != 1 or open_quantity.denominator != 1:
+                        # An unqualified snapshot may veto; it never grants
+                        # ownership or capacity. Preserve the first diagnostic.
+                        held["quantity_incident"] = {
+                            "filled_quantity": str(filled),
+                            "open_quantity": str(open_quantity),
+                            "selection": snapshot["selection"],
+                            "observed_at": snapshot["observed_at"],
+                            "source_snapshot_qualified": snapshot["qualified"],
+                            "reservation_frozen": True,
+                            "runtime_authorized": False,
+                        }
+                if "quantity_incident" in held:
+                    reasons.add("UNSUPPORTED_FRACTIONAL_RISK_QUANTITY")
             if research_signal is not None:
                 if research_signal["session_day"] != snapshot["session"]:
                     raise JournalError("research/risk session identity differs")
@@ -856,6 +890,12 @@ class AccountRiskOwner:
         self, state: dict[str, Any], snapshot: dict[str, Any], reasons: set[str]
     ) -> None:
         held = state["held"]
+        if "quantity_incident" in held:
+            # Unsupported ownership cannot be healed by a later whole/flat
+            # aggregate. Retain the last supported reservation until a separately
+            # qualified recovery path exists; this is not current exposure sizing.
+            reasons.add("UNSUPPORTED_FRACTIONAL_RISK_QUANTITY")
+            return
         cid = held["client_order_id"]
         orders = snapshot["orders"]
         known = {cid, *held["exits"]}
@@ -892,6 +932,7 @@ class AccountRiskOwner:
         filled = Fraction(entry["filled_quantity"])
         opened = Fraction(snapshot["positions"].get(held["symbol"], "0"))
         if filled.denominator != 1 or opened.denominator != 1:
+            # Preserve reduction semantics for pre-policy immutable events.
             raise JournalError("nonwhole entry/open risk cannot be released")
         unrelated_exits = [
             key
