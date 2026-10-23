@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 
 from .equity_fees import verify_fee_policy
 from .journal import Journal
+from .native_risk_registry import NativeRiskRegistry
 from .order_lifecycle import OrderProjection
 from .order_reconciliation import OrderReconciler
 from .paper_order_contract import decode_broker_json
@@ -67,6 +68,7 @@ def audit_owned_equity(
     max_metadata_age: timedelta,
     _intent_ids: tuple[str, ...] | None = None,
     _source_horizon: int | None = None,
+    _native_registry: NativeRiskRegistry | None = None,
 ) -> OwnedEquityAudit:
     """Reconcile a flat-E0 paper account's observed fills, cash and owned bids.
 
@@ -97,6 +99,7 @@ def audit_owned_equity(
         max_metadata_age=max_metadata_age,
         _intent_ids=_intent_ids,
         _source_horizon=_source_horizon,
+        _native_registry=_native_registry,
     )
     current = inspect_posted_ledger(
         journal,
@@ -171,6 +174,13 @@ def audit_owned_equity(
             row.broker_order_id: row
             for row in (OrderProjection.from_dict(raw) for raw in raw_orders.values())
         }
+        native_orders = (
+            {}
+            if _native_registry is None
+            else {order.order_id: order for order in _native_registry.orders}
+        )
+        if set(native_orders) & set(orders):
+            issues.add("NATIVE_SIMPLE_BROKER_ID_COLLISION")
         if len(orders) != len(raw_orders):
             issues.add("BROKER_ORDER_ID_COLLISION")
         if orders:
@@ -210,6 +220,17 @@ def audit_owned_equity(
             }
             if posted != target:
                 issues.add("FILL_SOURCE_DISAGREEMENT")
+        if _native_registry is not None:
+            # Raw activity IDs belong to one account-wide canonical fact; a
+            # native order must never create another copy of a simple fill.
+            native_ids = {fill.activity_id for fill in _native_registry.fills}
+            simple_ids = {
+                str(row["id"])
+                for row in rows.values()
+                if row["activity_type"] == "FILL" and str(row["order_id"]) in orders
+            }
+            if native_ids & simple_ids:
+                issues.add("NATIVE_SIMPLE_ACTIVITY_ID_COLLISION")
         by_order: dict[str, Fraction] = {}
         # Lifecycle quantities and its activity census cover each owned order's
         # lifetime. E0 only partitions cash and position changes for this session.
@@ -217,7 +238,7 @@ def audit_owned_equity(
             if row["activity_type"] != "FILL":
                 continue
             order_id = str(row["order_id"])
-            if order_id in orders:
+            if order_id in orders or order_id in native_orders:
                 by_order[order_id] = by_order.get(order_id, Fraction(0)) + _exact(
                     row["qty"], positive=True
                 )
@@ -232,11 +253,21 @@ def audit_owned_equity(
                 issues.add("LATE_BASELINE_FILL")
             order_id = str(row["order_id"])
             projection = orders.get(order_id)
+            native_projection = native_orders.get(order_id)
             symbol = str(row.get("symbol", ""))
             if (
-                projection is None
-                or projection.symbol != symbol
-                or projection.side != row["side"]
+                (projection is None and native_projection is None)
+                or (
+                    projection is not None
+                    and (projection.symbol != symbol or projection.side != row["side"])
+                )
+                or (
+                    native_projection is not None
+                    and (
+                        native_projection.symbol != symbol
+                        or native_projection.side != row["side"]
+                    )
+                )
             ):
                 issues.add("FILL_OWNERSHIP_MISMATCH")
             qty = _exact(row["qty"], positive=True)
@@ -249,6 +280,11 @@ def audit_owned_equity(
             for key, row in orders.items()
         ):
             issues.add("FILL_CUMULATIVE_QUANTITY_MISMATCH")
+        if any(
+            by_order.get(key, Fraction()) != row.filled_quantity
+            for key, row in native_orders.items()
+        ):
+            issues.add("NATIVE_FILL_CUMULATIVE_QUANTITY_MISMATCH")
         observed = dict(inputs.ownership.owned_long_positions)
         expected = {symbol: qty for symbol, qty in by_symbol.items() if qty}
         quantity_matches = inputs.ownership.ownership_verified and expected == observed

@@ -4094,3 +4094,60 @@ mypy passed for these two tests, `scripts/qualify_risk_inputs.py` and
 `src/alpaca_ross_bot/risk_account_inputs.py`. Tests used synthetic inputs only;
 no account connection or broker operation occurred. Native risk-owner integration
 is still in progress, and no W3 parent acceptance or runtime gate changes here.
+
+### Native account-risk ownership integration — 2026-10-23
+
+`AccountRiskOwner.observe_native` explicitly opts into
+`NATIVE_ACCOUNT_RISK_OBSERVATION_V1`. The locked preceding risk slot supplies
+the original reservation, entry identity and historical completed episodes.
+The registry rederives native exit receipts and the original positive source
+entry; it requires matching V2 account/capture transport origins. It extends
+accounting ownership with actual native order/activity facts, never synthetic
+simple-order intents or a fabricated MATCHED reconciliation report. Only exact
+native-caused reconciliation differences are covered; stream, gap, foreign-order
+and all other source checks remain required.
+
+Original source-entry requalification uses a private, strictly decreasing risk
+history prefix. Normal public replay remains unchanged. The shared OCO
+structural validator, canonical cache keys/values, duplicate event rejection,
+conflict receipt preservation and causal event/receipt times remain verified.
+Stored receipts or hashes alone cannot supply original economic acceptance.
+
+Full account activities, open orders, positions, owned bid valuation, cash and
+fees reconcile through the existing conservation audit. Partial/unknown exits
+retain the frozen reservation and zero capacity. Independently valid source
+quantities remain diagnostic when the surrounding account book fails; they do
+not become qualified positions or net equity. Fractions remain exact economic
+observations while the unsupported sizing incident stays latched. Completion
+requires terminal entry and native legs, complete commitments, qualified current
+flat account evidence and no relevant incident. It records one completed episode
+and retains its native source context for later observations and restart; a late
+unbound activity vetoes rather than rewriting completed results.
+
+Validation used injected source-shaped private fixtures only:
+
+- `tests/test_native_account_risk_owner.py`: 3 passed in 27.99s, covering partial
+  to terminal completion, restart/historical retry/fresh post-completion
+  observation, unbound late activity and fractional economics with zero capacity.
+- `tests/test_native_risk_registry.py`: 12 passed in 18.02s, rejecting causal
+  self/future references, altered entry economics, malformed event/cache/schema,
+  duplicated operations and clock mismatch. Assertions target each intended
+  rejection rather than a later incomplete account capture.
+- `tests/test_risk_ownership.py`, `tests/test_owned_equity_ledger.py` and
+  `tests/test_risk_input_evidence.py`: 54 passed in 1.96s.
+- `tests/test_account_risk_owner.py`, `tests/test_oco_journal.py`,
+  `tests/test_oco_entry_evidence.py` and `tests/test_oco_exit_evidence.py`:
+  final regression 115 passed in 195.31s. The earlier four failures were
+  shared-validator error-message compatibility regressions; restoring the
+  original frozen-binding and event-predates messages fixed them without
+  weakening rejection behavior.
+- Ruff check/format and mypy passed for all seven changed production modules and
+  both new test files. An independent closure/history review found no remaining
+  concrete blocker within this synthetic accounting increment.
+
+No real account connection, broker operation, service installation or formal
+paper evaluation occurred. This closes the local native accounting connection,
+not operational protection or W3-06/07/08 parent acceptance. Actual source/risk
+admission, current status continuity, first/late-fill protection, supported
+stop/close cleanup and real isolated cycles remain gated. `NOT_SIP_EQUIVALENT`
+and `runtime_authorized=false` remain in force.

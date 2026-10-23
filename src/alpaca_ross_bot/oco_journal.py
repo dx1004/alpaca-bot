@@ -582,10 +582,7 @@ class OcoJournal:
         expected_cache: dict[str, object] = {}
         original_operations: dict[str, dict[str, Any]] = {}
         for event, payload in self.journal.read_oco_research_events():
-            item = _object(
-                json.loads(payload),
-                {"schema", "binding", "kind", "operation", "dedupe_key"},
-            )
+            item = self._decode_operation(event, payload)
             binding = _object(item["binding"], set(self.binding))
             if binding["account_ref"] != self.initial.account_ref:
                 raise JournalError("foreign account in OCO research evidence")
@@ -675,6 +672,42 @@ class OcoJournal:
                 "OCO projection or deduplication differs from immutable evidence"
             )
         return projected, recorded, original_operations
+
+    def _decode_operation(self, event: Any, payload: bytes) -> dict[str, Any]:
+        """Shared structural validation; no source/risk recursion or writes."""
+        item = _object(
+            json.loads(payload),
+            {"schema", "binding", "kind", "operation", "dedupe_key"},
+        )
+        binding = _object(item["binding"], set(self.binding))
+        if binding["account_ref"] != self.initial.account_ref:
+            raise JournalError("foreign account in OCO research evidence")
+        if (
+            event.feed != "paper"
+            or event.event_kind != item["kind"]
+            or _json(item) != payload
+        ):
+            raise JournalError("OCO raw event metadata or canonical bytes differ")
+        if binding["entry_scope"] == self.initial.entry_scope:
+            if (
+                binding != self.binding
+                or type(item["schema"]) is not int
+                or item["schema"] != 1
+            ):
+                raise JournalError("OCO frozen binding differs from immutable evidence")
+            if item["kind"] in {"BOUND_ENTRY", "BOUND_NATIVE_EXIT"}:
+                operation = item["operation"]
+                if event.available_at < datetime.fromisoformat(
+                    operation["receipt"]["decision_at"]
+                ):
+                    raise JournalError(
+                        "entry-census event predates its receipt decision"
+                    )
+                if not 0 <= operation["source_horizon"] < event.sequence:
+                    raise JournalError(
+                        "entry-census source horizon exceeds derived event"
+                    )
+        return item
 
     def _record(
         self, kind: str, operation: dict[str, object], at: datetime

@@ -18,6 +18,8 @@ from .crossed_stop_contract import CrossedStopContract, load_crossed_stop_contra
 from .entry_strategy import EntryDecision
 from .equity_fees import planned_charge_bounds
 from .journal import Journal, JournalError
+from .native_risk_registry import POLICY as NATIVE_POLICY
+from .native_risk_registry import derive_native_registry
 from .observation_admission import ObservationContract
 from .oco_research import OcoResearchContract
 from .order_lifecycle import OrderProjection
@@ -159,10 +161,186 @@ class AccountRiskOwner:
             raise JournalError("invalid source-owner historical projection")
         return state, tuple(refs)
 
+    @classmethod
+    def _read_native_causal_evidence_at(
+        cls,
+        journal: Journal,
+        account_ref: str,
+        decision_at: datetime,
+        fee_policy: Path,
+        *,
+        through_sequence: int,
+    ) -> tuple[dict[str, Any] | None, tuple[int, ...]]:
+        """Replay a decreasing native dependency prefix, never whole-current state."""
+        _utc(decision_at)
+        if (
+            type(through_sequence) is not int
+            or not 0 <= through_sequence <= journal.read_evidence_sequence()
+            or journal.read_paper_account_ref() != account_ref
+        ):
+            raise JournalError("bound causal risk horizon required")
+        reader = object.__new__(cls)
+        reader.journal, reader.account_ref, reader.fee_policy = (
+            journal,
+            account_ref,
+            fee_policy,
+        )
+        reader.state_key = "account_risk:" + account_ref + ":" + VERSION
+        state: object = None
+        refs: list[int] = []
+        seen: dict[str, str] = {}
+        expected: dict[str, object] = {}
+        for event, raw in journal.read_account_risk_events():
+            if event.sequence > through_sequence:
+                continue
+            item = json.loads(raw)
+            common = {
+                "key",
+                "account_ref",
+                "version",
+                "kind",
+                "at",
+                "selection",
+                "census",
+                "source_horizon",
+            }
+            actions = {
+                "OBSERVE": set(),
+                "OBSERVE_NATIVE": {"native_policy_requested"},
+                "RESERVE": {"plan"},
+                "ABANDON_UNSENT": set(),
+                "BIND_EXIT": {"exit_id", "role", "exit_request"},
+                "BIND_EMERGENCY_POLICY": {"client_order_id", "execution_binding"},
+            }
+            if not isinstance(item, dict) or item.get("kind") not in actions:
+                raise JournalError("causal risk exact event schema differs")
+            required = common | actions[item["kind"]]
+            if item.get("selection") is not None:
+                required.add("snapshot")
+            optional = {
+                "quantity_incident_policy",
+                "research_signal",
+                "_native_policy",
+                "_native_context",
+            }
+            if not required <= set(item) or set(item) - required - optional:
+                raise JournalError("causal risk exact event schema differs")
+            if (
+                not event.visible_at(decision_at)
+                or event.feed != "paper"
+                or event.event_kind != item.get("kind")
+                or item.get("account_ref") != account_ref
+                or item.get("version") != VERSION
+                or item.get("at") != event.available_at.isoformat()
+                or event.external_clock_conflict
+                or _bytes(item) != raw
+            ):
+                raise JournalError("causal risk event identity unavailable")
+            digest = event.payload_ref
+            key = str(item["key"])
+            conflict = key in seen and seen[key] != digest
+            seen.setdefault(key, digest)
+            expected.setdefault(
+                json.dumps([VERSION, key], separators=(",", ":")),
+                {"hash": digest, "sequence": event.sequence},
+            )
+            state = reader._reduce(state, item, conflict, event.sequence)
+            refs.append(event.sequence)
+        current = journal.read_account_risk_evidence_cache(account_ref)
+        bounded_cache = {}
+        for key, value in current.items():
+            identity = json.loads(key)
+            if (
+                not isinstance(identity, list)
+                or len(identity) != 2
+                or identity[0] != VERSION
+                or type(identity[1]) is not str
+                or json.dumps(identity, separators=(",", ":")) != key
+                or not isinstance(value, dict)
+                or set(value) != {"hash", "sequence"}
+                or type(value["sequence"]) is not int
+                or value["sequence"] < 1
+                or type(value["hash"]) is not str
+            ):
+                raise JournalError("causal risk deduplication identity malformed")
+            if value["sequence"] <= through_sequence:
+                bounded_cache[key] = value
+        if bounded_cache != expected:
+            raise JournalError("causal risk deduplication differs")
+        if state is not None and not isinstance(state, dict):
+            raise JournalError("invalid causal risk projection")
+        return state, tuple(refs)
+
     def observe(
         self, event_id: str, selection: IncidentRiskRequest, at: datetime
     ) -> None:
         self._record(event_id, at, "OBSERVE", selection)
+
+    def observe_native(
+        self, event_id: str, selection: IncidentRiskRequest, at: datetime
+    ) -> None:
+        """Opt in to versioned native economic ownership, never dispatch authority."""
+        self._record(
+            event_id,
+            at,
+            "OBSERVE_NATIVE",
+            selection,
+            native_policy_requested=NATIVE_POLICY,
+        )
+
+    def _native_context(self, state: dict[str, Any], horizon: int) -> dict[str, Any]:
+        episodes = [
+            dict(row["native_context"], closed=True)
+            for row in state["completed"].values()
+            if "native_context" in row
+        ]
+        held = state["held"]
+        active = None
+        if held is not None:
+            scope = held["client_order_id"]
+            own = [
+                json.loads(raw)
+                for event, raw in self.journal.read_oco_research_events()
+                if event.sequence <= horizon
+                and json.loads(raw)["binding"]["entry_scope"] == scope
+            ]
+            if any(item["kind"] == "ALLOCATION" for item in own):
+                if (
+                    type(held.get("quantity")) is not int
+                    or held["quantity"] <= 0
+                    or _bytes(
+                        held.get("research_signal", {}).get(
+                            "execution_research_binding"
+                        )
+                    )
+                    != _bytes(OCO_EXECUTION_IDENTITY)
+                ):
+                    raise JournalError("original positive OCO risk slot required")
+                active = scope
+                episodes.append(
+                    {
+                        "entry_scope": scope,
+                        "symbol": held["symbol"],
+                        "quantity": held["quantity"],
+                        "limit": held["limit"],
+                        "stop": held["stop"],
+                        "closed": False,
+                        "census_refs": [],
+                    }
+                )
+        if not episodes:
+            raise JournalError("source native accounting episode required")
+        prior = self.journal.read_event(state["watermark"])
+        if prior is None or prior[0].sequence > horizon:
+            raise JournalError("native risk preceding slot evidence unavailable")
+        return {
+            "policy": NATIVE_POLICY,
+            "episodes": episodes,
+            "active_scope": active,
+            "prior_risk_ref": [prior[0].sequence, prior[0].payload_ref],
+            "frozen_risk_reserve": state["pending_open_loss_reserve"],
+            "frozen_cash_hold": state["additional_local_cash_hold"],
+        }
 
     def reserve(
         self,
@@ -388,6 +566,16 @@ class AccountRiskOwner:
             raise JournalError("source selection exceeds locked observation horizon")
         day = at.astimezone(ZoneInfo("America/New_York")).date()
         try:
+            native = None
+            if item.get("_native_policy") == NATIVE_POLICY:
+                native = derive_native_registry(
+                    self.journal,
+                    item["_native_context"],
+                    capture_sequence=selection.capture_sequence,
+                    decision_at=at,
+                    max_age=selection.max_age,
+                    through_sequence=horizon,
+                )
             audit = audit_owned_equity(
                 self.journal,
                 selection.capture_sequence,
@@ -400,6 +588,7 @@ class AccountRiskOwner:
                 max_metadata_age=selection.max_metadata_age,
                 _intent_ids=ids,
                 _source_horizon=horizon,
+                _native_registry=native,
             )
             baseline = read_baseline(
                 self.journal,
@@ -427,6 +616,7 @@ class AccountRiskOwner:
                 max_metadata_age=selection.max_metadata_age,
                 _intent_ids=ids,
                 _source_horizon=horizon,
+                _native_registry=native,
             )
             lifecycle, _ = OrderReconciler.read_evidence_at(
                 self.journal, self.account_ref, at, through_sequence=horizon
@@ -446,9 +636,20 @@ class AccountRiskOwner:
                 ).items():
                     if activity_id not in old_ids and row["activity_type"] == "FILL":
                         session_orders.add(str(row["order_id"]))
-            flat = not positions and not any(
-                OrderProjection.from_dict(row).state.value not in TERMINAL
-                for row in orders.values()
+            flat = (
+                not positions
+                and not any(
+                    OrderProjection.from_dict(row).state.value not in TERMINAL
+                    for row in orders.values()
+                )
+                and (
+                    native is None
+                    or not any(
+                        order.status
+                        not in {"filled", "canceled", "expired", "rejected"}
+                        for order in native.orders
+                    )
+                )
             )
             captured = self.journal.read_event(selection.capture_sequence)
             assert captured is not None  # source inspectors verified the event
@@ -458,7 +659,7 @@ class AccountRiskOwner:
                 datetime.fromisoformat(row["started_at"].replace("Z", "+00:00"))
                 for row in envelope["requests"]
             )
-            return {
+            result: dict[str, Any] = {
                 "qualified": audit.reported_conservation_verified,
                 "observed_at": observed.isoformat(),
                 "selection": item["selection"],
@@ -483,7 +684,38 @@ class AccountRiskOwner:
                 "source_refs": [list(row) for row in audit.source_refs],
                 "fee_document_ref": audit.fee_document_ref,
             }
+            if native is not None:
+                result["native"] = {
+                    "policy": NATIVE_POLICY,
+                    "context": item["_native_context"],
+                    "exit_by_scope": {
+                        scope: str(quantity) for scope, quantity in native.exit_by_scope
+                    },
+                    "final_scopes": list(native.final_scopes),
+                    "census_refs": {
+                        scope: [list(ref) for ref in refs]
+                        for scope, refs in native.census_refs
+                    },
+                    "risk_issues": list(native.risk_issues),
+                    "order_ids": [order.order_id for order in native.orders],
+                    "source_refs": [
+                        [seq, source[0].payload_ref]
+                        for seq in native.source_refs
+                        if (source := self.journal.read_event(seq)) is not None
+                    ],
+                    "runtime_authorized": False,
+                }
+            return result
         except JournalError:
+            if item.get("_native_policy") == NATIVE_POLICY:
+                return {
+                    "qualified": False,
+                    "issues": ["NATIVE_SOURCE_INVALID_OR_UNAVAILABLE"],
+                    "session": day.isoformat(),
+                    "flat": False,
+                    "observed_at": item["at"],
+                    "selection": item["selection"],
+                }
             raise
         except ValueError:
             return {
@@ -555,6 +787,8 @@ class AccountRiskOwner:
                         "exit_request",
                         "source_horizon",
                         "quantity_incident_policy",
+                        "_native_context",
+                        "_native_policy",
                     }
                 }
                 if _bytes(caller) == _bytes(item):
@@ -567,6 +801,19 @@ class AccountRiskOwner:
             item["census"] = self._census()
             item["source_horizon"] = self.journal.read_evidence_sequence()
             item["quantity_incident_policy"] = "LATCH_UNSUPPORTED_FRACTION_V1"
+            previous = self.view()
+            if kind == "OBSERVE_NATIVE" or (
+                isinstance(previous, dict)
+                and previous.get("_native_policy") == NATIVE_POLICY
+            ):
+                if previous is None:
+                    raise JournalError(
+                        "existing source risk slot required for native opt-in"
+                    )
+                item["_native_policy"] = NATIVE_POLICY
+                item["_native_context"] = self._native_context(
+                    previous, item["source_horizon"]
+                )
             if selection is not None:
                 item["snapshot"] = self._snapshot(item)
             if kind == "BIND_EXIT":
@@ -678,6 +925,28 @@ class AccountRiskOwner:
         if held is not None and "quantity_incident" in held:
             reasons.add("UNSUPPORTED_FRACTIONAL_RISK_QUANTITY")
         kind = item["kind"]
+        if item.get("_native_policy") == NATIVE_POLICY:
+            if (
+                not isinstance(old, dict)
+                or (
+                    kind == "OBSERVE_NATIVE"
+                    and item.get("native_policy_requested") != NATIVE_POLICY
+                )
+                or (
+                    kind != "OBSERVE_NATIVE"
+                    and state.get("_native_policy") != NATIVE_POLICY
+                )
+            ):
+                raise JournalError("explicit native risk policy origin required")
+            if _bytes(item.get("_native_context")) != _bytes(
+                self._native_context(state, item["source_horizon"])
+            ):
+                raise JournalError(
+                    "native risk context differs from preceding risk slot"
+                )
+            state["_native_policy"] = NATIVE_POLICY
+        elif state.get("_native_policy") == NATIVE_POLICY:
+            raise JournalError("enabled native accounting cannot silently downgrade")
         if kind == "BIND_EMERGENCY_POLICY":
             reasons.update(state.get("issues", []))
             declaration = None if held is None else held.get("research_signal")
@@ -765,6 +1034,21 @@ class AccountRiskOwner:
             snapshot = self._snapshot(item)
             if snapshot != item["snapshot"]:
                 raise JournalError("source risk snapshot differs from immutable replay")
+            if held is not None and isinstance(snapshot.get("native"), dict):
+                native = snapshot["native"]
+                scope = held["client_order_id"]
+                # Source quantities remain observable when the surrounding
+                # account book vetoes. They never substitute for qualified
+                # account positions or reduce the frozen reservation.
+                held["native_source_observation"] = {
+                    "exit_quantity": native["exit_by_scope"].get(scope),
+                    "source_refs": native["source_refs"],
+                    "census_refs": native["census_refs"].get(scope, []),
+                    "risk_issues": native["risk_issues"],
+                    "account_economics_qualified": snapshot["qualified"],
+                    "observed_at": snapshot["observed_at"],
+                    "runtime_authorized": False,
+                }
             if (
                 held is not None
                 and item.get("quantity_incident_policy")
@@ -848,7 +1132,10 @@ class AccountRiskOwner:
                 if Fraction(state["net"]) <= -Fraction(state["e0"]) / 100:
                     state["daily_stop_latched"] = True
                 if held is not None:
-                    self._sync_held(state, snapshot, reasons)
+                    if item.get("_native_policy") == NATIVE_POLICY:
+                        self._sync_native_held(state, snapshot, reasons)
+                    else:
+                        self._sync_held(state, snapshot, reasons)
                     held = state["held"]
                 elif not snapshot["flat"]:
                     reasons.add("UNBOUND_POSITION_OR_ORDER")
@@ -885,6 +1172,132 @@ class AccountRiskOwner:
         )
         self._totals(state, bool(reasons))
         return state
+
+    def _sync_native_held(
+        self, state: dict[str, Any], snapshot: dict[str, Any], reasons: set[str]
+    ) -> None:
+        held = state["held"]
+        native = snapshot["native"]
+        cid = held["client_order_id"]
+        if native["context"]["active_scope"] != cid:
+            self._sync_held(state, snapshot, reasons)
+            return
+        orders = snapshot["orders"]
+        entry = orders.get(cid)
+        if entry is None:
+            reasons.add("NATIVE_ENTRY_OWNERSHIP_UNAVAILABLE")
+            return
+        request = self._request(cid)
+        if (
+            request["side"] != "buy"
+            or request["type"] != "limit"
+            or request["symbol"] != held["symbol"]
+            or Fraction(str(request["qty"])) != held["quantity"]
+            or Fraction(str(request["limit_price"])) != Fraction(held["limit"])
+        ):
+            raise JournalError("native risk entry differs from original reservation")
+        filled = Fraction(entry["filled_quantity"])
+        opened = Fraction(snapshot["positions"].get(held["symbol"], "0"))
+        native_exit = Fraction(native["exit_by_scope"].get(cid, "0"))
+        simple_exit = sum(
+            (
+                Fraction(orders[key]["filled_quantity"])
+                for key in held["exits"]
+                if key in orders
+            ),
+            Fraction(),
+        )
+        if opened != filled - native_exit - simple_exit:
+            reasons.add("NATIVE_RISK_SLOT_QUANTITY_MISMATCH")
+        known = {cid, *held["exits"]}
+        completed_ids = {
+            key for row in state["completed"].values() for key in row["order_ids"]
+        }
+        if set(snapshot["positions"]) - {held["symbol"]}:
+            reasons.add("UNBOUND_POSITION")
+        if any(
+            key not in known | completed_ids
+            and (
+                row["state"] not in TERMINAL
+                or row["broker_order_id"] in snapshot["session_order_ids"]
+            )
+            for key, row in orders.items()
+        ):
+            reasons.add("UNBOUND_ORDER_OR_EXECUTION")
+        held.setdefault(
+            "native_frozen_risk_reserve", native["context"]["frozen_risk_reserve"]
+        )
+        held.setdefault(
+            "native_frozen_cash_hold", native["context"]["frozen_cash_hold"]
+        )
+        held["native_ownership"] = {
+            "policy": NATIVE_POLICY,
+            "exit_quantity": str(native_exit),
+            "open_quantity": str(opened),
+            "filled_quantity": str(filled),
+            "source_refs": native["source_refs"],
+            "census_refs": native["census_refs"].get(cid, []),
+            "native_order_ids": native["order_ids"],
+            "runtime_authorized": False,
+        }
+        reasons.update(native["risk_issues"])
+        if (
+            "quantity_incident" in held
+            or filled.denominator != 1
+            or opened.denominator != 1
+        ):
+            reasons.add("UNSUPPORTED_FRACTIONAL_RISK_QUANTITY")
+            return
+        held.update(
+            filled=int(filled),
+            open_quantity=int(opened),
+            pending_quantity=0
+            if entry["state"] in TERMINAL
+            else held["quantity"] - int(filled),
+            broker_hold_represented=entry["state"] not in TERMINAL,
+            bid=snapshot["bids"].get(held["symbol"], held["stop"]),
+        )
+        final = (
+            cid in native["final_scopes"]
+            and opened == 0
+            and entry["state"] in TERMINAL
+            and snapshot["flat"]
+            and not state["veto"]
+            and not reasons
+            and all(
+                key in orders and orders[key]["state"] in TERMINAL
+                for key in held["exits"]
+            )
+        )
+        if not final:
+            reasons.add("NATIVE_FINALITY_PENDING")
+            return
+        net = Fraction(snapshot["net"]) - Fraction(held["net_at_start"])
+        if filled > 0:
+            state["losing_streak"] = (
+                state["losing_streak"] + 1
+                if net < 0
+                else 0
+                if net > 0
+                else state["losing_streak"]
+            )
+            state["daily_stop_latched"] = (
+                state["daily_stop_latched"] or state["losing_streak"] >= 3
+            )
+        episode = next(
+            row for row in native["context"]["episodes"] if row["entry_scope"] == cid
+        )
+        state["completed"][cid] = {
+            "net": str(net),
+            "filled": int(filled),
+            "order_ids": sorted(known),
+            "native_order_ids": native["order_ids"],
+            "native_exit_quantity": str(native_exit),
+            "native_context": dict(
+                episode, closed=True, census_refs=native["census_refs"][cid]
+            ),
+        }
+        state["held"] = None
 
     def _sync_held(
         self, state: dict[str, Any], snapshot: dict[str, Any], reasons: set[str]
@@ -1097,6 +1510,9 @@ class AccountRiskOwner:
             cash = entry_fee + (
                 0 if held["broker_hold_represented"] else pending * limit
             )
+            if "native_frozen_risk_reserve" in held:
+                risk = max(risk, Fraction(held["native_frozen_risk_reserve"]))
+                cash = max(cash, Fraction(held["native_frozen_cash_hold"]))
         snapshot = state["last_snapshot"]
         healthy = snapshot is not None and snapshot["qualified"] and not vetoed
         cap = Fraction(0)

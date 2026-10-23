@@ -46,6 +46,43 @@ def derive_entry_census(
     through_sequence: int,
     fee_policy: Path,
 ) -> dict[str, Any]:
+    return _derive_entry_census(
+        journal,
+        initial,
+        decision_at=decision_at,
+        through_sequence=through_sequence,
+        fee_policy=fee_policy,
+        risk_reader=AccountRiskOwner.read_evidence_at,
+    )
+
+
+def _derive_native_entry_census(
+    journal: Journal,
+    initial: OcoResearchState,
+    *,
+    decision_at: datetime,
+    through_sequence: int,
+    fee_policy: Path,
+) -> dict[str, Any]:
+    return _derive_entry_census(
+        journal,
+        initial,
+        decision_at=decision_at,
+        through_sequence=through_sequence,
+        fee_policy=fee_policy,
+        risk_reader=AccountRiskOwner._read_native_causal_evidence_at,
+    )
+
+
+def _derive_entry_census(
+    journal: Journal,
+    initial: OcoResearchState,
+    *,
+    decision_at: datetime,
+    through_sequence: int,
+    fee_policy: Path,
+    risk_reader: Any,
+) -> dict[str, Any]:
     """Derive a receipt at one immutable prefix; reported observations aren't final."""
     _utc(decision_at)
     if (
@@ -53,7 +90,7 @@ def derive_entry_census(
         or not 0 <= through_sequence <= journal.read_evidence_sequence()
     ):
         raise JournalError("invalid entry-census source horizon")
-    risk, risk_refs = AccountRiskOwner.read_evidence_at(
+    risk, risk_refs = risk_reader(
         journal,
         initial.account_ref,
         decision_at,
@@ -187,14 +224,14 @@ def derive_entry_census(
             and _json(item.get("research_signal")) == _json(declaration)
         ):
             # A matching command is not necessarily the positive slot origin.
-            before, _ = AccountRiskOwner.read_evidence_at(
+            before, _ = risk_reader(
                 journal,
                 initial.account_ref,
                 record[0].available_at,
                 fee_policy,
                 through_sequence=sequence - 1,
             )
-            created, _ = AccountRiskOwner.read_evidence_at(
+            created, _ = risk_reader(
                 journal,
                 initial.account_ref,
                 record[0].available_at,

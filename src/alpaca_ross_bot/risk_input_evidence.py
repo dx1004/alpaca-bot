@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from fractions import Fraction
 
 from .journal import Journal
+from .native_risk_registry import NativeRiskRegistry
 from .risk_marks import BidMark, inspect_bid_mark
 from .risk_ownership import OwnershipFacts, qualify_ownership
 
@@ -54,6 +55,7 @@ def inspect_risk_inputs(
     max_metadata_age: timedelta,
     _intent_ids: tuple[str, ...] | None = None,
     _source_horizon: int | None = None,
+    _native_registry: NativeRiskRegistry | None = None,
 ) -> RiskInputEvidence:
     """Accept references, never caller-supplied positions or qualification flags.
 
@@ -71,6 +73,7 @@ def inspect_risk_inputs(
         max_age=max_age,
         _intent_ids=_intent_ids,
         _source_horizon=_source_horizon,
+        _native_registry=_native_registry,
     )
     if type(mark_refs) is not tuple:
         raise ValueError("immutable mark references required")
@@ -101,7 +104,7 @@ def inspect_risk_inputs(
     refs = set(ownership.source_refs)
     total = Fraction(0)
     for symbol, quantity in positions.items():
-        if quantity.denominator != 1 or quantity <= 0:
+        if quantity <= 0 or (quantity.denominator != 1 and _native_registry is None):
             issues.add("NONWHOLE_OWNED_POSITION_UNQUALIFIED")
             continue
         if symbol not in by_symbol:
@@ -121,7 +124,11 @@ def inspect_risk_inputs(
         marks.append(mark)
         refs.update(mark.source_refs)
         limitations.update(mark.limitations)
-        total += mark.long_value(quantity.numerator)
+        if quantity.denominator != 1 and _native_registry is not None:
+            limitations.add("NATIVE_FRACTIONAL_ECONOMICS_NOT_RISK_SIZING")
+            total += quantity * mark.bid
+        else:
+            total += mark.long_value(quantity.numerator)
     evidence_refs: list[tuple[int, str]] = []
     for sequence in sorted(refs):
         stored = journal.read_event(sequence)

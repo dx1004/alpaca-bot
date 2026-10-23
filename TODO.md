@@ -224,6 +224,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   - [x] Source-bound native exit census, 2026-10-23: immutable POST/root plus authenticated schema-2 nested GET/FILL now updates canonical OCO TARGET/STOP quantities, retaining exact fractions, oversell incidents, original allocations and risk reservations. Root-only POST, quarantine/recovery, declared-entry isolation, conflict/retry and historical-schema cases pass scoped regression/static checks and independent review. [Evidence and precise test scope](docs/week3-evidence.md#source-bound-native-exit-census--2026-10-23). Synthetic source integration only; actual risk-owner/native execution qualification and W3-06/07/08 parent acceptance remain open.
 
+  - [x] Native account-risk ownership integration, 2026-10-23: versioned opt-in joins native source exits to full-account ownership, cash/quantity/equity/fees and once-only terminal accounting; causal replay, historical attribution, frozen partial risk and fractional/late-activity vetoes pass synthetic integration/fault checks. [Evidence and limits](docs/week3-evidence.md#native-account-risk-ownership-integration--2026-10-23). No broker invocation, operational protection acceptance or W3-06/07/08 parent completion.
+
 - [!] **W3-07 [P1] Run isolated Alpaca paper API engineering tests**
   Depends: W3-04..W3-06, credentials available. Minimal non-strategy orders in isolated state only.  
   Accept: complete order lifecycle/reconciliation evidence; test activity cannot enter the formal paper sample. If credentials are unavailable, mark blocked without fabricating acceptance.

@@ -11,6 +11,8 @@ from fractions import Fraction
 from urllib.parse import parse_qs, urlsplit
 
 from .journal import Journal
+from .native_risk_registry import TERMINAL as NATIVE_TERMINAL
+from .native_risk_registry import NativeRiskRegistry
 from .order_lifecycle import OrderProjection
 from .order_reconciliation import OrderReconciler
 from .paper_order_contract import decode_broker_json, validate_order_snapshot
@@ -61,6 +63,7 @@ def qualify_ownership(
     max_age: timedelta,
     _intent_ids: tuple[str, ...] | None = None,
     _source_horizon: int | None = None,
+    _native_registry: NativeRiskRegistry | None = None,
 ) -> OwnershipFacts:
     """Inspect immutable account bytes and independently replayed lifecycle proof.
 
@@ -92,6 +95,8 @@ def qualify_ownership(
     positions_views: list[list[object]] = []
     orders_views: list[list[object]] = []
     issues: set[str] = set()
+    if _native_registry is not None:
+        issues.update(_native_registry.issues)
     limitations = {"NOT_SETTLEMENT_PROOF", "NON_ATOMIC_HTTP_SNAPSHOTS"}
     for request in requests:
         assert isinstance(request, dict)
@@ -169,7 +174,14 @@ def qualify_ownership(
         or not set(intents) <= set(journal.read_order_intent_ids())
     ):
         raise ValueError("invalid immutable intent census")
-    refs: tuple[int, ...] = (capture_sequence,)
+    refs: tuple[int, ...] = tuple(
+        sorted(
+            {
+                capture_sequence,
+                *(() if _native_registry is None else _native_registry.source_refs),
+            }
+        )
+    )
     if observed or raw_orders or intents:
         state, lifecycle_refs = OrderReconciler.read_evidence_at(
             journal, account_ref, decision_at, through_sequence=_source_horizon
@@ -182,8 +194,11 @@ def qualify_ownership(
             or state.get("stream_status") != "SUBSCRIBED"
             or state.get("issues")
             or not isinstance(report, dict)
-            or report.get("status") != "MATCHED"
-            or report.get("differences")
+            or report.get("status")
+            not in (
+                {"MATCHED"} if _native_registry is None else {"MATCHED", "DIFFERENCES"}
+            )
+            or (_native_registry is None and report.get("differences"))
             or report.get("watermark") != state.get("watermark")
         ):
             issues.add("LIFECYCLE_OWNERSHIP_UNQUALIFIED")
@@ -204,6 +219,11 @@ def qualify_ownership(
                 or set(last_item["intents"]) != set(intents)
             ):
                 issues.add("LOCAL_INTENT_SOURCE_COVERAGE")
+            if _native_registry is not None and (
+                not isinstance(last_item, dict)
+                or not _native_registry.covers_batch(last_item.get("batch"), observed)
+            ):
+                issues.add("LIFECYCLE_NATIVE_SOURCE_DISAGREEMENT")
         orders = state.get("orders")
         if not isinstance(orders, dict):
             issues.add("LIFECYCLE_ORDERS_UNQUALIFIED")
@@ -239,6 +259,21 @@ def qualify_ownership(
                 "REJECTED",
             }:
                 expected_open.add(cid)
+        if _native_registry is not None:
+            if isinstance(report, dict) and any(
+                not _native_registry.covers_difference(row, expected, observed)
+                for row in report.get("differences", [])
+            ):
+                issues.add("LIFECYCLE_NATIVE_DIFFERENCE_UNCOVERED")
+            for fill in _native_registry.fills:
+                expected[fill.symbol] = (
+                    expected.get(fill.symbol, Fraction()) - fill.quantity
+                )
+            expected_open.update(
+                order.client_order_id
+                for order in _native_registry.orders
+                if order.status not in NATIVE_TERMINAL
+            )
         if {key: value for key, value in expected.items() if value} != observed:
             issues.add("OWNED_POSITION_MISMATCH")
         seen: set[str] = set()
@@ -250,6 +285,11 @@ def qualify_ownership(
             if cid in seen:
                 issues.add("DUPLICATE_OPEN_ORDER")
             seen.add(cid)
+            if _native_registry is not None and any(
+                order.order_id == row.get("id") and order.client_order_id == cid
+                for order in _native_registry.orders
+            ):
+                continue  # Independently exact-checked by the native registry.
             intent = journal.read_order_intent(cid)
             open_projection = projections.get(cid)
             if not isinstance(intent, dict) or open_projection is None:
