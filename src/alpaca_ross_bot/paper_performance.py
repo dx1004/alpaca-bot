@@ -7,12 +7,13 @@ cash difference. No value here decides study acceptance, sizing or order action.
 """
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from fractions import Fraction
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from .equity_fees import ExecutedFeeLot, FeeTotals, daily_fees, verify_fee_policy
+from .posted_ledger import _timestamp
 
 NY = ZoneInfo("America/New_York")
 REGULATORY = {"SEC_FEE", "TAF_FEE", "CAT_FEE"}
@@ -47,6 +48,7 @@ class Execution:
     price: Fraction
     at: datetime
     ownership_ref: str | None
+    original_timestamp: str | None = None
 
 
 @dataclass(frozen=True)
@@ -57,6 +59,7 @@ class BrokerPosting:
     signed_cash: Fraction  # Debit negative; explicit attributable refunds positive.
     posted_at: datetime
     attribution_ref: str | None
+    original_timestamp: str | None = None
 
 
 @dataclass(frozen=True)
@@ -161,6 +164,17 @@ def _utc(at: datetime) -> None:
 def _number(value: Fraction, *, positive: bool = False) -> None:
     if type(value) is not Fraction or (positive and value <= 0):
         raise ValueError("exact Fraction amount required")
+
+
+def _instant(at: datetime, original: str | None) -> tuple[datetime, Fraction]:
+    """Preserve sub-microsecond seconds; absent text declares microsecond precision."""
+    _utc(at)
+    if original is None:
+        return at, Fraction(0)
+    base, remainder = _timestamp(original)
+    if base.astimezone(UTC) != at or not 0 <= remainder < Fraction(1, 1_000_000):
+        raise ValueError("original timestamp disagrees with declared datetime")
+    return at, remainder
 
 
 def _same_scope(actual: ScopeKey, expected: ScopeKey) -> None:
@@ -323,10 +337,12 @@ def describe_paper_performance(
         blocking.add("FLAT_CASH_BOUNDARY_UNQUALIFIED")
     unique: dict[str, Execution] = {}
     groups: dict[str, list[Execution]] = {}
-    last_at: datetime | None = None
+    last_at: tuple[datetime, Fraction] | None = None
+    start_key, end_key = (window.start, Fraction(0)), (window.end, Fraction(0))
     for fill in executions:
         _same_scope(fill.scope, window.scope)
         _utc(fill.at)
+        instant = _instant(fill.at, fill.original_timestamp)
         _number(fill.quantity, positive=True)
         _number(fill.price, positive=True)
         if not all(
@@ -338,11 +354,11 @@ def describe_paper_performance(
             if unique[fill.execution_id] != fill:
                 raise ValueError("execution identity conflict")
             continue
-        if not window.start <= fill.at <= window.end or (
-            last_at is not None and fill.at < last_at
+        if not start_key <= instant <= end_key or (
+            last_at is not None and instant < last_at
         ):
             raise ValueError("execution order or declared window differs")
-        last_at = fill.at
+        last_at = instant
         if not _text(fill.ownership_ref):
             blocking.add("EXECUTION_OWNERSHIP_UNVERIFIED")
         if fill.at.astimezone(NY).date() not in window.expected_fee_days:
@@ -359,7 +375,8 @@ def describe_paper_performance(
         for index, fill in enumerate(fills):
             if (
                 previous is not None
-                and fill.at == previous.at
+                and _instant(fill.at, fill.original_timestamp)
+                == _instant(previous.at, previous.original_timestamp)
                 and fill.side != previous.side
                 and not _text(execution_order_ref)
             ):
@@ -427,6 +444,7 @@ def describe_paper_performance(
     for posting in postings:
         _same_scope(posting.scope, window.scope)
         _utc(posting.posted_at)
+        instant = _instant(posting.posted_at, posting.original_timestamp)
         _number(posting.signed_cash)
         if not _text(posting.activity_id):
             raise ValueError("broker posting identity required")
@@ -437,7 +455,7 @@ def describe_paper_performance(
         raw_postings[posting.activity_id] = posting
         if posting.classification == "FUNDING" and posting.signed_cash:
             review.add("FUNDING_REQUIRES_STUDY_REVIEW")
-        if not opening.at <= posting.posted_at <= closing.at:
+        if not start_key <= instant <= end_key:
             blocking.add("POSTING_OUTSIDE_CASH_RECONCILIATION_SCOPE")
         if posting.classification not in CLASSIFIED or not _text(
             posting.attribution_ref

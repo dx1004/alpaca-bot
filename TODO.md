@@ -238,6 +238,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   Declared review receipt increment 2026-10-22: exact package/expected/unmask/comparison documents now persist in the existing bound private journal, with original retry clocks, scoped horizons, sealed calculator/reviewer declarations, immutable comparison bytes and conflict-preserving historical replay. Nineteen focused cases, five independent integrations and the combined 98-case Journal/report regression pass, with scoped Ruff/format and strict mypy. [Evidence and limits](docs/week3-evidence.md#declared-review-receipt-workflow--2026-10-22). Actual masking, independence, source authenticity and natural enrollment remain uncertified; no formal witness/report acceptance or runtime authority follows. Parent remains open.
 
+  Performance timestamp repair 2026-10-22: the existing descriptive calculator now retains optional original RFC3339 execution/posting timestamps and uses exact fractional-second keys for window boundaries, chronology and true ties. Ninety-five combined tests, including six independent precision integrations, pass with scoped Ruff/format and strict mypy. [Evidence and preserved gates](docs/week3-evidence.md#descriptive-performance-timestamp-precision-repair--2026-10-22). This removes a real source-conversion precision gap; engineering origin, unknown fees/censuses and actual formal-input conversion remain blocked. Parent remains open.
+
 ## Week 4 — Integration, audit, and release freeze
 
 - [ ] **W4-01 [P0] End-to-end deterministic replay**  

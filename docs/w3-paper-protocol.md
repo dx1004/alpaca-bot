@@ -485,6 +485,23 @@ study/day censuses, verified window snapshots and the final performance-input
 conversion remain open. No observation becomes a natural witness, and no
 runtime or order authority is granted.
 
+### Exact descriptive timestamps — 2026-10-22
+
+`paper_performance.Execution` and `BrokerPosting` can now retain optional
+`original_timestamp` RFC3339 text. The declared UTC datetime must match its
+microsecond base; exact fractional-second remainders determine execution order,
+window inclusion and genuine opposite-side ties. This prevents distinct
+nanosecond events becoming false ties and prevents an event just after the
+inclusive endpoint being admitted by truncation. The calculator never sorts
+input or invents an ID-based ordering. Genuine ties retain the existing explicit
+ordering-evidence requirement; original text survives in returned rows.
+
+Absent source text continues to declare microsecond precision, not proof of the
+source instant. Day grouping, fee/census checks, source-verification flags and
+the explicit formal-origin guard remain unchanged. This removes a representation
+gap; it does not convert engineering rows into formal performance inputs or
+close the ownership, census, attribution and source-order gaps above.
+
 ## Method references
 
 Checked by the coordinator 2026-10-15; source publication/version dates are not

@@ -3202,3 +3202,53 @@ Actual package construction/masking, independent calculations, reviewer
 assignment, prospective origin/enrollment, executable dependencies and final
 freeze remain open. No source-policy acceptance, account operation, broker
 action or formal paper start occurred; W3-06/07/08 parents remain open.
+
+## Descriptive performance timestamp precision repair — 2026-10-22
+
+A direct source/calculator check reproduced a representation defect: raw
+`13:30:01.000000100Z` and `13:30:01.000000200Z` have strictly ordered exact
+timestamps but equal Python microsecond datetimes; supplying the truncated
+values created `OPPOSITE_SIDE_ORDERING_UNKNOWN`. Independently audited source
+conversion cannot silently discard the remainder already retained by
+`paper_ledger_sources`.
+
+The existing `paper_performance.Execution` and `BrokerPosting` now append an
+optional original RFC3339 timestamp field. The existing posted-ledger parser
+supplies the exact fractional remainder in seconds, with the parsed base
+required to agree with the declared UTC datetime. Exact keys drive execution
+chronology, inclusive window boundaries and genuine opposite-side ties; raw
+text survives returned rows. Legacy inputs still declare only microsecond
+precision. There is no input sorting, arbitrary ID tie-break, formal-origin
+change, fee classification, new census proof or source-authority promotion.
+
+Independent review and six separate integration cases found no remaining
+material issue in the bounded correction. They cover execution end+1ns refusal,
+cross-symbol nanosecond reversal, genuine equal-instant ties despite differing
+RFC3339 spelling, distinct nanosecond sides, engineering-origin rejection and
+retained unknown-fee/account-day vetoes. The engineer's posting endpoint case
+was reused rather than duplicated.
+
+Final combined command:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-performance-precision-final-20261022 tests/test_paper_performance.py tests/test_paper_performance_precision_integration.py tests/test_posted_ledger.py
+```
+
+It passed **95 tests in 1.70 seconds**. Scoped Ruff and format checks passed;
+strict mypy passed all three changed Python files using
+`--cache-dir /tmp/alpaca-performance-precision-final-mypy`. Frozen SHA-256:
+calculator `f168e66f7157e5fb7f9fe95022a1dd677e27a74db80c01c117815708938f4510`;
+focused tests `013043fd2b812e60ad768688d60860f8d40fe03ff0d18a2df6f69f6d847924ca`;
+independent integrations `4eb2be69bf16803935d6418a9d6c05f65cb9a8f2a162d38ea512636601117631`.
+The correction is confined to the existing calculator and tests; the underlying
+source parser and source ledger adapter remain unchanged. A verified remote
+`gemma4:31b` response discussed only a public generic exact-timestamp problem;
+its vague remainder units were checked against the existing seconds-based
+parser, and no local/private content was exported.
+
+Actual formal performance conversion still requires accepted origin, source
+execution-order evidence, native ownership, full account-day/study censuses,
+fee attribution and qualified window endpoints. These are genuine missing
+inputs, not grounds for relabeling engineering observations. W3-06/07/08 remain
+open; no source-policy acceptance, account access, broker action or formal
+paper start occurred.

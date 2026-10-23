@@ -61,6 +61,91 @@ FILLS = (
 )
 
 
+@pytest.mark.parametrize(
+    "text", ["2026-10-26T13:30:01.000000123Z", "2026-10-26T09:30:01.000000123-04:00"]
+)
+def test_execution_preserves_exact_original_timestamp_and_offset_equivalence(
+    text: str,
+) -> None:
+    fill = replace(FILLS[0], original_timestamp=text)
+    result = calculate(fills=(fill, FILLS[1]))
+    assert result.executions[0].original_timestamp == text
+    assert result.gross_pnl == 10
+    assert not result.source_evidence_verified and not result.runtime_authorized
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "not-a-timestamp",
+        "2026-10-26T13:30:01",
+        "2026-10-26T13:30:02.000000123Z",
+        "2026-10-26 13:30:01Z",
+    ],
+)
+def test_original_execution_timestamp_must_be_rfc3339_and_match_declared_base(
+    text: str,
+) -> None:
+    with pytest.raises(ValueError):
+        calculate(fills=(replace(FILLS[0], original_timestamp=text), FILLS[1]))
+
+
+def test_same_side_execution_order_cannot_hide_decreasing_nanoseconds() -> None:
+    first = replace(
+        FILLS[0], quantity=F(5), original_timestamp="2026-10-26T13:30:01.000000200Z"
+    )
+    second = replace(
+        first,
+        execution_id="buy-second",
+        original_timestamp="2026-10-26T13:30:01.000000100Z",
+    )
+    with pytest.raises(ValueError, match="execution order"):
+        calculate(fills=(first, second, FILLS[1]))
+    increasing = calculate(fills=(second, first, FILLS[1]))
+    assert increasing.executions == (second, first, FILLS[1])
+    assert increasing.gross_pnl == 10
+
+
+def test_one_nanosecond_before_start_is_not_in_window() -> None:
+    fill = replace(
+        FILLS[0],
+        at=START - timedelta(microseconds=1),
+        original_timestamp="2026-10-26T13:29:59.999999999Z",
+    )
+    with pytest.raises(ValueError, match="declared window"):
+        calculate(fills=(fill, FILLS[1]))
+
+
+def test_exact_timestamp_duplicates_and_changed_raw_identity_conflict() -> None:
+    fill = replace(FILLS[0], original_timestamp="2026-10-26T13:30:01.000000100Z")
+    assert calculate(fills=(fill, fill, FILLS[1])).executions == (fill, FILLS[1])
+    equivalent = replace(fill, original_timestamp="2026-10-26T09:30:01.000000100-04:00")
+    with pytest.raises(ValueError, match="execution identity conflict"):
+        calculate(fills=(fill, equivalent, FILLS[1]))
+
+
+def test_posting_one_nanosecond_after_end_blocks_cash_scope() -> None:
+    row = replace(
+        posting("fee", "SEC_FEE", F(0)),
+        original_timestamp="2026-10-26T20:00:00.000000001Z",
+    )
+    result = calculate(postings=(row,))
+    assert "POSTING_OUTSIDE_CASH_RECONCILIATION_SCOPE" in result.issues
+    assert result.broker_net_pnl is None
+    assert result.broker_postings[0].original_timestamp == row.original_timestamp
+
+
+def test_posting_timestamp_mismatch_rejected_and_duplicate_preserved() -> None:
+    row = replace(
+        posting("fee", "SEC_FEE", F(0)), original_timestamp="2026-10-26T16:00:00-04:00"
+    )
+    assert calculate(postings=(row, row)).broker_postings == (row,)
+    with pytest.raises(ValueError, match="declared datetime"):
+        calculate(
+            postings=(replace(row, original_timestamp="2026-10-26T20:00:00.000001Z"),)
+        )
+
+
 def calculate(
     *,
     fills: tuple[Execution, ...] = FILLS,
