@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from .crossed_stop_contract import CrossedStopContract, load_crossed_stop_contract
 from .entry_strategy import EntryDecision
 from .equity_fees import planned_charge_bounds
 from .journal import Journal, JournalError
@@ -24,6 +25,7 @@ from .order_reconciliation import OrderReconciler
 from .owned_equity_ledger import audit_owned_equity
 from .paper_order_contract import decode_broker_json, validate_saved_request
 from .research_risk_binding import (
+    OCO_EXECUTION_IDENTITY,
     RESEARCH_BINDING,
     _declared_research_plan,
     _research_declaration,
@@ -36,6 +38,10 @@ from .strategy_risk import VERSION
 
 SOURCE = "ALPACA_ACCOUNT_RISK"
 TERMINAL = {"FILLED", "CANCELED", "EXPIRED", "REJECTED"}
+
+
+class _KnownRiskConflict(Exception):
+    """This exact conflicting command is already retained under the write lock."""
 
 
 def _bytes(value: object) -> bytes:
@@ -248,6 +254,60 @@ class AccountRiskOwner:
         ):
             result.update(quantity=0, reason="RESERVATION_NOT_CURRENT")
         return result
+
+    def bind_emergency_policy(
+        self,
+        event_id: str,
+        at: datetime,
+        *,
+        client_order_id: str,
+        contract: CrossedStopContract,
+    ) -> dict[str, object]:
+        """Explicit same-slot policy opt-in; neither reserve nor runtime clearance."""
+        if self.journal._db.in_transaction:
+            raise JournalError("emergency policy binding requires its own transaction")
+        if type(contract) is not CrossedStopContract:
+            raise JournalError("explicit pinned emergency contract required")
+        contract.__post_init__()
+        if (
+            type(client_order_id) is not str
+            or not client_order_id
+            or client_order_id != client_order_id.strip()
+        ):
+            raise JournalError("exact emergency entry identity required")
+        self._record(
+            event_id,
+            at,
+            "BIND_EMERGENCY_POLICY",
+            None,
+            client_order_id=client_order_id,
+            execution_binding=contract.identity,
+        )
+        current = self.view()
+        held = None if current is None else current.get("held")
+        receipt = (
+            None
+            if not isinstance(held, dict)
+            else held.get("emergency_execution_binding")
+        )
+        matched = (
+            isinstance(held, dict)
+            and held.get("client_order_id") == client_order_id
+            and isinstance(receipt, dict)
+            and receipt["identity"] == contract.identity
+        )
+        return {
+            "classification": "RESEARCH_POLICY_REFERENCE_NOT_RISK_CLEARANCE",
+            "research_policy_bound_to_current_slot": matched,
+            "receipt": receipt if matched else None,
+            "risk_veto_retained": None if current is None else current["veto"],
+            "daily_stop_retained": None
+            if current is None
+            else current["daily_stop_latched"],
+            "entry_risk_version_binding_accepted": False,
+            "runtime_authorized": False,
+            "order_authority": False,
+        }
 
     def bind_exit(
         self, event_id: str, at: datetime, client_order_id: str, role: str
@@ -480,6 +540,7 @@ class AccountRiskOwner:
                 raise JournalError("source-owner cache or deduplication differs")
             # Retry identity is the caller's command, not later observations.
             # Preserve the original locked source census and assessment bytes.
+            first_for_key = True
             for _event, raw in self.journal.read_account_risk_events():
                 saved = json.loads(raw)
                 if saved["key"] != event_id:
@@ -490,11 +551,13 @@ class AccountRiskOwner:
                     if key
                     not in {"census", "snapshot", "exit_request", "source_horizon"}
                 }
-                if caller == item:
+                if _bytes(caller) == _bytes(item):
+                    if not first_for_key:
+                        raise _KnownRiskConflict
                     item.clear()
                     item.update(saved)
                     return raw
-                break
+                first_for_key = False
             item["census"] = self._census()
             item["source_horizon"] = self.journal.read_evidence_sequence()
             if selection is not None:
@@ -503,16 +566,21 @@ class AccountRiskOwner:
                 item["exit_request"] = self._request(str(item["exit_id"]))
             return _bytes(item)
 
-        self.journal.apply_account_risk_event(
-            account_ref=self.account_ref,
-            state_key=self.state_key,
-            dedupe_key=json.dumps([VERSION, event_id], separators=(",", ":")),
-            event_kind=kind,
-            payload=b"",
-            received_at=at,
-            prepare_payload=prepare,
-            reduce=lambda old, conflict, seq: self._reduce(old, item, conflict, seq),
-        )
+        try:
+            self.journal.apply_account_risk_event(
+                account_ref=self.account_ref,
+                state_key=self.state_key,
+                dedupe_key=json.dumps([VERSION, event_id], separators=(",", ":")),
+                event_kind=kind,
+                payload=b"",
+                received_at=at,
+                prepare_payload=prepare,
+                reduce=lambda old, conflict, seq: self._reduce(
+                    old, item, conflict, seq
+                ),
+            )
+        except _KnownRiskConflict:
+            return
 
     def _charges(self, qty: int, stop: Fraction) -> tuple[Fraction, Fraction]:
         if qty == 0:
@@ -557,6 +625,11 @@ class AccountRiskOwner:
         at = datetime.fromisoformat(item["at"])
         _utc(at)
         research_signal = item.get("research_signal")
+        if item.get("kind") == "BIND_EMERGENCY_POLICY":
+            if type(item.get("execution_binding")) is not dict or _bytes(
+                item["execution_binding"]
+            ) != _bytes(load_crossed_stop_contract().identity):
+                raise JournalError("pinned emergency risk identity differs")
         if research_signal is not None:
             if item.get("kind") != "RESERVE":
                 raise JournalError("research signal requires a research reservation")
@@ -596,7 +669,67 @@ class AccountRiskOwner:
             return state
         held = state["held"]
         kind = item["kind"]
-        if kind == "BIND_EXIT":
+        if kind == "BIND_EMERGENCY_POLICY":
+            reasons.update(state.get("issues", []))
+            declaration = None if held is None else held.get("research_signal")
+            if (
+                held is None
+                or held.get("client_order_id") != item["client_order_id"]
+                or type(held.get("quantity")) is not int
+                or held["quantity"] <= 0
+                or not isinstance(declaration, dict)
+                or _bytes(declaration.get("execution_research_binding"))
+                != _bytes(OCO_EXECUTION_IDENTITY)
+            ):
+                raise JournalError("original positive OCO risk slot required")
+            snapshot = state.get("last_snapshot")
+            if (
+                not isinstance(snapshot, dict)
+                or type(snapshot.get("selection")) is not dict
+                or type(snapshot.get("observed_at")) is not str
+            ):
+                raise JournalError(
+                    "current source snapshot required for policy binding"
+                )
+            for event, _ in self.journal.read_account_risk_events():
+                if event.sequence <= item["source_horizon"] and (
+                    not event.visible_at(at) or event.external_clock_conflict
+                ):
+                    raise JournalError("emergency policy prior risk prefix unavailable")
+            if not 0 < state["watermark"] <= item["source_horizon"] < sequence:
+                raise JournalError("emergency policy prior risk horizon differs")
+            selection = IncidentRiskRequest.from_dict(snapshot["selection"])
+            observed = datetime.fromisoformat(snapshot["observed_at"])
+            _utc(observed)
+            if not timedelta(0) <= at - observed <= selection.max_age:
+                raise JournalError("emergency risk binding source stale or future")
+            prior = held.get("emergency_execution_binding")
+            if prior is None:
+                previous = self.journal.read_event(state["watermark"])
+                if previous is None or previous[0].source_id != SOURCE:
+                    raise JournalError("previous held risk evidence missing")
+                held["emergency_execution_binding"] = {
+                    "identity": item["execution_binding"],
+                    "client_order_id": held["client_order_id"],
+                    "symbol": held["symbol"],
+                    "quantity": held["quantity"],
+                    "limit": held["limit"],
+                    "stop": held["stop"],
+                    "research_signal_sha256": hashlib.sha256(
+                        _bytes(declaration)
+                    ).hexdigest(),
+                    "prior_slot_ref": [previous[0].sequence, previous[0].payload_ref],
+                    "binding_ref": [
+                        sequence,
+                        "sha256:" + hashlib.sha256(_bytes(item)).hexdigest(),
+                    ],
+                    "bound_at": item["at"],
+                    "runtime_authorized": False,
+                }
+            elif _bytes(prior["identity"]) != _bytes(item["execution_binding"]):
+                raise JournalError("emergency policy cannot be rebound")
+            reasons.add("REFRESH_REQUIRED")
+        elif kind == "BIND_EXIT":
             cid, role, request = item["exit_id"], item["role"], item["exit_request"]
             if request != self._request(cid) or held is None:
                 raise JournalError("exit binding lacks current immutable risk slot")

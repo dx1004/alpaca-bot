@@ -3590,3 +3590,80 @@ and release acceptance. This source-reference connection is not proof of those
 gates. W3-07 actual cycles and formal paper remain blocked on their real
 dependencies. No actual account, credentials, market capture or broker request
 was accessed in this increment; NOT_SIP_EQUIVALENT and runtime refusal remain.
+
+## Crossed-stop explicit shared-risk policy binding — 2026-10-23
+
+Previous goal turn: progress (`ee1f449`, source-trigger connection). This turn
+implements the next control connection within the existing `AccountRiskOwner`,
+not a second allocator or another declared dispatcher. `crossed_stop_contract.py`
+validates the unchanged independent manifest and OCO parent and returns detached,
+strictly pinned identities. The existing crossed-stop journal uses this same
+loader; its prior manifest identity and declared-state shape remain unchanged.
+
+`bind_emergency_policy` requires the explicit contract and exact current entry
+scope. Its atomic `BIND_EMERGENCY_POLICY` event can attach only to an existing
+positive OCO-origin research slot. The receipt freezes original L/S/quantity,
+signal hash, prior risk-event reference and first binding reference/time. It
+changes no risk budget, price, size, fee input, attempt, source declaration or
+existing exit. Prior issues, vetoes and daily-stop latches remain; the operation
+adds `REFRESH_REQUIRED` and zeroes available capacity pending refresh. It never
+grants source, entry-risk, broker or runtime acceptance. Current-slot status is
+computed from the present held slot after a retry; a completed slot cannot be
+reported bound just because its historical command was once successful.
+
+The source adapter validates and references the optional opt-in against the
+same original positive reservation, immutable signal hash and frozen prices.
+It adds fields only for prefixes where that binding exists, preserving earlier
+source receipts. Declared/source isolation and the source-mode preparation veto
+remain in place. Two-connection tests verify that competing identical-policy
+attachments preserve a single original receipt without creating budget.
+
+Review/test corrections:
+
+- A source-reference loop initially overwrote the selected quote sequence with
+  a policy-binding sequence; the integrated raw-identity test caught it. Separate
+  local names now retain the selected quote exactly.
+- Risk conflicts can advance a watermark without advancing its decision clock.
+  Checking the latest reference alone was insufficient: the entire prior risk
+  prefix must be visible and free of external-clock conflict at binding time.
+  Both latest-future and hidden-not-latest future records now refuse atomically.
+- Unqualified snapshots can lack selection fields; binding now refuses cleanly
+  instead of indexing missing fields.
+- The canonical owner's command dedupe originally recognized only first-command
+  bytes. It now recognizes every verified previously retained conflicting caller
+  command under the same write lock, preventing repeated conflict append while
+  retaining the veto. This applies to ordinary reservations as well as the new
+  binding API. Old history is not deleted or rewritten.
+
+Fresh complete independent review was clean after corrections. Two separate
+synthetic probes verified known-conflict retry/reopen without new rows and
+atomic refusal of a hidden future-prefix record. Reviewed SHA-256 values:
+
+- Contract: `042bcc3b1abf53eb7da152279f3e771e7f9c5560ba23167a8e9fc688edf538b0`.
+- Risk owner: `b8ce55529bbee238332719e2d652af892b7642e506cb3226f0a3a5f5b755d40a`.
+- Journal integration: `78d776f345cdbaac8c47f5eea2f17fb0c36f1f7cd22e46be161e13b7e9fc67c3`.
+- Source adapter: `91c1c7d958501515a1ed7250c0a3325d79868af84002eb9a3ea0258814a12e28`.
+
+Validation:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/pytest -q -p no:cacheprovider tests/test_crossed_stop_risk_binding.py tests/test_crossed_stop_source.py tests/test_account_risk_owner.py tests/test_crossed_stop.py`:
+  **100 passed**, including 20 new binding cases, in 79.59 seconds.
+- The ordinary-reservation conflict regression was also rerun after its final
+  exact-type assertion adjustment: **1 passed**. Scoped Ruff lint/format and
+  strict mypy passed for all five changed/new Python files. Diff and review-bundle
+  checks verify the final sources, tests and documents; parent pins are unchanged.
+- Tests used synthetic private journals only. Coverage includes unchanged budget,
+  prices/quantity/signal, no new intent, original/reopen/conflicting retries,
+  stale/wrong/legacy/empty/completed slots, veto/stops, caller transaction
+  preservation, storage rollback, concurrent attachments and source-trigger join.
+- Public-only Cloud `gemma4:31b` inference was verified for generic event-sourcing
+  invariants. No code, local documents, credentials or account data were exported;
+  model suggestions did not authorize any operational behavior.
+
+Claim ceiling: this is explicit same-slot policy metadata/control implementation
+and synthetic verification, not accepted operational risk binding or native exit
+ownership. Actual source/strategy admission, fractional/native source seams,
+source-to-broker ACK/execution mapping, old-protection continuity and real
+disposal/crash cleanup remain unaccepted. W3-06 and W3-07 parents remain open;
+no real account, broker order/cancel, market capture or formal paper was accessed
+or started. NOT_SIP_EQUIVALENT and runtime refusal remain controlling.

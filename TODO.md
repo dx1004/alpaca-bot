@@ -214,6 +214,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   - [x] Crossed-stop source-trigger connection, 2026-10-23: raw quote/metadata and official session interval join the original source-bound entry/shared slot at an immutable visible prefix; exact census, retry/conflict, source/declared isolation and risk-veto preservation pass 108 related tests and independent review. [Evidence and limits](docs/week3-evidence.md#crossed-stop-immutable-source-trigger-binding--2026-10-23). Synthetic source integration only; actual admission, operational emergency-risk binding, native exit ownership/cleanup and W3-06 parent acceptance remain open.
 
+  - [x] Crossed-stop explicit shared-risk policy binding, 2026-10-23: the canonical risk owner attaches the pinned independent policy to the existing positive OCO-origin slot without changing budget, L/S, size, fees or vetoes; source receipts join its immutable references. Current-slot retry, conflict/reopen dedupe, full visible prefix, rollback and concurrency pass 100 related tests and independent review. [Evidence and limits](docs/week3-evidence.md#crossed-stop-explicit-shared-risk-policy-binding--2026-10-23). Operational acceptance, real source/native exit ownership and cleanup remain open; no order or formal-paper authority.
+
 - [!] **W3-07 [P1] Run isolated Alpaca paper API engineering tests**
   Depends: W3-04..W3-06, credentials available. Minimal non-strategy orders in isolated state only.  
   Accept: complete order lifecycle/reconciliation evidence; test activity cannot enter the formal paper sample. If credentials are unavailable, mark blocked without fabricating acceptance.

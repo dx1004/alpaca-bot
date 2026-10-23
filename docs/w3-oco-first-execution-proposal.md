@@ -457,3 +457,22 @@ synthetic immutable captures. It does not accept whole-source admission, native
 exit ownership/reservations, fractional entry seams, the emergency version's
 operational risk binding or real broker disposal. No actual account/capture was
 accessed. [Evidence and retained gates](week3-evidence.md#crossed-stop-immutable-source-trigger-binding--2026-10-23).
+
+### Explicit same-risk-slot policy binding implemented — 2026-10-23
+
+The existing `AccountRiskOwner` now accepts an explicit pinned
+`CrossedStopContract` opt-in for its currently held positive OCO-origin slot.
+This records the independent emergency identity, exact original signal hash,
+frozen L/S/quantity and immutable prior-risk/binding references. It does not call
+the reservation allocator, change fees or quantities, clear old reasons/vetoes,
+consume another signal, create an order intent or grant runtime authority.
+Binding adds `REFRESH_REQUIRED`; normal source refresh and all other gates remain
+necessary. A historical command retry does not claim that a completed slot is
+currently bound. Concurrent identical-policy attachments retain the first receipt.
+
+Source-trigger receipts can now join that explicit policy reference to the same
+original reservation and entry evidence. Optional fields are absent for earlier
+unbound source prefixes, preserving their replay shape. Source observations still
+cannot use the declared preparation API to bypass unaccepted exit ownership or
+source/risk qualification. This closes an implementation connection, not the
+operational risk/protection acceptance gate. [Validation and limits](week3-evidence.md#crossed-stop-explicit-shared-risk-policy-binding--2026-10-23).

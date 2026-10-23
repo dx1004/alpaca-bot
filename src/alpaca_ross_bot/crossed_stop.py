@@ -11,18 +11,14 @@ import json
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from fractions import Fraction
-from pathlib import Path
 from typing import Any
 
+from .crossed_stop_contract import MANIFEST_SHA256 as MANIFEST_SHA256
+from .crossed_stop_contract import VERSION as VERSION
+from .crossed_stop_contract import load_crossed_stop_contract
 from .journal import JournalError
 from .oco_journal import OcoJournal, _json
-from .oco_research import MANIFEST_SHA256 as PARENT_SHA256
 
-VERSION = "CROSSED_STOP_RESIDUAL_EXIT_RESEARCH_V1"
-MANIFEST_SHA256 = "6f5c6fe8796e9abad2f88edcee46d13e337f762765f45f6ba08c6959e01fc0b1"
-_MANIFEST = Path(__file__).resolve().parents[2] / (
-    "evidence/crossed-stop-residual-exit-research-v1.json"
-)
 _ORIGIN = "DECLARED_RESEARCH_INPUT_NOT_SOURCE_OR_BROKER_PROOF"
 _SOURCE_ORIGIN = "SOURCE_REFERENCED_TRIGGER_NOT_EXIT_OR_BROKER_QUALIFICATION"
 
@@ -159,12 +155,7 @@ class CrossedStopJournal:
     def __init__(self, owner: OcoJournal) -> None:
         if type(owner) is not OcoJournal:
             raise JournalError("canonical OCO lot owner required")
-        raw = _MANIFEST.read_bytes()
-        if hashlib.sha256(raw).hexdigest() != MANIFEST_SHA256:
-            raise JournalError("pinned independent crossed-stop contract differs")
-        manifest = json.loads(raw)
-        if manifest["parent_contract_sha256"] != PARENT_SHA256:
-            raise JournalError("crossed-stop parent differs")
+        manifest = json.loads(load_crossed_stop_contract().raw)
         self.owner, self.journal = owner, owner.journal
         self._binding_bytes = _json(
             dict(

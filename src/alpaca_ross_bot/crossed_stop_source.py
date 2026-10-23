@@ -11,6 +11,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from .account_risk_owner import AccountRiskOwner
+from .crossed_stop_contract import load_crossed_stop_contract
 from .journal import JournalError
 from .oco_journal import OcoJournal, _json
 from .posted_ledger import _exact, _timestamp
@@ -111,6 +112,36 @@ def derive_source_crossing(
     }
     refs.add(bound["reservation_ref"][0])
     refs.add(bound["capture_ref"][0])
+    emergency_binding = held.get("emergency_execution_binding")
+    if emergency_binding is not None:
+        if (
+            not isinstance(emergency_binding, dict)
+            or _json(emergency_binding["identity"])
+            != _json(load_crossed_stop_contract().identity)
+            or emergency_binding["client_order_id"] != model.entry_scope
+            or emergency_binding["symbol"] != model.symbol
+            or emergency_binding["quantity"] != bound["reservation"]["quantity"]
+            or _exact(emergency_binding["limit"], positive=True) != model.limit
+            or _exact(emergency_binding["stop"], positive=True) != model.stop
+            or emergency_binding["research_signal_sha256"]
+            != hashlib.sha256(
+                _json(bound["reservation"]["research_signal"])
+            ).hexdigest()
+        ):
+            raise JournalError(
+                "emergency policy differs from original source risk slot"
+            )
+        for name in ("prior_slot_ref", "binding_ref"):
+            binding_sequence, digest = emergency_binding[name]
+            stored = owner.journal.read_event(binding_sequence)
+            if (
+                stored is None
+                or stored[0].payload_ref != digest
+                or binding_sequence > horizon
+                or not stored[0].visible_at(at)
+            ):
+                raise JournalError("emergency risk binding reference unavailable")
+            refs.add(binding_sequence)
     sources = []
     for ref in sorted(refs):
         stored = owner.journal.read_event(ref)
@@ -167,7 +198,7 @@ def derive_source_crossing(
     ):
         issues.append("REPORTED_RISK_SNAPSHOT_UNQUALIFIED")
     qualified = price.component_qualified and not issues
-    return {
+    result = {
         "schema": 1,
         "classification": "RAW_PRICE_AND_ENTRY_REFERENCED_CROSSING_NOT_ADMISSION",
         "source_horizon": horizon,
@@ -208,3 +239,7 @@ def derive_source_crossing(
             "NO_FRESHNESS_SESSION_OR_RISK_CLEARANCE_FOR_DISPATCH",
         ],
     }
+    if emergency_binding is not None:
+        result["emergency_risk_policy_opt_in_observed"] = True
+        result["emergency_risk_binding"] = emergency_binding
+    return result
