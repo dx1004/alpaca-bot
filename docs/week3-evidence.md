@@ -3252,3 +3252,28 @@ fee attribution and qualified window endpoints. These are genuine missing
 inputs, not grounds for relabeling engineering observations. W3-06/07/08 remain
 open; no source-policy acceptance, account access, broker action or formal
 paper start occurred.
+
+## Protection requirement and component-experiment scope audit — 2026-10-22
+
+Independent read-only review compared original P11/P13, the retained user
+continuity decision, the accepted OCO-first manifest and current incident
+refusals. The [controlling clarification](w3-oco-first-execution-proposal.md#controlling-protection-scope-and-component-test-dependency--2026-10-22)
+removes two historical implications: every route need not atomically convert
+or grow a standalone stop, and the incident contract does not require a
+universal broker no-race guarantee. Neither correction permits a stop gap or
+invents a latency allowance. Current protection/runtime refusal remains valid.
+
+Full strategy/data acceptance is not a universal prerequisite for every safe
+component experiment; otherwise evidence gathering could be circular. Actual
+component dispatch still requires an independently reviewed safe request,
+protection, cleanup and recovery envelope. The existing bounded-test provision
+is preserved, not replaced by an order authorization. No currently enabled
+writing path was found, and no experiment or repeated synthetic suite was run.
+
+Real remaining dependencies are initial/late-fill protection mapping, exact
+residual and broker reservations, sibling-stop preservation during amendment,
+safe close/crash cleanup and actual native send/ACK/execution attribution. The
+pending reported-price policy decision is a separate source/entry prerequisite;
+accepting it would not resolve these execution requirements. Original accepted
+manifests, runtime flags and W3 parent status remain unchanged. Documentation
+diff checks passed; no account access, broker request or formal paper occurred.

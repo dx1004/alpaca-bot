@@ -102,7 +102,7 @@ monotonicity argument, not an assertion that finite cases establish all behavior
 | Independent research version | Separate candidate/provisional early-exit decision; other qualification retained | User accepted research scope only; source/protection/close remain unqualified |
 | Deterministic owner/model | Durable group allocation, timeout recovery, no double reservation and all six incident groups | Local source-derived incident receipts, durable entry allocation and six synthetic fault groups verified; native protection/exit mapping, qualified recovery and continuous runtime acceptance remain open |
 | Broker mapping | OCO during pending entry/cancel, group reservations, exact residuals, target amendments and stop preservation | Unverified |
-| Bounded isolated API experiment | Qualified data/account, reviewed request manifest, safe supported cleanup and restart path | Not authorized for dispatch by this document |
+| Bounded isolated API component experiment | Component-specific account/source prerequisites, reviewed request manifest, independently safe supported cleanup and restart path | Full strategy/data acceptance is not a universal prerequisite for every component observation; this document authorizes no dispatch or unprotected partial position |
 | Formal paper preregistration | Accepted release and all existing W3/W4 requirements | Blocked by prior stages |
 
 The provisional early-exit decision has been made for this separate candidate.
@@ -111,6 +111,33 @@ research manifest explicitly; it cannot enter the original runtime by calling
 the changed behavior an engineering-only change. This exit-allocation book is
 not a second cash/loss-risk allocator, and no entry-risk version binding is
 inferred from sharing the parent research inputs.
+
+### Controlling protection scope and component-test dependency — 2026-10-22
+
+P11 requires protection of actual partial fills at frozen S and reconciliation
+of racing entry fills; P13 preserves valid protection under uncertainty. The
+user's rejection of a cancel-confirm-submit protection gap remains controlling.
+No numerical activation grace period or zero-network-latency promise follows
+from these requirements. Lack of a specified latency does not approve an
+unprotected interval.
+
+Atomic standalone-stop conversion and atomic growth of an established stop
+belong to the earlier architecture, not every accepted OCO-first allocation.
+Disjoint allocations may avoid those operations. They still need a supported
+initial/late-fill protection mapping and exact residual/reservation eligibility.
+Likewise, the incident contract explicitly requires handling double exits;
+it does not require proof that broker races can never occur. Observed stop
+coverage, arithmetic and matching group fields do not prove earlier continuity.
+
+Do not require full W3-06 acceptance before every independently safe component
+experiment needed to gather W3-06 evidence. Each such experiment needs its own
+reviewed account/source scope, request/stop conditions, crash/restart handling
+and supported protection-preserving cleanup before execution. No current
+enabled broker-writing path is established here. Deliberately creating an
+unprotected partial position remains prohibited; a component result cannot
+qualify P11 or bypass the W3-07 full-cycle dependencies. The actual unresolved
+mapping remains initial/late-fill protection, residual/group reservations,
+sibling-stop preservation during amendment, and safe close/crash cleanup.
 
 The research-only [allocation model](../src/alpaca_ross_bot/oco_research.py)
 and [synthetic tests](../tests/test_oco_research.py) now implement exact lot
