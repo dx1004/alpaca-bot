@@ -1,0 +1,27 @@
+{
+  "account_get_performed": true,
+  "account_identity_matches_bound_journal": true,
+  "acknowledged_status_symbol_count": 1,
+  "baseline_or_risk_state_changed": false,
+  "broker_writes_performed": false,
+  "classification": "BOUNDED_IEX_STATUS_SUBSCRIPTION_NOT_CURRENT_STATUS",
+  "continuous_status_coverage_proven": false,
+  "control_frame_sha256": [
+    "4e9f8851ead97dad186d181acb4b2aadfcac94763f3db885d43b34cd82889bae",
+    "4a75420b09cd5a7bfa91b214daed981a2fc2b43e7a04df92895b548f3d707128"
+  ],
+  "coverage_label": "NOT_SIP_EQUIVALENT",
+  "current_no_halt_proven": false,
+  "finished_at": "2026-10-23T20:24:34.529383+00:00",
+  "formal_paper_authorized": false,
+  "iex_authentication_confirmed": true,
+  "local_order_markers_unchanged": true,
+  "other_channels_empty": true,
+  "private_journal_bytes_unchanged": true,
+  "runtime_authorized": false,
+  "schema": 1,
+  "started_at": "2026-10-23T20:24:33.528846+00:00",
+  "status": "SUBSCRIPTION_ACK_ONLY",
+  "subscription_ack_sha256": "ee3a645d416ec7dddc98c7b70ec76f9a18a82d6a6bfedf1ec1dfc36fae96c9cb",
+  "subscription_acknowledged": true
+}

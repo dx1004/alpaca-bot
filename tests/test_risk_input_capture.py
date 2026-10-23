@@ -46,6 +46,20 @@ def test_capture_requires_explicit_connect_before_credentials_or_network() -> No
     }
 
 
+@pytest.mark.parametrize("owner_mode", ["off", "source_baseline"])
+def test_capture_optional_statuses_retains_raw_refs_without_price_or_risk_clearance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, owner_mode: str
+) -> None:
+    test_capture_private_account_and_stream_with_redacted_summary(
+        tmp_path,
+        monkeypatch,
+        short_first_page=False,
+        freeze_requested=False,
+        owner_mode=owner_mode,
+        include_statuses=True,
+    )
+
+
 def test_get_record_retains_raw_body_and_only_uses_bounded_get(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -75,6 +89,7 @@ def test_capture_private_account_and_stream_with_redacted_summary(
     short_first_page: bool,
     freeze_requested: bool,
     owner_mode: str,
+    include_statuses: bool = False,
 ) -> None:
     module = collector()
     private = tmp_path / "private"
@@ -168,11 +183,14 @@ def test_capture_private_account_and_stream_with_redacted_summary(
             return None
 
         async def subscribe(self, channels: object) -> None:
-            assert channels == {
+            expected = {
                 "trades": ("SPY",),
                 "quotes": ("SPY",),
                 "bars": ("SPY",),
             }
+            if include_statuses:
+                expected["statuses"] = ("SPY",)
+            assert channels == expected
             self.subscribed = True
 
         async def receive(self) -> ReceivedFrame:
@@ -180,21 +198,26 @@ def test_capture_private_account_and_stream_with_redacted_summary(
                 raise TimeoutError
             self.used = True
             at = observed_at
-            body = json.dumps(
-                [
-                    {
-                        "T": "t",
-                        "S": "SPY",
-                        "x": "V",
-                        "p": 10,
-                        "s": 1,
-                        "i": 1,
-                        "c": ["@"],
-                        "z": "B",
-                        "t": at.isoformat().replace("+00:00", "Z"),
-                    }
+            records: list[dict[str, object]] = [
+                {
+                    "T": "t",
+                    "S": "SPY",
+                    "x": "V",
+                    "p": 10,
+                    "s": 1,
+                    "i": 1,
+                    "c": ["@"],
+                    "z": "B",
+                    "t": at.isoformat().replace("+00:00", "Z"),
+                }
+            ]
+            if include_statuses:
+                records += [
+                    {"T": "s", "S": "SPY", "sc": "T", "t": at.isoformat()},
+                    {"T": "s", "S": "SPY", "sc": "H", "t": at.isoformat()},
+                    {"T": "b", "S": "SPY", "t": at.isoformat()},
                 ]
-            ).encode()
+            body = json.dumps(records).encode()
             event = self.journal.append_next(
                 source_id="alpaca_market_data",
                 feed="iex",
@@ -232,6 +255,7 @@ def test_capture_private_account_and_stream_with_redacted_summary(
         freeze_baseline=freeze_requested,
         observe_risk_owner=owner_mode != "off",
         require_bound_account=owner_mode != "off",
+        include_statuses=include_statuses,
     )
     context = (
         account_sources(
@@ -255,6 +279,20 @@ def test_capture_private_account_and_stream_with_redacted_summary(
     assert report["account"]["starting_equity_matches_500"]
     assert report["account"]["pre_session_baseline_frozen"] is False
     assert report["market"]["assessed_records"] == 1
+    assert report["market"]["assessment_scope"] == "TRADE_QUOTE_ONLY"
+    assert report["market"]["raw_records"] == (4 if include_statuses else 1)
+    assert report["market"]["non_price_record_counts"] == (
+        {"s": 2, "b": 1} if include_statuses else {}
+    )
+    assert report["market"]["status_subscription_acknowledged"] is include_statuses
+    assert len(report["market"]["raw_status_record_refs"]) == (
+        2 if include_statuses else 0
+    )
+    assert [row[2] for row in report["market"]["raw_status_record_refs"]] == (
+        [1, 2] if include_statuses else []
+    )
+    assert report["market"]["current_trading_status_verified"] is False
+    assert report["market"]["continuous_status_coverage_verified"] is False
     assert report["market"]["runtime_eligible"] is False
     assert report["private_integrity_verified"] is True
     assert report["risk_inputs"]["reported_inputs_qualified"] is True

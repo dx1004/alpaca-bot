@@ -299,10 +299,17 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
         symbols = tuple(
             sorted({"SPY", *(s for s, _ in ownership.owned_long_positions)})
         )
-        await stream.subscribe({"trades": symbols, "quotes": symbols, "bars": symbols})
+        channels = {"trades": symbols, "quotes": symbols, "bars": symbols}
+        include_statuses = getattr(args, "include_statuses", False)
+        if include_statuses:
+            channels["statuses"] = symbols
+        await stream.subscribe(channels)
         subscribed = stream.subscribed
         deadline = asyncio.get_running_loop().time() + args.stream_seconds
         assessed = fresh = valid = 0
+        raw_records = 0
+        non_price_types: dict[str, int] = {}
+        status_refs: list[tuple[int, str, int]] = []
         codes: set[tuple[str, str, str]] = set()
         latest_quotes: dict[str, tuple[int, int, str]] = {}
         while asyncio.get_running_loop().time() < deadline:
@@ -318,6 +325,17 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
                 raise ValueError("raw frame disappeared")
             records = json.loads(stored[1])
             for index, value in enumerate(records):
+                raw_records += 1
+                record_type = value.get("T")
+                if record_type not in {"t", "q"}:
+                    non_price_types[record_type] = (
+                        non_price_types.get(record_type, 0) + 1
+                    )
+                    if record_type == "s":
+                        status_refs.append(
+                            (stored[0].sequence, stored[0].payload_ref, index)
+                        )
+                    continue
                 kind = "trade" if value.get("T") == "t" else "quote"
                 mapping = names.get((kind, value.get("z")))
                 checked = assess_market_record(
@@ -437,6 +455,14 @@ async def capture(args: argparse.Namespace) -> dict[str, Any]:
             "coverage": "NOT_SIP_EQUIVALENT",
             "diagnostic_symbol": "SPY",
             "subscription_acknowledged": subscribed,
+            "assessment_scope": "TRADE_QUOTE_ONLY",
+            "raw_records": raw_records,
+            "non_price_record_counts": dict(sorted(non_price_types.items())),
+            "status_subscription_requested": include_statuses,
+            "status_subscription_acknowledged": include_statuses and subscribed,
+            "raw_status_record_refs": status_refs,
+            "current_trading_status_verified": False,
+            "continuous_status_coverage_verified": False,
             "assessed_records": assessed,
             "schema_valid_records": valid,
             "measured_fresh_records": fresh,
@@ -502,6 +528,14 @@ def main() -> None:
         / ".local/state/alpaca-bot/risk-input-qualification-20261016",
     )
     parser.add_argument("--stream-seconds", type=float, default=10)
+    parser.add_argument(
+        "--include-statuses",
+        action="store_true",
+        help=(
+            "Also retain raw IEX status messages; "
+            "never prove current no-halt or continuity"
+        ),
+    )
     args = parser.parse_args()
     if not args.connect:
         print(json.dumps({"status": "NOT_RUN", "runtime_authorized": False}))

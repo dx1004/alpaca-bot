@@ -3831,3 +3831,37 @@ remaining issue: preparation `acc9e36903981132`, crossed-stop owner
 `9b92cb18b4c93214`, Journal `032f7c1c5146b504`, source tests `1f496ce1d3494f8b`.
 The alias/future-prefix checks were root-run after the earlier independent suite;
 the final reviewer inspected those changed bytes without repeating the suite.
+
+### Actual IEX status subscription and bounded collector connection — 2026-10-23
+
+A finite read-only probe at 20:24:33–20:24:34 UTC authenticated the existing
+dedicated credentials, matched the paper identity against its original private
+journal, and received an IEX `statuses` subscription acknowledgment for AAPL.
+The [redacted actual result](../evidence/w3-iex-status-subscription-20261023.json)
+records the acknowledgment digest and confirmation flags, not account IDs,
+credentials, balances or raw responses. Read-only SQLite checks verified private
+integrity, zero local intent/send/cancel markers and unchanged journal bytes.
+No baseline/risk mutation or broker write occurred. Raw control frames were not
+retained; their hashes identify the observations, not independently replayable
+raw source. This establishes this bounded symbol/channel acknowledgment only,
+not complete message delivery, market-wide entitlement or a current halt state.
+
+`qualify_risk_inputs.py --include-statuses` now optionally requests statuses in
+its existing finite IEX subscription. Every status record stays in its original
+raw frame, and the redacted report retains sequence/hash/index references.
+Status schemas are not accepted merely because a raw `s` record arrived. The
+new price-assessment scope is explicitly `TRADE_QUOTE_ONLY`: bars, statuses and
+other non-price messages have separate full raw denominators instead of being
+counted as malformed quotes. This does not retroactively change older reports.
+Default subscription channels, selected quote marking, source-risk/baseline
+rules and all runtime gates are preserved. No current no-halt or continuous
+status-coverage acceptance follows from any count or acknowledgment.
+
+Two new mixed-frame integrations cover t/s/s/b records with status capture on,
+including deliberately incomplete status schemas, retained raw indices and
+unchanged risk refusal. The existing default/window/account/redaction and stream
+suites passed with them: 77 tests, one existing upstream websockets legacy
+DeprecationWarning. Independent review found no actionable issue in denominators,
+raw ancestry, subscription acknowledgment, defaults or authority. Ruff/mypy checks
+passed. A bounded actual collector run remains a separate integration observation;
+W3-06/07/08 parents stay open and no actual order or formal paper was started.
