@@ -1,0 +1,107 @@
+{
+  "account": {
+    "activity_pages": 2,
+    "available_funds_observed": false,
+    "available_profile": "UNQUALIFIED",
+    "before_session_open": false,
+    "calendar_sequence": 5393,
+    "capture_sequence": 5394,
+    "pre_session_baseline_frozen": false,
+    "reason_codes": [
+      "CASHFLOW_COMPLETENESS_UNVERIFIED",
+      "CHARGES_COMPLETENESS_UNVERIFIED",
+      "RESERVATIONS_UNVERIFIED",
+      "BID_MARKS_UNVERIFIED",
+      "PAGINATION_COMPLETENESS_UNVERIFIED",
+      "MISSING_DAYTRADING_BUYING_POWER",
+      "MISSING_PENDING_TRANSFER_IN",
+      "MISSING_PENDING_TRANSFER_OUT",
+      "NO_PRESESSION_BASELINE",
+      "ONE_X_FLAT_AVAILABLE_PROFILE_UNQUALIFIED"
+    ],
+    "settlement_status": "UNKNOWN",
+    "starting_equity_matches_500": true
+  },
+  "broker_writes_performed": false,
+  "independent_readonly_verification": {
+    "after_official_regular_close": true,
+    "all_event_payload_hashes_verified": true,
+    "current_status_or_continuity_accepted": false,
+    "no_new_risk_baseline_capital_owner_events": true,
+    "private_integrity_verified": true,
+    "zero_intent_send_cancel_markers_verified": true
+  },
+  "ledger": {
+    "assessment_sequence": 5395,
+    "baseline_present": false,
+    "baseline_status": "NOT_REQUESTED",
+    "cash_matches": null,
+    "issues": [
+      "CURRENT_FUNDS_UNQUALIFIED",
+      "NONATOMIC_ACCOUNT_ACTIVITY_CAPTURE",
+      "OWNED_NONFLAT_RECONCILIATION_UNQUALIFIED",
+      "POSTED_ACTIVITY_FINALITY_UNVERIFIED",
+      "PRESESSION_E0_MISSING"
+    ],
+    "new_activity_count": 0,
+    "new_fill_count": 0,
+    "pagination_exhausted": true,
+    "runtime_authorized": false
+  },
+  "market": {
+    "assessed_records": 0,
+    "assessment_scope": "TRADE_QUOTE_ONLY",
+    "clock_origin_qualified": false,
+    "continuity_recovery_required_after_close": true,
+    "continuous_status_coverage_verified": false,
+    "coverage": "NOT_SIP_EQUIVALENT",
+    "current_trading_status_verified": false,
+    "diagnostic_symbol": "SPY",
+    "feed": "iex",
+    "measured_fresh_records": 0,
+    "metadata_refs": [
+      5396,
+      5397,
+      5398,
+      5399,
+      5400,
+      5401
+    ],
+    "non_price_record_counts": {},
+    "observed_condition_names": [],
+    "raw_records": 0,
+    "raw_status_record_refs": [],
+    "runtime_eligible": false,
+    "schema_valid_records": 0,
+    "status_subscription_acknowledged": true,
+    "status_subscription_requested": true,
+    "subscription_acknowledged": true,
+    "trigger_policy_accepted": false
+  },
+  "observed_at": "2026-10-23T20:31:15.220952+00:00",
+  "private_integrity_verified": true,
+  "risk_inputs": {
+    "assessment_sequence": 5403,
+    "available_funds_qualified": true,
+    "bid_valuation_qualified": true,
+    "funds_profile": "ALPACA_PAPER_REPORTED_1X_AVAILABILITY_V1",
+    "issues": [],
+    "limitations": [
+      "E0_AND_ACCOUNTING_LEDGER_REQUIRE_SEPARATE_ACCEPTANCE",
+      "NON_ATOMIC_HTTP_SNAPSHOTS",
+      "NOT_SETTLEMENT_PROOF",
+      "NOT_STRATEGY_PROTECTION_OR_EXECUTABLE_RELEASE_ACCEPTANCE",
+      "REVALIDATE_INPUTS_UNDER_RUNTIME_OWNER_BEFORE_ACTION",
+      "UNKNOWN_PENDING_TRANSFER_IN",
+      "UNKNOWN_PENDING_TRANSFER_OUT",
+      "UNKNOWN_UNSETTLED_FUNDS"
+    ],
+    "owned_position_count": 0,
+    "ownership_verified": true,
+    "reported_inputs_qualified": true,
+    "runtime_authorized": false,
+    "valued_position_count": 0
+  },
+  "runtime_authorized": false,
+  "zero_order_intents_verified": true
+}

@@ -3865,3 +3865,33 @@ DeprecationWarning. Independent review found no actionable issue in denominators
 raw ancestry, subscription acknowledgment, defaults or authority. Ruff/mypy checks
 passed. A bounded actual collector run remains a separate integration observation;
 W3-06/07/08 parents stay open and no actual order or formal paper was started.
+
+### Actual finite status-enabled collector observation — 2026-10-23
+
+Using committed collector `0da96f8`, one 3-second IEX capture completed at
+20:31:15 UTC on the existing dedicated credentials and original private journal.
+`--require-bound-account --include-statuses` was enabled; `--freeze-baseline` and
+`--observe-risk-owner` were omitted. The
+[redacted integration report](../evidence/w3-iex-status-capture-20261023.json)
+confirms the full requested subscription, including SPY statuses, and successful
+private integrity/zero-order-intent checks. The AAPL-only direct probe above and
+this combined SPY subscription are separate bounded observations, not universal
+symbol coverage.
+
+No market records arrived during this finite interval: raw price and status
+observations are both empty. Independent read-only inspection of the captured
+official calendar confirmed the observation was after the regular close. Empty
+status delivery is not a normal-trading/no-halt observation. Closing the bounded
+stream preserves its recovery-required gap; current status and continuous status
+coverage remain unverified. No new E0 is synthesized or inferred from this run.
+
+A separate read-only SQLite audit verified every current stored payload hash,
+private integrity and zero intent/send/cancel rows. The newly appended capture
+prefix contains no account-risk, baseline, baseline-receipt or capital-stage
+owner events. Raw source observations were appended privately; earlier history
+was preserved. No broker order/cancel, risk reservation, baseline freeze, account
+reset, paid-data request or formal paper start occurred.
+
+This closes the finite status-enabled collector integration observation only.
+W3-06 still requires operational status/source/protection and native exit-ownership
+acceptance before W3-07 actual order cycles; W3-08 final freeze remains gated.

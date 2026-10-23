@@ -514,3 +514,15 @@ local preparation**, not satisfaction or relaxation of the accepted operational
 halt/protection/source gate. Broker admission, native exit ownership, actual
 cleanup/restart execution and W3-06/07 acceptance remain open. No broker call or
 formal paper evaluation occurred. See the [implementation evidence](week3-evidence.md#raw-source-local-emergency-preparation--2026-10-23).
+
+### Actual status subscription capability observed — 2026-10-23
+
+The existing dedicated account acknowledged IEX `statuses` for AAPL in a direct
+finite read-only probe and for SPY in a separate committed collector subscription.
+The collector now retains raw status references separately from trade/quote
+assessment. Its 3-second after-close observation received no records. These facts
+remove subscription acknowledgment as an unknown for those bounded requests;
+they do not establish current security state, status delivery, initial-state
+completeness or continuous coverage. `current_no_halt_proven` and all operational
+admission/protection gates remain false. No source-prepared reservation was sent.
+See the [actual integration record](week3-evidence.md#actual-finite-status-enabled-collector-observation--2026-10-23).
