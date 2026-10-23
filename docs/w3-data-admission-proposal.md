@@ -222,3 +222,73 @@ Independent retrieval checked these first-party pages, and the coordinator
 rechecked the FAQ matrix. This inventory selects no new trading/quote policy.
 The next concrete contract must separate source-documented facts from any
 remaining eligibility choice, so only genuine policy decisions reach the user.
+
+## Concrete reported-price policy proposal — pending acceptance
+
+Proposal ID: `ALPACA_REPORTED_INTRADAY_PRICE_POLICY_PROPOSAL_1`.
+Status: **DRAFT — USER POLICY ACCEPTANCE AND INDEPENDENT VALIDATION REQUIRED**.
+This fills the currently undefined source-eligibility rule; it is not a Ross
+rule, executable acceptance or an order authorization. Preserve the existing
+observation-age/OCO-first parent versions and both accepted manifest bytes.
+
+### Proposed source-eligibility decisions
+
+1. **Intraday price events:** use the published Alpaca **minute** price-update
+   rules, by reported tape and every reported trade condition, for the first
+   eligible RTH trade, setup/invalidation/trigger prices and the RTH low. The
+   published minute open/close and high/low flags agree; volume-only trades do
+   not become price events. Apply the strictest applicable condition per field.
+   This is a proposed strategy-use mapping of documented aggregation facts,
+   not a claim that Alpaca prescribes trading triggers. Daily trend and prior
+   daily close still use the unchanged observed provider daily bars; do not
+   substitute minute rules for daily aggregation or recompute scanner volume.
+2. **RTH consistency:** retain the calendar's reported-time RTH interval and the
+   accepted provider-reported/local-receipt ages. A condition identifying
+   extended-hours activity inside that RTH interval is a source/session conflict
+   requiring resolution before the affected symbol/derivation can be admitted,
+   even if minute aggregation could update a price. This conflict veto is a
+   new conservative eligibility choice, not an inherited requirement or an
+   all-symbol/session-wide latch. Unknown code/tape combinations, unresolved ordering or known
+   history gaps remain unavailable. Preserve exact codes, including the space
+   code on tapes A/B; do not trim or substitute tape-C codes.
+3. **Entry quote profile:** explicitly require the existing reported-regular
+   quote shape `c == ["R"]`, tape A/B/C and contemporaneous source metadata
+   identifying R as `Regular Market Maker Open`, plus the unchanged quote age,
+   positive bid/ask/sizes and bid-not-above-ask checks. Preserve reported size
+   units; do not manufacture share depth. Reuse the source-verification checks
+   of `ALPACA_IEX_REPORTED_REGULAR_BID_V1` without treating its earlier valuation
+   acceptance as entry-policy approval. Extending this restriction to entry is
+   a new proposed policy choice. It asserts no NBBO, firm liquidity, native IEX
+   flag mapping or fill guarantee. Other quote conditions remain unavailable
+   for this profile, not negative strategy witnesses.
+4. **History/revisions:** require decision-visible raw trade history from open,
+   complete observed query ranges/pages and monitored-stream overlap/revision
+   reconciliation before deriving first trade, setup state or low. Bars alone
+   cannot reconstruct trade order. Never substitute the first locally seen
+   trade, assume consecutive trade IDs or infer missing minutes. Preserve raw
+   occurrences, conflicts and availability times; an unresolved order between
+   distinct price events with tied timestamps blocks an order-sensitive
+   derivation unless every possible ordering produces the same result; a
+   commutative low calculation alone does not require invented ordering.
+   Corrections are not new live trigger prints, and later repairs never rewrite old decisions
+   or restore a consumed attempt. Freeze source identity/deduplication/revision
+   mechanics in the independently reviewed implementation; no finality delay,
+   watermark or native lossless-delivery claim is added here.
+
+### Review cases fixed before implementation
+
+| Reported input | Proposed handling | Why it matters |
+| --- | --- | --- |
+| Nasdaq `@` plus `I`, price above trigger high | Retain volume-only observation; no price trigger | A high odd-lot print does not update the provider minute price |
+| Condition B on tape C versus tape A/B | Apply the different published tape rules | A regular-sale-only shortcut would discard documented price events; a tape-blind rule can admit an average-price event |
+| P/Z/4 in a minute price history | Not a minute price event under the documented rules | Daily high/low eligibility must not leak into intraday trigger/low rules |
+| T inside the reported RTH interval | Unavailable source/session conflict pending resolution | Minute aggregation eligibility alone cannot settle the RTH inconsistency |
+| Latest quote carries an unsupported condition | Unavailable quote; preserve the observation | No older qualifying quote may be cherry-picked to replace it |
+| History begins after open or a distinct-price timestamp tie can change the setup result | No positive admission for the affected derivation | Neither a fresh quote nor a later download proves a missing or ambiguous setup path; order-independent calculations need no invented sequence |
+
+Approval would authorize a separate versioned source-policy implementation and
+validation of these choices. It would not qualify actual inputs, change risk
+amounts/entry windows, approve a protection gap, enable broker calls or start
+formal paper. The original Ross baseline and source-age baseline remain
+preserved. A rejected or unresolved policy leaves the current source gate open;
+metadata names alone will not be used to fill it silently.

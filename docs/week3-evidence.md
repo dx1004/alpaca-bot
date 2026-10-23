@@ -3130,3 +3130,26 @@ evidence pass; source-native unknowns no longer create an extra blanket refusal.
 Existing research-component runtime flags are not a new native-equivalence
 requirement and are not being toggled by this audit. This documentation
 correction requires no order, new capture or broker contact.
+
+## Reported-price eligibility decision package — 2026-10-22
+
+The [concrete source-policy proposal](w3-data-admission-proposal.md#concrete-reported-price-policy-proposal--pending-acceptance)
+is now independently reviewed as a decision package, not accepted execution.
+It explicitly separates three new choices: mapping documented minute-price
+eligibility to intraday strategy events, a known extended-hours-condition/RTH
+conflict veto for the affected symbol/derivation, and extending the existing
+valuation-only regular quote profile to entry. Existing ages, raw history and
+unknown-condition vetoes remain unchanged. The review corrected an overbroad
+timestamp-tie refusal: only order-sensitive ambiguous derivations are blocked;
+commutative lows need no invented event ordering. It also made the proposed
+RTH conflict veto explicit rather than implying inherited acceptance.
+
+Independent final review found no remaining material omission preventing a
+user decision in this scope. Exact condition matrices and reconstruction
+mechanics still require implementation review and validation after policy
+acceptance. The observation-age and OCO-first manifest SHA-256 values remain
+`f5439d49ac9354abbe56b7b1fcb603c915942dee647efedebf48060e63b49e8c`
+and `fa6e29ede5a92428308ad19ba794be5e6e3f0b2a3c216818a54f3ffc9a112d80`.
+`rtk git diff --check` passed. This documentation-only increment reuses prior
+source research and test evidence; no test rerun, capture, account operation,
+policy acceptance or W3 parent completion is claimed.
