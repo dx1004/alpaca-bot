@@ -308,3 +308,90 @@ First/late-fill admission when price is already through S is the critical
 research item; another fake dispatcher, a successful target amendment or a
 whole-share-only observation cannot close it. No broker request was made and
 no contact with Alpaca was sent or made a universal prerequisite.
+
+## Crossed-stop new-fill disposition decision — pending user choice, 2026-10-23
+
+Proposal ID: `CROSSED_STOP_UNCOVERED_RESIDUAL_EXIT_PROPOSAL_1`.
+Status: **PROPOSAL_NOT_ACCEPTED — NO IMPLEMENTATION OR ORDER AUTHORITY**.
+This proposes an independent emergency-disposition version for research and
+validation. It preserves the original continuously protected candidate and
+does not silently extend the accepted OCO-first contract.
+
+### Source result and excluded shortcuts
+
+The advanced-order check constrains stop_price itself; changing a new OCO's
+stop-limit execution price does not establish admission at crossed fixed S.
+For a working limit buy at L, the [wash table](https://docs.alpaca.markets/us/docs/user-protection)
+rejects a new sell limit when its price is at or below L. A sell limit above L
+is not an immediately executable exit when bids are below S<L. Trailing-stop
+exemption supplies no independently frozen-S threshold. The
+[retail create schema](https://docs.alpaca.markets/us/reference/postorder)
+lists sell_to_close intent but documents no wash/reservation exemption or
+reduce-only guarantee; SDK acceptance is only syntax evidence.
+
+The [single-position close endpoint](https://docs.alpaca.markets/us/reference/deleteopenposition-1)
+does not supply those guarantees either. Published Alpaca staff explanations
+([2020-12-03](https://forum.alpaca.markets/t/cant-sell-my-aal-stock/3512),
+[2025-08-27](https://forum.alpaca.markets/t/alpaca-py-apierror-insufficient-qty-available-for-order/17712))
+describe available quantity after outstanding sell reservations. They support
+investigating a genuinely available uncovered residual, not canceling old
+protection to sell it. The later thread's multiple-OCO conclusion is another
+user's reply, not an additional staff guarantee. No public native route was
+found proving immediate fixed-S protection of the new quantity while the buy
+remainder is unresolved. This is a bounded research finding, not proof that
+every possible broker architecture is impossible.
+
+### Concrete independent emergency rule for review
+
+1. On a source-observed new owned fill that lacks verified protection, use a
+   fresh source-qualified reported IEX bid at or below frozen S as the proposed
+   emergency trigger. This is an explicit incident-policy choice, not proof of
+   Alpaca's native stop election or equality with its market-base price. Missing
+   or stale quotes remain unknown; do not invent a crossing. Once triggered,
+   retain the incident across later rebounds. Stop new exposure and retain S.
+   Preserve every valid protective order for older quantities. Do not lower S, create a
+   trailing substitute, round residuals, reset an attempt or release risk.
+   Unverified protection triggers an incident; it does not establish freely
+   closeable or unallocated shares.
+2. Retain the existing durable entry-cancel request and unknown-result rules.
+   Do not infer terminality from a cancel acknowledgment, timeout or lookup
+   miss. Continue owning all racing and late fills.
+3. Before a residual-close intent, require fresh same-account evidence of a
+   terminal entry, no other conflicting working/uncertain buy, reconciled
+   per-execution ownership, current position and existing/unknown exit
+   allocations. Isolate the exact new uncovered quantity using the canonical
+   ledger. Broker-confirmed available quantity must accommodate it; a mismatch
+   is an incident, not permission to cancel older exits or guess a smaller lot.
+   Exclude every portion held by an existing or uncertain exit allocation,
+   including UNKNOWN ACK groups, until exact reconciliation resolves that
+   reservation. Broker available quantity cannot override local reservations.
+4. Propose only an explicit-quantity simple market sell for that uncovered
+   quantity, with its own durable client ID, original lot attribution and
+   single-attempt marker. This is a candidate broker mapping, not already
+   verified admission. Do not use whole-position/percentage liquidation.
+5. Preserve partial exits and unknown acknowledgments across restart; reconcile
+   the original client/order identities before further action. Newly observed
+   late fills invalidate an earlier complete census and require fresh disjoint
+   attribution. Never resubmit an uncertain close or spend its reserved shares
+   twice. Insufficient availability, ownership conflict, halt or rejection
+   retains incident status and existing valid protection; it is not recovery
+   clearance or automatic authority to alter those orders.
+
+### Material difference requiring user choice
+
+This rule **does not give the new quantity broker-stop coverage while waiting
+for entry cancellation/reconciliation and market-exit execution**. Published
+interfaces supply no maximum duration or execution-price guarantee for that
+interval; a process crash can prolong it. Existing protected quantities remain
+protected, but that does not make the new quantity continuously protected.
+The rule therefore changes the retained protection acceptance for this emergency
+state. It cannot be implemented as a mere clarification or marked equivalent to
+P11. There is no approved grace period or automatic overnight policy.
+
+Acceptance would permit a separately pinned research/implementation version
+of this emergency rule, with the exposure interval explicitly accepted as a
+research-policy difference. Actual broker admission, safe cleanup, source/risk
+binding and release still require independent validation; acceptance authorizes
+no orders or formal paper. If the user retains continuous protection for every
+new quantity, keep this proposal unaccepted and the entry path blocked until a
+supported native mapping or a separately reviewed architecture is established.

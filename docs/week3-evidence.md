@@ -3390,3 +3390,46 @@ claimed. JSON integrity, exact calculations and documentation diff checks are
 the relevant validation for this research-only increment.
 Independent final document review also found the scope clean. Research-record
 SHA-256: `6cd4397e690a345016279cf79de720bb22cd621129bfae9978627ca2cb024be3`.
+
+## Crossed-stop emergency disposition decision package — 2026-10-23
+
+The user prioritized newly owned fills observed after price crossed S. Bounded
+Sol Low retrieval and coordinator verification examined alternatives specifically
+for that state. A new OCO stop-limit execution limit does not remove its
+advanced stop-price admission constraint. A simple sell limit must be above
+the working buy limit to clear that wash comparison and cannot then dispose
+immediately at bids below S<L. Trailing stops do not implement independently
+frozen S. Retail sell_to_close syntax and single-position DELETE document no
+wash/reservation bypass or reduce-only guarantee. Public SDK support is not
+broker behavior evidence; Broker API documentation was not substituted.
+
+The newly verified staff explanations from 2020-12-03 and 2025-08-27 describe
+shares available after outstanding sell reservations. This supports further
+investigation of cancellation-terminal, reconciled, genuinely available residual
+market disposal while keeping old protection. It does not prove current
+admission, exact native group accounting, source atomicity or continuity of the
+new quantity. The discussion's user reply about multiple OCOs is not treated
+as an additional staff guarantee.
+
+The [concrete independent proposal](w3-oco-first-execution-proposal.md#crossed-stop-new-fill-disposition-decision--pending-user-choice-2026-10-23)
+pins a proposed trigger (fresh qualified reported IEX bid at/below S on a new
+owned quantity lacking verified protection), preserves old valid exits and S,
+requires a terminal entry/all conflicting-buy reconciliation, and proposes a
+single durable explicit-quantity market-exit attempt only for exact uncovered,
+unreserved ownership. Unknown ACK allocations remain reserved; broker available
+quantity never overrides them. Rebounds do not erase the triggered incident.
+
+Independent review identified and resolved the ambiguity between unverified
+protection and unallocated shares. It confirmed a genuine user choice is
+required: the proposal accepts a broker-stop-free interval for this new quantity
+through cancellation/reconciliation/exit, potentially prolonged by crash. No
+duration, loss or fill bound is documented. Original continuous protection and
+the accepted OCO provisional-target choice do not authorize that new risk.
+The proposal remains unaccepted, with no implementation or order authority.
+
+Public-only Cloud `gemma4:31b` analysis was obtained, but its claims that waiting
+for cancellation or lowering the new stop do not change policy were rejected.
+The latter widens frozen S and the former changes retained coverage acceptance.
+No local/private content was exported. Validation is primary-source review,
+independent requirements review and documentation diff checks; no unrelated
+test suite, account request, broker write or contact was performed.
