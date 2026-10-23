@@ -232,6 +232,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   Reported-stage adapter increment 2026-10-22: the new adapter reuses discovery denominators and retains scoped source references, empty/missing rows and unmapped derived events. Read-only compatibility against the existing October 15 archive preserved source bytes and prior denominators; no new market capture occurred. [Redacted evidence](evidence/w3-source-stage-compatibility-20261022.json). Formal candidate IDs remain unknown; prospective origin/enrollment, ownership-backed performance inputs, independent review and final freeze remain open. No historical observation becomes a formal natural witness.
 
+  Observed ledger attribution increment 2026-10-22: raw activity variants, exact amounts/timestamps and explicit simple engineering roundtrip ownership now join the existing risk owner and reconciled order census at one fixed prefix. Eighteen focused cases and two independent integration cases passed, with strict type/lint/format checks. [Evidence and limits](docs/week3-evidence.md#observed-ledger-and-engineering-roundtrip-attribution--2026-10-22). Native/formal ownership, study/day census, posting finality and complete performance-input conversion remain unaccepted; no new risk owner, runtime or paper authority is created.
+
 ## Week 4 — Integration, audit, and release freeze
 
 - [ ] **W4-01 [P0] End-to-end deterministic replay**  

@@ -2977,3 +2977,73 @@ a completed draft-review specification increment, not reviewer appointment,
 formal enrollment, W3-08 acceptance or a paper start. Documentation-only changes
 were checked for whitespace, local links and all thirteen rule rows; the prior
 2050-test run was not repeated because no executable bytes changed.
+
+## Observed ledger and engineering roundtrip attribution — 2026-10-22
+
+`paper_ledger_sources.inspect_paper_ledger_sources` now reads a bound private
+account capture and canonical risk/lifecycle evidence in one read snapshot at a
+fixed visible horizon. It retains each canonical activity variant, all source
+occurrences, original timestamp text/submicrosecond remainder and exact amounts.
+Raw decimal JSON numbers remain numeric and exact; they are not coerced to float
+or disguised as broker string fields. Invalid numeric quantity shape remains an
+unqualified observation rather than a silently repaired execution.
+
+For simple ENGINEERING_TEST orders only, observed completed roundtrips require
+the original positive canonical reservation, explicit exit bindings, exact
+client-to-broker identity joins, terminal lifecycle and matching fill censuses.
+Balanced cash or quantities alone cannot attribute a roundtrip. The raw capture
+must match the owner's actual source selection; newer captures cannot borrow
+older positive ownership. Unknown fees, conflicting identities, fractional,
+future and unbound activities remain visible and cannot gain inferred ownership.
+Caller-declared scope labels do not authenticate a namespace or formal origin.
+
+Independent coordinator review found and verified two repairs: ordinary daily
+stop latches must not hide properly attributed completed losses, and unknown
+raw JSON numeric fields must retain exact numeric type without crashing standard
+serialization. The unchanged risk policy still blocks new trading; identity/
+clock/source conflicts still prevent attribution. A generic public-only remote
+`gemma4:31b` analysis ran without repository/account export. Its invented temporal
+relation between a fill and a reconciliation timestamp was explicitly rejected;
+it supplies no ownership or operational authority.
+
+Validation on frozen bytes: 18 focused unit cases passed in 8.11 seconds and two
+independent source-shaped integration cases passed in 2.83 seconds. Strict mypy,
+Ruff check and format checks passed for the three affected files. Integration
+checks show that a flat unbound pair cannot become a roundtrip, a historical
+completed prefix survives later unbound inventory without adopting it, current
+unbound inventory refuses attribution, and reads do not mutate journal state.
+Units cover three losses with a business-stop latch, nanosecond and decimal
+precision, duplicate occurrences/conflicts, unsupported fee attribution,
+fractional/future rows, stale/changed capture, account/horizon/clock/scope errors,
+caller transaction preservation and immutable/cache corruption. Commands:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-ledger-source-independent-20261022 tests/test_paper_ledger_sources_integration.py
+```
+
+Source SHA-256:
+`96d7ae8606df93b016238344bd5a1ebc7993ec861a69e461d67fbc0783efc047`;
+unit tests `da3a48735e2357861efe2f48078fb1bad988909b2b72f3ff3a0c636b6a25345b`;
+independent integration tests
+`e7b4845765bb199024c06c648d9df9f4d205ad67084d5783d73ed7c2f5b791b9`.
+The prior full 2050-test result is the unchanged baseline, not a claim that this
+new increment ran through a new full suite. Focused tests cover the new isolated
+reader; existing production modules and manifests were not modified.
+
+Focused worker commands (no rerun was needed after the frozen hashes matched):
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/pytest -p no:cacheprovider -q tests/test_paper_ledger_sources.py
+rtk proxy .venv/bin/mypy --strict --cache-dir /tmp/alpaca-paper-ledger-mypy src/alpaca_ross_bot/paper_ledger_sources.py tests/test_paper_ledger_sources.py
+rtk proxy .venv/bin/ruff check --no-cache src/alpaca_ross_bot/paper_ledger_sources.py tests/test_paper_ledger_sources.py
+rtk proxy .venv/bin/ruff format --check --no-cache src/alpaca_ross_bot/paper_ledger_sources.py tests/test_paper_ledger_sources.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/mypy --strict --cache-dir /tmp/alpaca-ledger-source-independent-mypy tests/test_paper_ledger_sources_integration.py
+```
+
+This remains observed engineering attribution, not accepted inputs for complete
+formal performance. Native OCO ownership, natural study origin/enrollment,
+execution-order/precision conversion, account-day completeness, late-post
+finality, fees/window snapshots and the final `paper_performance` adapter remain
+open. Source-admission/formal/runtime/dispatch flags remain false. W3-06 actual
+input/protection and W3-07 protected actual cycles remain open; no parent
+acceptance, broker/account access, order or formal paper start occurred.

@@ -438,6 +438,30 @@ enrollment or strategy admission. `natural_candidate_ids` remains unknown;
 formal origin/episode/enrollment evidence, an ownership-backed performance
 ledger adapter, independent review assignments and final freeze remain open.
 
+### Observed ledger and engineering roundtrip sources — 2026-10-22
+
+`paper_ledger_sources.inspect_paper_ledger_sources` retains per-activity evidence
+from a bound account capture at one visible immutable prefix. It preserves
+exact amounts, original timestamp text and submicrosecond remainder, raw-field
+variants and their occurrence locations. Caller-declared journal scope is
+carried by source references without claiming namespace authentication.
+
+For the supported simple engineering contract only, completed roundtrips may
+be linked through the canonical positive risk reservation, explicit bound
+exits, reconciled client/broker identities and matching complete observed fill
+censuses. Unbound, conflicting or disagreeing executions remain visible and
+cannot gain ownership through flat cash or balanced quantities. An ordinary
+daily-stop latch does not hide a proven completed losing roundtrip; it still
+blocks trading under the unchanged risk policy.
+
+This is not yet an input adapter for `paper_performance`: no formal study origin,
+execution-order contract, full account-day finality, fee attribution or native
+OCO ownership is invented. Generic fee rows remain unclassified; observed
+pagination exhaustion is not posting finality. Native/formal ownership, complete
+study/day censuses, verified window snapshots and the final performance-input
+conversion remain open. No observation becomes a natural witness, and no
+runtime or order authority is granted.
+
 ## Method references
 
 Checked by the coordinator 2026-10-15; source publication/version dates are not
