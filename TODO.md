@@ -220,6 +220,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   - [x] Bounded actual IEX status subscription/capture connection, 2026-10-23: dedicated-account AAPL statuses ACK and a separate committed-code SPY combined subscription were verified; raw status references now remain separate from price-assessment denominators. The 77-case collector/stream regression, static checks and independent review pass. [Actual evidence and limits](docs/week3-evidence.md#actual-finite-status-enabled-collector-observation--2026-10-23). The after-close finite capture received zero records, so current no-halt, status delivery/continuity and operational source/protection acceptance remain unverified; W3-06/07 parents stay open.
 
+  - [x] Native OCO HTTP boundary and GET-only recovery, 2026-10-23: exact PREPARED bytes, immutable isolated-account proofs, durable once-only send fence, fake/HTTP exclusion, complete cache/proof rebuild and unresolved GET recovery verified with scoped fault/regression checks and independent review. [Evidence and split test results](docs/week3-evidence.md#native-oco-http-boundary-and-get-only-recovery--2026-10-23). No broker invocation or native ownership/protection acceptance; W3-06/07/08 parents remain open.
+
 - [!] **W3-07 [P1] Run isolated Alpaca paper API engineering tests**
   Depends: W3-04..W3-06, credentials available. Minimal non-strategy orders in isolated state only.  
   Accept: complete order lifecycle/reconciliation evidence; test activity cannot enter the formal paper sample. If credentials are unavailable, mark blocked without fabricating acceptance.

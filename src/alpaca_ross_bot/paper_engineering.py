@@ -1,5 +1,6 @@
 """Isolated engineering recovery; no exposure or protective-exit dispatch."""
 
+import base64
 import hashlib
 import json
 import stat
@@ -146,6 +147,7 @@ class EngineeringHarness:
             # A previous sidecar proof is never a substitute for this call.
             self.verify_formal_account(formal_api)
         api.verify_account(self.journal, expected_reference=self.scope.account_ref)
+        native_recovery = self._recover_native_http(api)
         lifecycle = OrderReconciler(
             self.journal, self.scope.account_ref, clock=self.now
         )
@@ -176,6 +178,7 @@ class EngineeringHarness:
                 self.journal.has_order_send_attempt(cid)
                 for cid in self.journal.read_order_intent_ids()
             ),
+            **native_recovery,
             "rebuild_verified": True,
             "broker_writes_performed": False,
             "runtime_authorized": False,
@@ -191,6 +194,74 @@ class EngineeringHarness:
             processed_at=now,
         )
         return result
+
+    def _recover_native_http(self, api: PaperOrderHttp) -> dict[str, object]:
+        """Retain one GET per consumed native attempt; absence never releases it."""
+        # Local import avoids a module cycle: the transport requires this actual
+        # harness, while recovery must inventory it without constructing a sender.
+        from .native_oco_http import native_http_inventory
+
+        rows = native_http_inventory(self.journal)
+        refs: list[dict[str, object]] = []
+        for row in rows:
+            pre = row["precall"]
+            request = json.loads(pre["request_body"])
+            started = self.now()
+            response = None
+            error = None
+            try:
+                response = api.read_native_oco_by_client_id(request["client_order_id"])
+            except Exception as exc:
+                # Exception text can contain headers/private values. A GET error
+                # is not rejection evidence and cannot clear a POST fence.
+                error = type(exc).__name__
+            completed = self.now()
+            if completed < started:
+                raise JournalError("native HTTP recovery clock regressed")
+            payload = {
+                "schema": 1,
+                "attempt_ref": row["attempt_ref"],
+                "account_ref": self.scope.account_ref,
+                "origin": api.native_http_origin,
+                "method": "GET",
+                "client_order_id": request["client_order_id"],
+                "started_at": started.isoformat(),
+                "completed_at": completed.isoformat(),
+                "http_status": None if response is None else response.status,
+                "body_base64": None
+                if response is None
+                else base64.b64encode(response.body).decode(),
+                "error_category": error,
+                "ownership_accepted": False,
+                "protection_accepted": False,
+                "retry_authorized": False,
+            }
+            event = self.journal.append_next(
+                source_id="ALPACA_NATIVE_OCO_HTTP_RECOVERY",
+                feed="paper",
+                event_kind="LOOKUP_OBSERVATION",
+                payload=json.dumps(
+                    payload, sort_keys=True, separators=(",", ":")
+                ).encode(),
+                system_first_seen_at=started,
+                processed_at=completed,
+            )
+            refs.append({"sequence": event.sequence, "hash": event.payload_ref})
+        return {
+            "native_http_attempt_count": len(rows),
+            "native_http_unresolved_count": len(rows),
+            "native_http_missing_outcome_count": sum(
+                row["outcome"] is None for row in rows
+            ),
+            "native_http_lookup_refs": refs,
+            "native_http_transport_provenance_verified": True,
+            # The generic recovery inventory checks immutable transport facts;
+            # source/risk replay remains the separate preparation owner's job.
+            "native_http_source_replay_verified": False,
+            # A received POST/GET response, including 404, does not establish
+            # final disposition, fill ownership, continuous protection or cleanup.
+            "native_http_disposition_accepted": False,
+        }
 
     def close(self) -> None:
         self.journal.close()

@@ -3895,3 +3895,79 @@ reset, paid-data request or formal paper start occurred.
 This closes the finite status-enabled collector integration observation only.
 W3-06 still requires operational status/source/protection and native exit-ownership
 acceptance before W3-07 actual order cycles; W3-08 final freeze remains gated.
+
+### Trading-status bootstrap source review — 2026-10-23
+
+Independent public-source retrieval and coordinator inspection distinguish the
+already observed IEX subscription acknowledgment from current-state acceptance.
+The [Alpaca stock stream documentation](https://docs.alpaca.markets/us/docs/real-time-stock-pricing-data)
+defines timestamped trading-status messages and tape-specific status codes, but
+the inspected public contract does not specify startup state delivery, a latest
+status REST lookup, replay cursors or gap-free status continuity. This is an
+unresolved documentation/qualification gap, not proof that no such capability
+exists. The earlier actual subscription observations remain valid within their
+recorded scope; the retrieval worker's unverified entitlement statement does not
+override that actual evidence.
+
+The [Nasdaq Trade Halt RSS documentation](https://www.nasdaqtrader.com/Trader.aspx?id=TradeHaltRSS)
+offers a free current-halt feed covering Nasdaq-listed and other exchange-listed
+securities, updated once per minute each trading day, with requests limited to
+that frequency. This is a potential supplementary source, not a maximum-latency
+guarantee or proof that an absent symbol is currently trading. No exchange feed
+was added, polled or admitted in this increment. A recent local resumption event,
+an empty finite stream and absence from a current-halt list still cannot silently
+initialize an unseen symbol as trading. The original source/status qualification
+requirements and source-mode dispatch refusal remain unchanged.
+
+### Native OCO HTTP boundary and GET-only recovery — 2026-10-23
+
+`native_oco_http.py` supplies a separate low-level paper transport owner; it does
+not reinterpret the existing injected-callback history. Its original PREPARED
+reference and exact immutable request bytes are committed with a once-only
+precall fence before POST. The simple-order schema and simple/native CID
+collision guard remain intact. Fresh isolated engineering/formal identity checks
+precede a first attempt; their private evidence and transport origins are pinned
+with the engineering scope. An injected formal verification cannot authorize a
+builtin sender. The builtin transport uses the existing exact paper HTTPS host,
+request/response caps and no-retry exchange. No CLI, scheduler, startup or
+strategy path invokes this sender.
+
+Raw response bytes and transport-unknown outcomes remain distinct from broker
+identity matching, accepted order ownership and protective coverage. A crash
+before the exchange or a failed outcome write leaves the precall consumed.
+Cross-connection locking and bidirectional fake/HTTP group exclusion prevent
+another attempt through either path. Immutable evidence, complete scoped cache
+inventories, original preparation references and private account/scope proofs
+are checked during rebuild; corrupt evidence fails closed.
+
+Engineering recovery inventories consumed native attempts and makes bounded
+GET-only client-ID lookups after account authentication. It stores raw lookup
+evidence and attempt ancestry privately, returning only counts and evidence
+references. A 404, a timeout, a received POST response or an empty book never
+releases allocation, authorizes replay or proves cleanup. Existing groups and
+risk records remain unchanged. Recovery does not adopt native exits or prove a
+complete nested group/fill census.
+
+All HTTP interactions for this increment use injected exchanges or a patched
+default HTTPS function with no sockets. No credentials, account connections,
+broker writes, position changes, E0 freeze, risk-owner updates or formal paper
+evaluation occurred. These are implementation/fault-test observations, not
+actual broker-cycle evidence. W3-06 remains open for actual source/risk admission,
+native exit ownership, initial/late-fill protection, stop continuity, supported
+close and runtime qualification. W3-07 actual cycles and W3-08 final freeze remain
+dependent on those real prerequisites.
+
+Validation on the reviewed production snapshot:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider tests/test_native_oco_http_recovery.py tests/test_paper_order_http.py tests/test_paper_order_cancel.py tests/test_paper_engineering.py tests/test_native_oco_lookup.py -q`: 87 passed in 14.80s. This includes unknown POST followed by GET 404, loss of control after the fence but before the exchange, and changed-account refusal.
+- Ruff `check --no-cache`, Ruff `format --check` and strict mypy with `/tmp/alpaca-native-http-final-mypy` passed for the four changed production modules and both new test files.
+- The three new immutable-proof corruption cases initially failed because the tests matched an inner error's text against its outer wrapper. The corrected tests check the precise causal rejection, consumed immutable PRECALL, zero POST/native GET, and unchanged risk/allocation/intent histories; all three passed in 9.77s. No production change was made for this assertion correction.
+- The related command `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/pytest -q -p no:cacheprovider tests/test_native_oco_http.py tests/test_native_oco_http_recovery.py tests/test_native_oco_attempts.py tests/test_native_oco_attempts_integration.py tests/test_native_oco_requests.py` completed with 74 passed and those same three old-regex failures in 358.84s. The corrected three were then verified separately against unchanged production bytes. Acceptance uses this split evidence; there is no claim of a final single-run 77-pass suite or a full-repository regression. All finite test processes completed.
+
+Independent review found and closed complete-cache-inventory, mixed formal-auth
+origin and weaker recovery-proof-validation issues. Final reviewed production
+SHA-256 prefixes are native HTTP `086cc13f0d43`, engineering recovery
+`51696d91a469`, HTTP adapter `de13d044c781`, fake-attempt owner `b90e73b287d7`.
+The final corrected native HTTP test hash begins `57feb3b87897`; the recovery
+tests begin `fc6b2478ab46`. These hashes identify the reviewed bounded increment,
+not a full-repository or actual-broker acceptance result.

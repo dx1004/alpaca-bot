@@ -575,6 +575,9 @@ class NativeOcoAttempts:
 
         def prepare(_: bytes) -> bytes:
             nonlocal result
+            from .native_oco_http import require_no_http_group
+
+            require_no_http_group(self.journal, self.binding["entry_scope"], group)
             state, originals, seen, ids, _identities = self._verified_replay()
             original = originals.get(group)
             if ids.get(command["attempt_id"], set()) - {key}:

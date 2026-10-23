@@ -1,5 +1,7 @@
 """Single-request Alpaca paper order transport; no retry or order policy."""
 
+from __future__ import annotations
+
 import hashlib
 import json
 import time
@@ -8,6 +10,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from http.client import HTTPException, HTTPSConnection
 from math import isfinite
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlencode
 from uuid import UUID
 
@@ -29,6 +32,10 @@ from alpaca_ross_bot.paper_order_contract import (
 )
 
 _PAPER_HOST = "paper-api.alpaca.markets"
+
+if TYPE_CHECKING:
+    from .native_oco_http import NativeOcoHttp
+    from .paper_engineering import EngineeringHarness
 
 
 class PaperOrderHttpError(ValueError):
@@ -87,6 +94,48 @@ class PaperOrderHttp:
         self._max_request_bytes = max_request_bytes
         self._max_response_bytes = max_response_bytes
         self._exchange = exchange or _exchange_paper_https
+
+    @property
+    def native_http_origin(self) -> str:
+        return (
+            "BUILTIN_PAPER_HTTPS"
+            if self._exchange is _exchange_paper_https
+            else "INJECTED_EXCHANGE"
+        )
+
+    def validate_native_http_body(self, body: str) -> None:
+        """Only a canonical native preparation can supply this bounded body."""
+        if (
+            type(body) is not str
+            or not 0 < len(body.encode()) <= self._max_request_bytes
+        ):
+            raise PaperOrderHttpError("native HTTP request exceeds its cap")
+
+    def post_native_oco_once(
+        self,
+        owner: NativeOcoHttp,
+        harness: EngineeringHarness,
+        *,
+        formal_api: PaperOrderHttp,
+        group_id: str,
+        decision_at: datetime,
+        started_at: datetime,
+        clock: Callable[[], datetime],
+    ) -> dict[str, Any]:
+        """Native engineering transport; no CLI, strategy or cleanup authority."""
+        from .native_oco_http import NativeOcoHttp
+
+        if type(owner) is not NativeOcoHttp:
+            raise PaperOrderHttpError("canonical native HTTP owner required")
+        return owner.post_once(
+            self,
+            harness,
+            formal_api=formal_api,
+            group_id=group_id,
+            decision_at=decision_at,
+            started_at=started_at,
+            clock=clock,
+        )
 
     def verify_account(
         self,
