@@ -310,6 +310,18 @@ class PaperOrderHttp:
         """Read account positions without altering order or position state."""
         return self._request("GET", "/v2/positions", None)
 
+    def read_account(self) -> PaperHttpResponse:
+        """Read raw account evidence; callers must verify its bound identity."""
+        return self._request("GET", "/v2/account", None)
+
+    def read_native_oco_order(self, broker_order_id: str) -> PaperHttpResponse:
+        """Read nested native order evidence without adopting or changing it."""
+        try:
+            identity = str(UUID(broker_order_id))
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise ValueError("native order lookup requires a broker UUID") from exc
+        return self._request("GET", f"/v2/orders/{identity}?nested=true", None)
+
     def read_fill_activities_page(
         self, broker_order_id: str, *, page_token: str | None = None
     ) -> PaperHttpResponse:

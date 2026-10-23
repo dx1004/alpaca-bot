@@ -124,7 +124,11 @@ the parent entry signal and original budget. A local entry receipt now binds the
 original positive held reservation and immutable source-execution census under
 the private journal lock. Explicit candidate incident opt-in and six synthetic
 integration cases are verified. Receipt origin remains engineering-only and
-source admission remains false. Native exit/group facts are still declared;
+source admission remains false. A separate GET-only native OCO collector and
+interpreter now retain account-bound nested group and per-execution activity
+observations, including transport failures, bounded pagination and temporal
+conflicts. These observations are not yet bound to local exit intent/ACK
+ownership; the allocation book's native exit/group facts remain declared.
 continuous runtime supervision, qualified completed-slot recovery and actual
 broker protection/close acceptance remain open. There is no broker dispatcher;
 every operational authority remains false. Local source-derived incident receipts

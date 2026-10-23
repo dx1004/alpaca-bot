@@ -2693,3 +2693,54 @@ a supported protection-preserving timed close. Native exit/group source binding,
 qualified completed-slot recovery and continuous runtime verification also remain
 unaccepted. Synthetic success and local quarantine cannot supply those contracts.
 No order, cancellation, account reset, live mode or formal paper start occurred.
+
+## Native OCO capture temporal-consistency validation — 2026-10-22
+
+`native_oco_capture.py` adds finite GET-only account, nested-order and paginated
+per-order FILL collection in the existing private, already-bound journal.
+`native_oco_evidence.py` validates exact source bytes, identity, chronology,
+group topology and capture-local quantity agreement. Fractions and signed
+remaining quantities survive interpretation; replacement links block a claim
+of complete history. Duplicate conflicts, failed requests and incomplete page
+budgets remain evidence rather than empty-success substitutes. Both exit roles
+having fills is not itself an accounting failure when quantities reconcile.
+
+Public schema basis: Alpaca's Trading API 2.0.1 schema at commit
+`2a973a046607c42742bf141184b71f1990fa1809`, file
+`src/alpaca_mcp_server/specs/trading-api.json`, SHA-256
+`e67cf32d58cd5f918c593925e966bf737eff1e0f03f15c7c0ba467368eaa6d42`.
+Its group IDs/roles and replacement links identify reported groups; they do
+not promise ownership, parent-child client-ID equality, complete replacement
+history or atomic stop continuity. Locally required fields are stronger
+evidence requirements than the broker schema's optional fields.
+
+The existing, uncommitted native OCO read-only collector and interpreter were
+reused rather than rebuilt. The interpreter now keeps source timestamps bound
+to the original containing HTTP observation: a later decision time cannot clear
+an order/fill timestamp conflict, and a fill after an order snapshot cannot
+explain that earlier snapshot merely because quantities match. Raw facts remain
+preserved; these are local observation/clock uncertainties, not a claimed broker
+clock violation or exchange timing guarantee.
+
+Focused validation passed 78 tests in `tests/test_native_oco_evidence.py` and
+`tests/test_native_oco_capture.py`, including seven temporal regression cases.
+Ruff check, format check and strict mypy passed for those four implementation
+and test files. The full offline suite subsequently passed 1,930 tests, with
+the existing websockets legacy deprecation warning. Independent final review
+found no actionable issue in the five implementation/test files and separately
+passed all seven temporal regressions without repeating the full suite.
+Repository-wide Ruff check and format check passed (152 formatted files).
+Strict mypy passed all 154 source/test/script files. Full validation commands:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-native-oco-final-20261022 tests
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff check --no-cache src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff format --check --no-cache src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/mypy --strict --cache-dir /tmp/alpaca-native-oco-global-mypy src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```
+
+These checks used synthetic evidence only. Capture-local pagination and
+quantity consistency do not establish local order ownership, broker ACK
+provenance, continuous stop protection, actual strategy admission, runtime
+authority or W3-06/07/08 completion. No account connection or broker action was
+performed for this validation.
