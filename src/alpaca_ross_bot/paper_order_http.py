@@ -322,6 +322,23 @@ class PaperOrderHttp:
             raise ValueError("native order lookup requires a broker UUID") from exc
         return self._request("GET", f"/v2/orders/{identity}?nested=true", None)
 
+    def read_native_oco_by_client_id(self, client_order_id: str) -> PaperHttpResponse:
+        """Read raw lookup evidence; no send, ownership or retry proof is implied.
+
+        A collector must separately authenticate its bound account and retain
+        these bytes. This endpoint has no documented nested parameter; a known
+        broker UUID can subsequently be read with ``read_native_oco_order``.
+        """
+        if (
+            type(client_order_id) is not str
+            or not client_order_id
+            or client_order_id != client_order_id.strip()
+            or len(client_order_id) > 128
+        ):
+            raise ValueError("native lookup requires an exact client order ID")
+        query = urlencode({"client_order_id": client_order_id})
+        return self._request("GET", f"/v2/orders:by_client_order_id?{query}", None)
+
     def read_fill_activities_page(
         self, broker_order_id: str, *, page_token: str | None = None
     ) -> PaperHttpResponse:

@@ -337,6 +337,22 @@ cannot fill `natural_candidate_ids`: that field remains unknown until the
 accepted stage/origin/enrollment evidence adapter exists. It cannot convert
 engineering or historical captures into formal witnesses or close release gates.
 
+### Reported source-stage adapter — 2026-10-22
+
+`paper_source_stages.inspect_paper_source_stages` reuses the discovery audit and
+adds reported screen-stage observations from a bounded hash-verified prefix.
+Each outward reference includes the caller-declared journal scope, sequence,
+hash and availability time; the scope is not authenticated by this adapter.
+Empty screen rows are explicit missing census evidence, never a zero-candidate
+session. Unmapped derived events and missing inputs remain visible.
+
+The existing October 15 archive was checked through a read-only backup without
+new market collection. Its original database/WAL bytes and prior observation
+denominators were preserved. This is compatibility evidence, not formal
+enrollment or strategy admission. `natural_candidate_ids` remains unknown;
+formal origin/episode/enrollment evidence, an ownership-backed performance
+ledger adapter, independent review assignments and final freeze remain open.
+
 ## Method references
 
 Checked by the coordinator 2026-10-15; source publication/version dates are not

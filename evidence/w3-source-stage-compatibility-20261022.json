@@ -1,0 +1,36 @@
+{
+  "adapter_sha256": "cec6dae4cc0ede641b1ec205e8f27d65fc903d5e7277d2e6cc4f4f1a12ea13df",
+  "as_of": "2026-10-20T22:51:10.008849+00:00",
+  "broker_requests": 0,
+  "copy_read_only_during_adapter": true,
+  "declared_journal_scope": "EXPOSED_W205_ARCHIVE_20261015_C7B0F08C",
+  "enrollment_accepted": false,
+  "formal_sample_eligible": false,
+  "missing_observations": 919,
+  "natural_candidate_ids": null,
+  "prior_main_db_hash_matches": true,
+  "requested_observations": 14398,
+  "returned_observations": 13479,
+  "reused_denominator_matches_prior": true,
+  "runtime_authorized": false,
+  "scanner_contract_sha256": "5ce35ecf7e4869dfda490c5e54b0d17d35c47b4d29cd641ccf2d14f87d8bc88f",
+  "schema": 1,
+  "source_admission_accepted": false,
+  "source_archive": "var/research/w205-adapted-screen/2026-10-15/c7b0f08c10d64c47a39e2c374f0ea405/journal.sqlite3",
+  "source_db_and_wal_before": {
+    "journal.sqlite3": "b0b857390e26c1a4b397ff214e07d658fb95249ec7759323f59edf2aff192248",
+    "journal.sqlite3-wal": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "source_db_and_wal_preserved": true,
+  "source_horizon": 13801,
+  "stage_counts": {
+    "OBSERVED": 13479,
+    "SNAPSHOT_MISSING": 919,
+    "SOURCE_EVENT": 33,
+    "UNMAPPED_DERIVED_EVENT": 13623
+  },
+  "stage_issue_counts": {
+    "DERIVED_EVENT_NOT_USED_AS_SCREEN_INPUT": 13623
+  },
+  "status": "EXPOSED_ARCHIVE_STAGE_ADAPTER_COMPATIBILITY_NOT_ENROLLMENT"
+}

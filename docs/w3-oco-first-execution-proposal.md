@@ -196,3 +196,19 @@ late-fill replay, physical restart, two-connection races and transaction
 rollback. A matched group still does not prove initial/late-fill stop coverage,
 sibling-stop continuity or safe timed liquidation. Those remain separate W3-06
 requirements before W3-07 actual order cycles; none is waived by this contract.
+
+### Prepared-request to GET association implemented — 2026-10-22
+
+`native_oco_correlation.py` now records an immutable association receipt against
+the original prepared request and a retained nested GET capture. Historical
+prefix reads, first broker assignments, changed-command conflicts and rollback
+are preserved independently of later observations. Quantity comparisons describe
+only the captured fields: a reported residual after target fills is not proof
+of continuous stop coverage, broker reservations or execution ownership.
+
+`PaperOrderHttp.read_native_oco_by_client_id` provides a raw, one-request GET
+lookup without changing the ordinary simple-order sender. Association explicitly
+keeps `send_proven=false` and `ack_proven=false`. Native dispatch-attempt and raw
+POST/ACK provenance, qualified execution ownership, protection continuity and
+safe close/runtime acceptance remain open. No dispatcher or broker authority is
+introduced by this increment.

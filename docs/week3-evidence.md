@@ -2859,3 +2859,82 @@ Actual send-attempt/ACK provenance, native source-group ownership, continuous
 initial/late-fill protection, sibling-stop continuity, timed close/runtime,
 W3-07 real cycles and W3-08 final registration remain open. No account access,
 broker request, cancellation, reset, paid data or formal paper start occurred.
+
+## Prepared-request GET association and reported source stages — 2026-10-22
+
+This increment reuses the accepted local request, risk and discovery components;
+it does not repeat broker research or collect new market data. The separate
+native correlation namespace binds the original PREPARED request and historical
+source prefix to one retained nested GET observation. Exact account/client ID,
+terms, capture clocks and root/stop/group identities are checked; first
+assignments survive later conflicts, and changed commands latch conflicts.
+Capture-local residual arithmetic retains fractional/signed facts without
+claiming continuous protection, broker reservation correctness or ownership.
+Historical reads still require current immutable/cache integrity. No ordinary
+order intent, extra risk slot, send marker or ACK is created. Raw native lookup
+by client ID is one GET without undocumented nested parameters or automatic
+retry; the existing simple-order sender is unchanged.
+
+Independent native review found no actionable defect on the frozen increment;
+four selected historical/conflict/rollback checks passed. Root integration
+checks passed seven cases; native lookup plus existing simple HTTP checks passed
+35 cases. The twenty correlation unit cases were covered by the earlier focused
+runs; these synthetic durations are not protection-latency acceptance.
+
+`paper_source_stages` reuses the existing hash-verified scanner denominator and
+reports decision-visible source/screen stages. All outward event references
+carry a declared journal scope; that declaration is not authenticated enrollment.
+Independent review identified and verified repairs for two omissions: empty
+screen rows now remain explicit missing census evidence, and nested discovery
+references now retain scope. Five independent selected regressions passed;
+the complete focused stage suite passed 36 cases.
+
+The [redacted archive compatibility report](../evidence/w3-source-stage-compatibility-20261022.json)
+checks the new adapter on a read-only backup of the already audited October 15
+archive through sequence 13801. Original database/WAL hashes and prior
+denominators were preserved: 14398 requested, 13479 returned, 919 missing.
+Unmapped derived events are explicitly retained, not counted as enrolled
+candidate episodes. No new capture or broker request occurred. Natural candidate
+IDs remain unknown; source admission, enrollment, formal eligibility and runtime
+authority remain false.
+
+A bounded generic public-only Cloud analysis ran with the configured remote
+`gemma4:31b`; no repository, credential or account material was exported.
+Unsupported temporal/origin claims in its output were rejected. Model output
+was not treated as broker evidence or operational authority.
+
+Actual W3-02 qualification, native send/ACK and execution ownership, first/late
+partial-fill protection, sibling-stop continuity, safe close and continuous
+runtime remain open. W3-07 still needs actual isolated protected order cycles;
+W3-08 needs prospective episode/origin/enrollment, ownership-backed performance
+inputs, independent review and final freeze. No parent acceptance is claimed.
+
+The next actual-input seam was independently located without new collection:
+`entry_strategy.InputHealth` and trade/quote condition eligibility still consume
+offline attestations; `market_input_checks` reports condition names but retains
+`CONDITION_POLICY_UNQUALIFIED`. Passing observation admission is component-only,
+not strategy eligibility. Reuse `AccountRiskOwner`'s existing one-prefix
+funds/equity/E0/fee/lifecycle join; do not rebuild that owner. Its research
+reservation does not turn a declared strategy decision into raw-market
+qualification. Current-session private E0 status was not read or inferred in
+this audit.
+
+Integrated validation completed: repository Ruff check and format passed (160
+files formatted); strict mypy passed 162 files. The single full offline pytest
+run passed 2050 tests in 407.02 seconds, with only the existing websockets legacy
+deprecation warning. The approved execution route handled the previously
+isolated sandbox asyncio limitation; no application workaround was added.
+Command:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-native-association-stages-full-20261022 tests
+```
+
+Frozen production SHA-256 values: native correlation
+`d5a54a1df302a609a3367afcf46903773cf22727e167c541554e95c79c78c1e3`;
+native requests `ea75d7fbcbfd5d51956ab31719c56d9d58abe47f0b83efa3e8e26907ddb49ee5`;
+journal `f897037127884033bfeaa6de492d1f0bfafc2e7e3a2e1ea712cc4d28df853388`;
+HTTP `daed65c40bd6a579ed5d05097ade7bc3acefe1c753d202236d5df98cf5017885`;
+source stages `cec6dae4cc0ede641b1ec205e8f27d65fc903d5e7277d2e6cc4f4f1a12ea13df`.
+The archive compatibility report hash is
+`74e20ff863f4dd45e4543261719c937606cb6f6022329fbbcd0107d160d4a9f6`.

@@ -556,6 +556,48 @@ class NativeOcoRequests:
         self.view()
         return True
 
+    def read_verified_at(
+        self, through_sequence: int, decision_at: datetime
+    ) -> dict[str, Any] | None:
+        """Verified historical request prefix, never current dispatch clearance."""
+        _utc(decision_at)
+        if type(through_sequence) is not int or through_sequence < 0:
+            raise JournalError("invalid historical native request horizon")
+        owns_read = not self.journal._db.in_transaction
+        if owns_read:
+            self.journal._db.execute("BEGIN")
+        try:
+            self._verified_replay()
+            if through_sequence > self.journal.read_evidence_sequence():
+                raise JournalError("invalid historical native request horizon")
+            originals: dict[str, dict[str, Any]] = {}
+            conflicts: set[str] = set()
+            watermark = 0
+            for event, payload in self.journal.read_native_oco_request_events():
+                if event.sequence > through_sequence:
+                    continue
+                item = self._validate_item(event, payload)
+                if item["binding"] != self.binding:
+                    continue
+                if not event.visible_at(decision_at):
+                    raise JournalError("native request prefix is not decision-visible")
+                group = item["command"]["group_id"]
+                if group not in originals:
+                    originals[group] = {
+                        "receipt": item["receipt"],
+                        "request_ref": {
+                            "sequence": event.sequence,
+                            "hash": event.payload_ref,
+                        },
+                    }
+                else:
+                    conflicts.add(group)
+                watermark = event.sequence
+            return self._projection(originals, conflicts, watermark)
+        finally:
+            if owns_read:
+                self.journal._db.rollback()
+
     @staticmethod
     def _result(state: dict[str, Any], original: dict[str, Any]) -> dict[str, Any]:
         conflicts = bool(state["conflict_groups"])

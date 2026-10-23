@@ -126,3 +126,40 @@ below. See [implementation evidence](week3-evidence.md#independent-observation-a
 Absence applies to the inspected public interface, not a claim that Alpaca can
 never provide additional evidence. The existing research acceptance artifact
 and its blocked source-age contract remain unchanged.
+
+## Actual-trigger binding seam — 2026-10-22
+
+This is an implementation dependency inventory, not a new accepted condition
+policy or a relaxation of session-history requirements. Reuse the existing
+account-risk owner; do not introduce another allocator.
+
+1. A reference-only admission receipt must identify the candidate version,
+   policy version, immutable journal horizon and decision cutoff. Every trade,
+   quote, historical bar and connection observation must resolve to retained
+   bytes available by that cutoff. Caller booleans cannot establish eligibility.
+2. Trade-price eligibility, minute/daily aggregation eligibility and quote
+   eligibility are distinct policy decisions. The official
+   [latest-trades endpoint](https://docs.alpaca.markets/us/reference/stocklatesttrades-1)
+   excludes price-ineligible trades, including odd lots; it does not establish
+   a complete trigger history or a quote whitelist. The
+   [aggregation FAQ](https://docs.alpaca.markets/us/docs/market-data-faq)
+   supplies aggregation semantics, not permission to treat all received trades
+   as strategy triggers. No condition whitelist is adopted here.
+3. Reconstruct the first eligible regular-session IEX trade, setup path and
+   low-since-open only from an accepted historical/revision contract. The
+   [stream schema](https://docs.alpaca.markets/us/docs/real-time-stock-pricing-data)
+   documents trade IDs and correction/cancel messages, but no transport sequence
+   counter. Do not interpret consecutive IDs, a quiet interval or an acknowledged
+   subscription as proof of complete delivery. Connection observations describe
+   local health; provider completeness remains a separate unresolved question.
+4. Bind an admitted strategy decision to the existing risk owner's same-prefix
+   source funds/equity/E0/fee/lifecycle snapshot. The current research declaration
+   path remains non-authorizing until these upstream inputs are qualified.
+
+Independent retrieval and coordinator inspection checked these public pages on
+2026-10-22. A public-only remote `gemma4:31b` analysis confirmed the distinction
+between observed connection health and unresolved completeness; its generic
+claims do not authenticate actual data or prove that any stream is active.
+No credentials, local code or account evidence were exported. No runtime gate,
+strategy rule or original source-age contract changed. `NOT_SIP_EQUIVALENT`
+remains mandatory.
