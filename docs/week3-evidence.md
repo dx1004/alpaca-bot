@@ -3971,3 +3971,107 @@ SHA-256 prefixes are native HTTP `086cc13f0d43`, engineering recovery
 The final corrected native HTTP test hash begins `57feb3b87897`; the recovery
 tests begin `fc6b2478ab46`. These hashes identify the reviewed bounded increment,
 not a full-repository or actual-broker acceptance result.
+
+### Native order schema source revalidation — 2026-10-23
+
+The current primary contract supports the parser's group fields. Alpaca's dated
+[2026-10-08 changelog](https://docs.alpaca.markets/us/changelog/2026-10-08-order-group-db02af7)
+adds optional `group_id` and `group_role` to Order/OrderLeg, including Trading API
+POST and GET order endpoints. The group UUID is opaque and shared across legs
+and replacements; it is not an alias for the root order ID. OCO roots have the
+take-profit role. Independent retrieval found that rendered SDK references can
+lag current first-party models; an older field list is not proof these fields
+are absent. Coordinator inspection confirmed the dated changelog directly.
+
+The [native OCO instructions](https://docs.alpaca.markets/us/docs/orders-at-alpaca)
+and [ID lookup contract](https://docs.alpaca.markets/us/reference/getorderbyorderid-1)
+describe a take-profit root with a nested stop-loss leg. No complete actual OCO
+response from this account was collected in this increment. A documented field
+shape and synthetic fixtures do not establish successful broker observation,
+coverage, execution behavior or protective continuity.
+
+The retail [account-activities contract](https://docs.alpaca.markets/us/docs/account-activities)
+identifies FILL activity IDs and their pagination use. The inspected contract
+does not establish cross-account global uniqueness or equivalence to Broker API
+SSE execution identifiers. Native binding therefore retains account/order/raw
+activity identity and exact content, with a conservative conflicting-ID veto;
+it must not silently reinterpret cross-order conflicts as additional executions.
+
+The first-party [Order model](https://github.com/alpacahq/alpaca-py/blob/master/alpaca/trading/models.py)
+permits `legs` to be null/omitted, while nested GET
+explicitly supplies child orders. Neither the inspected
+[POST contract](https://docs.alpaca.markets/us/reference/postorder) nor
+[`submit_order` documentation](https://alpaca.markets/sdks/python/api_reference/trading/orders.html#alpaca.trading.client.TradingClient.submit_order)
+guarantees an OCO stop-child identity in a successful
+POST response. Requiring that child ID at POST would add an unsupported response
+shape. Native ownership binding must therefore support a verified POST root plus
+subsequent independently authenticated nested GET, checking any POST child when
+present and never treating its absence as evidence of continuous protection.
+This is documented-schema support, not an observed response specimen. The SDK
+source inspected was mutable master; no released SDK version was inferred.
+
+### Source-bound native exit census — 2026-10-23
+
+`OcoJournal.bind_native_exit_census` now derives a durable census from the same
+group's immutable preparation, consumed HTTP attempt, successful POST root and
+later authenticated nested GET/FILL capture. This changes the canonical model:
+exact TARGET/STOP executions reduce `owned_quantity` and `group_residual`, while
+original allocated lot portions and account-risk records remain unchanged.
+Model source adoption does not release the shared reservation, qualify risk,
+accept protective coverage, or grant broker/runtime authority.
+
+Native capture schema 2 pins its actual configured HTTP transport origin. The
+reader still accepts strict legacy schema 1 and preserves historical fact
+serialization/correlation replay, but legacy captures cannot establish native
+exit ownership. POST and GET origins must match. Injected evidence is permanently
+classified as a test source; builtin evidence is reported source evidence, not
+an actual broker-cycle qualification. Neither path sets
+`broker_ownership_accepted`, `risk_qualified`, `risk_release_authorized` or
+`protection_accepted` true.
+
+POST may contain only its root. An independently authenticated nested GET then
+supplies the stop child, opaque shared group identity and exact stop terms. Any
+child included in POST must also match. Missing topology, changed identities,
+prices or quantities, replacement ancestry, POST/GET cumulative or source-clock
+regression, and a fill predating its order/precall prevent adoption. Malformed
+POST bodies and unsuccessful/unknown POST outcomes cannot be promoted by a
+matching GET. Complete observed double exits remain signed model incidents;
+fractional positive exits are retained exactly rather than rounded away.
+
+Incomplete positive captures retain raw facts and quarantine the group without
+replacing prior accepted executions with zero. Quarantine blocks new allocation
+and declared ACK/execution mixing. A new qualified census can resolve data
+insufficiency only while preserving observed positive identities/content;
+identity/content conflicts remain sticky. Account-scoped raw activity identity
+checks prevent namespace prefixes from hiding cross-order/group reuse. Exact
+retries preserve their original source horizon and cannot clear a later
+quarantine. Schema 3 stores native bindings separately; schemas 1/2 retain their
+historical projection layout.
+
+Declared ENTRY facts cannot inflate source ownership after native binding. Before
+the first native binding, a later unvalidated declared ENTRY quarantines source
+adoption; older declarations already revalidated by BOUND_ENTRY remain compatible.
+Verified exit facts can still update economic accounting after an unrelated
+rejected owner command, while its conflict keys persist and veto allocations.
+This follows the existing source-entry accounting behavior and grants no release.
+
+All observations in this increment are synthetic source integrations. No broker
+or private-account connection, order/cancel, E0 change, account reset, data
+purchase or formal paper run occurred. W3-06 remains open for actual source/risk
+admission, operational native risk-owner integration, first/late-fill protection,
+stop continuity and supported close/runtime qualification; W3-07 actual cycles
+and W3-08 final freeze remain dependent on those prerequisites.
+
+Validation for this increment:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider tests/test_native_oco_capture.py tests/test_native_oco_evidence.py tests/test_native_oco_correlation.py tests/test_native_oco_correlation_integration.py -q`: 110 passed in 263.11s. After adding the explicit raw-hash corruption case, the final capture file passed all 23 cases in 0.80s; production parser bytes did not change between those runs.
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/pytest -q -p no:cacheprovider tests/test_oco_exit_evidence.py tests/test_oco_journal.py tests/test_oco_entry_evidence.py tests/test_oco_research.py`: 118 passed in 183.51s. Four subsequently added cases (conflicted-owner economic accounting, legacy/origin rejection, unsuccessful POST rejection) passed separately in 25.87s. This covers all 23 new bridge cases; it is split evidence, not a claimed single-run 122-pass suite.
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider tests/test_crossed_stop.py tests/test_crossed_stop_source.py -q`: 61 passed in 63.98s, checking the existing incident consumers of the changed OCO owner.
+- Ruff `check --no-cache`, Ruff `format --check` and strict mypy using `/tmp/alpaca-native-bound-exit-final-mypy` passed for the four changed production modules and both changed/new test files. Independent source and final bridge reviews found no remaining actionable issue. No full-repository regression is inferred.
+
+Final reviewed SHA-256 prefixes: exit derivation `9a0f7d191a50`, OCO owner
+`2c402f4ba3d5`, native capture `2eb00f1174ed`, native parser `dd2d7c7807ec`,
+exit tests `35573d7248a2`, capture tests `e904703c06dc`. All finite test processes
+completed. The public-only Cloud analysis route was verified, but unsupported
+suggestions about signed server timestamps or broker-side automatic retry
+semantics were not adopted; broker facts above come from primary sources.

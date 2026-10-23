@@ -39,6 +39,8 @@ def capture_native_oco_group(
     intent, amend an order, or attest a complete replacement history.
     """
     journal.require_private_order_state()
+    if type(api) is not PaperOrderHttp:
+        raise JournalError("canonical paper transport required for origin capture")
     if (
         type(account_ref) is not str
         or not account_ref
@@ -147,7 +149,8 @@ def capture_native_oco_group(
         raise JournalError("native OCO capture clock rewound")
     payload = json.dumps(
         {
-            "schema": 1,
+            "schema": 2,
+            "transport_origin": api.native_http_origin,
             "paper_endpoint": "https://paper-api.alpaca.markets",
             "account_ref": account_ref,
             "requested_order_id": order_id,

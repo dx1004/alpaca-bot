@@ -3,6 +3,7 @@
 import base64
 import json
 from collections.abc import Mapping
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -140,6 +141,8 @@ def test_nested_group_capture_uses_only_get_and_keeps_private_source(
     exchange = Exchange()
     before = journal.read_order_intent_ids()
     sequence, raw = _capture(journal, exchange)
+    assert raw["schema"] == 2
+    assert raw["transport_origin"] == "INJECTED_EXCHANGE"
     assert len(exchange.calls) == 4
     assert raw["requested_order_id"] == TARGET
     assert journal.read_order_intent_ids() == before == ()
@@ -309,3 +312,129 @@ def test_clock_rewind_fails_without_backdating_raw_evidence(journal: Journal) ->
         )
     assert exchange.calls == []
     journal.close()
+
+
+def _append_capture(journal: Journal, payload: dict[str, object]) -> int:
+    return journal.append_next(
+        source_id="ALPACA_NATIVE_OCO",
+        feed="paper",
+        event_kind="NATIVE_OCO_CAPTURE",
+        payload=json.dumps(payload).encode(),
+        system_first_seen_at=NOW,
+        processed_at=NOW,
+    ).sequence
+
+
+def test_legacy_capture_remains_observation_without_origin(journal: Journal) -> None:
+    try:
+        current_seq, payload = _capture(journal, Exchange())
+        payload.pop("transport_origin")
+        payload["schema"] = 1
+        legacy_seq = _append_capture(journal, payload)
+        current = inspect_native_oco_capture(
+            journal,
+            current_seq,
+            account_ref=ACCOUNT_REF,
+            decision_at=NOW,
+            max_age=timedelta(seconds=1),
+        )
+        legacy = inspect_native_oco_capture(
+            journal,
+            legacy_seq,
+            account_ref=ACCOUNT_REF,
+            decision_at=NOW,
+            max_age=timedelta(seconds=1),
+        )
+        assert current.orders == legacy.orders
+        assert current.fills == legacy.fills
+        assert current.accounting_complete is legacy.accounting_complete is True
+        # Fact serialization stays compatible with existing schema-1 receipts;
+        # an ownership binder must separately require the raw schema-2 origin.
+        assert legacy.to_dict()["schema"] == 1
+        assert "transport_origin" not in legacy.to_dict()
+        assert not any(legacy.to_dict()["authority"].values())
+    finally:
+        journal.close()
+
+
+@pytest.mark.parametrize("origin", [None, ["INJECTED_EXCHANGE"], "UNKNOWN"])
+def test_unknown_capture_origin_is_not_qualified(
+    journal: Journal, origin: object
+) -> None:
+    try:
+        _, payload = _capture(journal, Exchange())
+        payload["transport_origin"] = origin
+        sequence = _append_capture(journal, payload)
+        with pytest.raises(JournalError, match="transport origin"):
+            inspect_native_oco_capture(
+                journal,
+                sequence,
+                account_ref=ACCOUNT_REF,
+                decision_at=NOW,
+                max_age=timedelta(seconds=1),
+            )
+    finally:
+        journal.close()
+
+
+def test_default_https_capture_origin_with_patched_exchange_only(
+    journal: Journal, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpaca_ross_bot import paper_order_http
+
+    exchange = Exchange()
+    monkeypatch.setattr(paper_order_http, "_exchange_paper_https", exchange)
+    api = PaperOrderHttp(
+        CONFIG,
+        CREDENTIALS,
+        ACCOUNT_REF,
+        timeout_seconds=2,
+        max_request_bytes=1024,
+        max_response_bytes=65_536,
+    )
+    try:
+        sequence = capture_native_oco_group(
+            api,
+            journal,
+            account_ref=ACCOUNT_REF,
+            broker_order_id=TARGET,
+            clock=lambda: NOW,
+            max_fill_pages=2,
+        )
+        record = journal.read_event(sequence)
+        assert record is not None
+        payload = json.loads(record[1])
+        assert payload["schema"] == 2
+        assert payload["transport_origin"] == "BUILTIN_PAPER_HTTPS"
+        assert len(exchange.calls) == 4
+        assert all(method == "GET" for method, _ in exchange.calls)
+    finally:
+        journal.close()
+
+
+def test_capture_hash_mismatch_blocks_interpretation(
+    journal: Journal, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    try:
+        sequence, _ = _capture(journal, Exchange())
+        stored = journal.read_event(sequence)
+        assert stored is not None
+        envelope, raw = stored
+        monkeypatch.setattr(
+            journal,
+            "read_event",
+            lambda _sequence: (
+                replace(envelope, payload_ref="sha256:" + "0" * 64),
+                raw,
+            ),
+        )
+        with pytest.raises(JournalError, match="payload hash differs"):
+            inspect_native_oco_capture(
+                journal,
+                sequence,
+                account_ref=ACCOUNT_REF,
+                decision_at=NOW,
+                max_age=timedelta(seconds=1),
+            )
+    finally:
+        journal.close()

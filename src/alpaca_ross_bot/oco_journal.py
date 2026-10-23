@@ -1,4 +1,4 @@
-"""Private durable *declared* OCO research operations; never broker authority."""
+"""Durable declared and source-bound OCO model operations; no runtime authority."""
 
 import hashlib
 import json
@@ -139,6 +139,7 @@ class OcoJournalView:
     conflict_keys: tuple[str, ...]
     watermark: int
     entry_binding: dict[str, Any] | None = None
+    native_exit_bindings: tuple[dict[str, Any], ...] = ()
 
     @property
     def issues(self) -> tuple[str, ...]:
@@ -146,6 +147,14 @@ class OcoJournalView:
             sorted(
                 set(self.model.issues)
                 | ({"OPERATION_IDENTITY_CONFLICT"} if self.conflict_keys else set())
+                | (
+                    {"NATIVE_EXIT_CENSUS_QUARANTINED"}
+                    if any(
+                        row["status"] != "BOUND_NATIVE_EXIT_CENSUS"
+                        for row in self.native_exit_bindings
+                    )
+                    else set()
+                )
             )
         )
 
@@ -158,8 +167,10 @@ class _RecordedConflict(Exception):
 class OcoJournal:
     """One immutable account/entry-scope binding; every access verifies replay.
 
-    Raw execution observations remain caller-declared, not source-qualified. The
-    private transaction owns only this research projection and deduplication cache.
+    The declared execution API carries no source qualification. Separate entry
+    and native-exit census APIs bind immutable source evidence to model quantities;
+    injected evidence stays labeled as test evidence. This projection grants no
+    broker/protection acceptance, risk release or runtime authority.
     """
 
     def __init__(self, journal: Journal, initial: OcoResearchState) -> None:
@@ -216,11 +227,22 @@ class OcoJournal:
             ids = [_text(value) for value in _list(row["entry_execution_ids"])]
             if ids != sorted(set(ids)):
                 raise JournalError("canonical exact OCO terminal census required")
-        elif kind == "BOUND_ENTRY":
+        elif kind in {"BOUND_ENTRY", "BOUND_NATIVE_EXIT"}:
             row = _object(
                 operation, {"request", "source_horizon", "receipt", "outcome"}
             )
-            request = _object(row["request"], {"event_id", "decision_at", "fee_policy"})
+            request = _object(
+                row["request"],
+                {"event_id", "decision_at", "fee_policy"}
+                if kind == "BOUND_ENTRY"
+                else {
+                    "event_id",
+                    "decision_at",
+                    "group_id",
+                    "capture_sequence",
+                    "max_age_microseconds",
+                },
+            )
             identity = _text(request["event_id"])
             stamp = datetime.fromisoformat(_text(request["decision_at"]))
             if (
@@ -228,9 +250,19 @@ class OcoJournal:
                 or stamp.isoformat() != request["decision_at"]
             ):
                 raise JournalError("canonical UTC entry-census request required")
-            path = Path(_text(request["fee_policy"]))
-            if not path.is_absolute() or str(path.resolve()) != request["fee_policy"]:
-                raise JournalError("canonical entry-census fee path required")
+            if kind == "BOUND_ENTRY":
+                path = Path(_text(request["fee_policy"]))
+                if (
+                    not path.is_absolute()
+                    or str(path.resolve()) != request["fee_policy"]
+                ):
+                    raise JournalError("canonical entry-census fee path required")
+            else:
+                _text(request["group_id"])
+                if not _integer(request["capture_sequence"]) or not _integer(
+                    request["max_age_microseconds"]
+                ):
+                    raise JournalError("positive native exit capture/age required")
             if pending:
                 if (
                     row["outcome"] != "PENDING_DERIVATION"
@@ -243,7 +275,12 @@ class OcoJournal:
                 or row["source_horizon"] < 0
                 or type(row["receipt"]) is not dict
                 or row["outcome"]
-                not in {"BOUND_ENTRY_CENSUS", "REQUEST_IDENTITY_CONFLICT"}
+                not in {
+                    "BOUND_ENTRY_CENSUS"
+                    if kind == "BOUND_ENTRY"
+                    else "BOUND_NATIVE_EXIT_CENSUS",
+                    "REQUEST_IDENTITY_CONFLICT",
+                }
             ):
                 raise JournalError("invalid derived entry-census operation")
         else:
@@ -323,13 +360,18 @@ class OcoJournal:
             base
             | (
                 {"entry_binding"}
-                if isinstance(value, dict) and value.get("schema") == 2
+                if isinstance(value, dict) and value.get("schema") in (2, 3)
+                else set()
+            )
+            | (
+                {"native_exit_bindings"}
+                if isinstance(value, dict) and value.get("schema") == 3
                 else set()
             ),
         )
         if (
             type(row["schema"]) is not int
-            or row["schema"] not in (1, 2)
+            or row["schema"] not in (1, 2, 3)
             or row["binding"] != self.binding
         ):
             raise JournalError("OCO frozen binding or cache schema differs")
@@ -343,9 +385,59 @@ class OcoJournal:
         if not watermark:
             raise JournalError("OCO cache watermark missing")
         binding = row.get("entry_binding")
-        if row["schema"] == 2 and type(binding) is not dict:
+        if row["schema"] in (2, 3) and type(binding) is not dict:
             raise JournalError("source-bound entry projection missing")
-        return OcoJournalView(model, conflicts, watermark, binding)
+        exits = tuple(_list(row["native_exit_bindings"])) if row["schema"] == 3 else ()
+        if any(type(item) is not dict for item in exits):
+            raise JournalError("native exit binding projection differs")
+        return OcoJournalView(model, conflicts, watermark, binding, exits)
+
+    def _derive_bound(
+        self, kind: str, request: dict[str, Any], horizon: int
+    ) -> dict[str, Any]:
+        if kind == "BOUND_ENTRY":
+            return derive_entry_census(
+                self.journal,
+                self.initial,
+                decision_at=datetime.fromisoformat(request["decision_at"]),
+                through_sequence=horizon,
+                fee_policy=Path(request["fee_policy"]),
+            )
+        from .oco_exit_evidence import derive_native_exit_census
+
+        return derive_native_exit_census(
+            self.journal,
+            self.initial,
+            group_id=request["group_id"],
+            capture_sequence=request["capture_sequence"],
+            decision_at=datetime.fromisoformat(request["decision_at"]),
+            max_age=timedelta(microseconds=request["max_age_microseconds"]),
+            through_sequence=horizon,
+        )
+
+    def _bound_exit_model(
+        self, model: OcoResearchState, receipt: dict[str, Any]
+    ) -> OcoResearchState:
+        if receipt["status"] != "BOUND_NATIVE_EXIT_CENSUS":
+            return model
+        group = next(
+            (g for g in model.groups if g.group_id == receipt["group_id"]), None
+        )
+        if group is None:
+            raise JournalError("native exit allocation missing")
+        model = acknowledge_group(
+            model, group.group_id, receipt["identity"]["root_order_id"]
+        )
+        for row in receipt["executions"]:
+            execution = _execution(
+                {
+                    key: value
+                    for key, value in row.items()
+                    if key not in {"activity_id", "content_hash", "transaction_time"}
+                }
+            )
+            model = observe_execution(model, execution)
+        return model
 
     def _bound_model(
         self,
@@ -408,13 +500,25 @@ class OcoJournal:
             raise JournalError("OCO immutable binding missing")
         model = self.initial if prior is None else prior.model
         entry_binding = None if prior is None else prior.entry_binding
+        native_exits = (
+            {}
+            if prior is None
+            else {row["group_id"]: row for row in prior.native_exit_bindings}
+        )
         conflicts = set(() if prior is None else prior.conflict_keys)
         if conflict:
             conflicts.add(item["dedupe_key"])
         elif kind == "EXECUTION":
+            if native_exits:
+                raise JournalError(
+                    "declared executions cannot mix with native source ownership"
+                )
             model = observe_execution(model, _execution(operation))
         elif kind == "ALLOCATION":
-            if conflicts:
+            if conflicts or any(
+                row["status"] != "BOUND_NATIVE_EXIT_CENSUS"
+                for row in native_exits.values()
+            ):
                 raise JournalError(
                     "durable OCO identity conflict blocks new allocation"
                 )
@@ -422,6 +526,10 @@ class OcoJournal:
                 model, operation["group_id"], _portions(operation["portions"])
             )
         elif kind == "ACKNOWLEDGEMENT":
+            if native_exits:
+                raise JournalError(
+                    "declared ACK cannot mix with native source ownership"
+                )
             model = acknowledge_group(
                 model, operation["group_id"], operation["acknowledgement_id"]
             )
@@ -437,10 +545,19 @@ class OcoJournal:
                 raise JournalError("entry-census source horizon/outcome differs")
             model = self._bound_model(model, operation, prior)
             entry_binding = operation["receipt"]
+        elif kind == "BOUND_NATIVE_EXIT":
+            if (
+                operation["outcome"] != "BOUND_NATIVE_EXIT_CENSUS"
+                or not 0 <= operation["source_horizon"] < sequence
+                or entry_binding is None
+            ):
+                raise JournalError("source-bound native exit prerequisites differ")
+            model = self._bound_exit_model(model, operation["receipt"])
+            native_exits[operation["receipt"]["group_id"]] = operation["receipt"]
         elif kind != "BIND":
             raise JournalError("unsupported OCO research operation")
         result: dict[str, object] = {
-            "schema": 1 if entry_binding is None else 2,
+            "schema": 3 if native_exits else (1 if entry_binding is None else 2),
             "binding": self.binding,
             "model": self._model_dict(model),
             "conflict_keys": sorted(conflicts),
@@ -449,6 +566,10 @@ class OcoJournal:
         }
         if entry_binding is not None:
             result["entry_binding"] = entry_binding
+        if native_exits:
+            result["native_exit_bindings"] = [
+                native_exits[key] for key in sorted(native_exits)
+            ]
         return result
 
     def _verified_replay(
@@ -488,7 +609,7 @@ class OcoJournal:
                 raise JournalError("OCO operation deduplication key differs")
             digest = "sha256:" + hashlib.sha256(payload).hexdigest()
             conflict = key in first and first[key] != digest
-            if item["kind"] == "BOUND_ENTRY":
+            if item["kind"] in {"BOUND_ENTRY", "BOUND_NATIVE_EXIT"}:
                 operation = item["operation"]
                 if event.available_at < datetime.fromisoformat(
                     operation["receipt"]["decision_at"]
@@ -513,14 +634,15 @@ class OcoJournal:
                         )
                 else:
                     request = operation["request"]
-                    receipt = derive_entry_census(
-                        self.journal,
-                        self.initial,
-                        decision_at=datetime.fromisoformat(request["decision_at"]),
-                        through_sequence=operation["source_horizon"],
-                        fee_policy=Path(request["fee_policy"]),
+                    receipt = self._derive_bound(
+                        item["kind"], request, operation["source_horizon"]
                     )
-                    if operation["outcome"] != "BOUND_ENTRY_CENSUS" or _json(
+                    expected_outcome = (
+                        "BOUND_ENTRY_CENSUS"
+                        if item["kind"] == "BOUND_ENTRY"
+                        else "BOUND_NATIVE_EXIT_CENSUS"
+                    )
+                    if operation["outcome"] != expected_outcome or _json(
                         receipt
                     ) != _json(operation["receipt"]):
                         raise JournalError(
@@ -559,7 +681,9 @@ class OcoJournal:
     ) -> OcoJournalView:
         if type(at) is not datetime or at.utcoffset() != timedelta(0):
             raise JournalError("UTC OCO receipt clock required")
-        key = self._operation_key(kind, operation, pending=kind == "BOUND_ENTRY")
+        key = self._operation_key(
+            kind, operation, pending=kind in {"BOUND_ENTRY", "BOUND_NATIVE_EXIT"}
+        )
         item = {
             "schema": 1,
             "binding": self.binding,
@@ -586,7 +710,7 @@ class OcoJournal:
                     raise JournalError(
                         "crossed-stop incident blocks new OCO allocations"
                     )
-            if kind == "BOUND_ENTRY":
+            if kind in {"BOUND_ENTRY", "BOUND_NATIVE_EXIT"}:
                 original = originals.get(key)
                 if original is not None:
                     complete = dict(original)
@@ -599,18 +723,14 @@ class OcoJournal:
                     horizon = self.journal.read_evidence_sequence()
                     request = operation["request"]
                     assert isinstance(request, dict)
-                    receipt = derive_entry_census(
-                        self.journal,
-                        self.initial,
-                        decision_at=datetime.fromisoformat(str(request["decision_at"])),
-                        through_sequence=horizon,
-                        fee_policy=Path(str(request["fee_policy"])),
-                    )
+                    receipt = self._derive_bound(kind, request, horizon)
                     complete = {
                         "request": request,
                         "source_horizon": horizon,
                         "receipt": receipt,
-                        "outcome": "BOUND_ENTRY_CENSUS",
+                        "outcome": "BOUND_ENTRY_CENSUS"
+                        if kind == "BOUND_ENTRY"
+                        else "BOUND_NATIVE_EXIT_CENSUS",
                     }
                 item["operation"] = complete
                 if at < datetime.fromisoformat(complete["receipt"]["decision_at"]):
@@ -721,6 +841,44 @@ class OcoJournal:
                     "event_id": event_id,
                     "decision_at": decision_at.isoformat(),
                     "fee_policy": str(fee_policy.resolve()),
+                },
+                "source_horizon": None,
+                "receipt": None,
+                "outcome": "PENDING_DERIVATION",
+            },
+            received_at,
+        )
+
+    def bind_native_exit_census(
+        self,
+        event_id: str,
+        group_id: str,
+        capture_sequence: int,
+        decision_at: datetime,
+        max_age: timedelta,
+        received_at: datetime,
+    ) -> OcoJournalView:
+        if type(decision_at) is not datetime or decision_at.utcoffset() != timedelta(0):
+            raise JournalError("UTC native exit-census decision required")
+        if type(max_age) is not timedelta or max_age <= timedelta(0):
+            raise JournalError("positive native exit-census age required")
+        if (
+            type(received_at) is not datetime
+            or received_at.utcoffset() != timedelta(0)
+            or received_at < decision_at
+        ):
+            raise JournalError("UTC native exit receipt cannot precede decision")
+        if self.journal._db.in_transaction:
+            raise JournalError("native exit binding refuses caller-owned transaction")
+        return self._record(
+            "BOUND_NATIVE_EXIT",
+            {
+                "request": {
+                    "event_id": event_id,
+                    "group_id": group_id,
+                    "capture_sequence": capture_sequence,
+                    "decision_at": decision_at.isoformat(),
+                    "max_age_microseconds": max_age // timedelta(microseconds=1),
                 },
                 "source_horizon": None,
                 "receipt": None,

@@ -222,6 +222,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   - [x] Native OCO HTTP boundary and GET-only recovery, 2026-10-23: exact PREPARED bytes, immutable isolated-account proofs, durable once-only send fence, fake/HTTP exclusion, complete cache/proof rebuild and unresolved GET recovery verified with scoped fault/regression checks and independent review. [Evidence and split test results](docs/week3-evidence.md#native-oco-http-boundary-and-get-only-recovery--2026-10-23). No broker invocation or native ownership/protection acceptance; W3-06/07/08 parents remain open.
 
+  - [x] Source-bound native exit census, 2026-10-23: immutable POST/root plus authenticated schema-2 nested GET/FILL now updates canonical OCO TARGET/STOP quantities, retaining exact fractions, oversell incidents, original allocations and risk reservations. Root-only POST, quarantine/recovery, declared-entry isolation, conflict/retry and historical-schema cases pass scoped regression/static checks and independent review. [Evidence and precise test scope](docs/week3-evidence.md#source-bound-native-exit-census--2026-10-23). Synthetic source integration only; actual risk-owner/native execution qualification and W3-06/07/08 parent acceptance remain open.
+
 - [!] **W3-07 [P1] Run isolated Alpaca paper API engineering tests**
   Depends: W3-04..W3-06, credentials available. Minimal non-strategy orders in isolated state only.  
   Accept: complete order lifecycle/reconciliation evidence; test activity cannot enter the formal paper sample. If credentials are unavailable, mark blocked without fabricating acceptance.

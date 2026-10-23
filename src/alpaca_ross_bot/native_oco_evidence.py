@@ -385,6 +385,8 @@ def inspect_native_oco_capture(
     if stored is None:
         raise JournalError("native OCO capture is missing")
     event, raw = stored
+    if event.payload_ref != "sha256:" + hashlib.sha256(raw).hexdigest():
+        raise JournalError("native OCO capture payload hash differs")
     if (event.source_id, event.feed, event.event_kind) != (
         "ALPACA_NATIVE_OCO",
         "paper",
@@ -394,7 +396,7 @@ def inspect_native_oco_capture(
     if not event.visible_at(decision_at) or event.external_clock_conflict:
         raise JournalError("native OCO capture unavailable at decision")
     capture = decode_broker_json(raw)
-    if not isinstance(capture, dict) or set(capture) != {
+    fields = {
         "schema",
         "paper_endpoint",
         "account_ref",
@@ -402,12 +404,24 @@ def inspect_native_oco_capture(
         "started_at",
         "completed_at",
         "requests",
-    }:
+    }
+    if not isinstance(capture, dict):
+        raise JournalError("native OCO capture envelope mismatch")
+    schema = capture.get("schema")
+    if type(schema) is not int or schema not in {1, 2}:
+        raise JournalError("native OCO capture version mismatch")
+    if schema == 2:
+        fields.add("transport_origin")
+        origin = capture.get("transport_origin")
+        if type(origin) is not str or origin not in {
+            "BUILTIN_PAPER_HTTPS",
+            "INJECTED_EXCHANGE",
+        }:
+            raise JournalError("native OCO capture transport origin mismatch")
+    if set(capture) != fields:
         raise JournalError("native OCO capture envelope mismatch")
     if (
-        type(capture["schema"]) is not int
-        or capture["schema"] != 1
-        or capture["paper_endpoint"] != "https://paper-api.alpaca.markets"
+        capture["paper_endpoint"] != "https://paper-api.alpaca.markets"
         or capture["account_ref"] != account_ref
     ):
         raise JournalError("native OCO capture account/endpoint mismatch")
