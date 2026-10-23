@@ -807,6 +807,40 @@ class Journal:
     ) -> dict[str, object]:
         return self._read_evidence_cache("native_oco_attempt_evidence", account_ref)
 
+    def apply_crossed_stop_event(
+        self,
+        *,
+        account_ref: str,
+        state_key: str,
+        dedupe_key: str,
+        event_kind: str,
+        payload: bytes,
+        received_at: datetime,
+        reduce: Callable[[object | None, bool, int], object],
+        prepare_payload: Callable[[bytes], bytes],
+    ) -> EventEnvelope | None:
+        """Independent declared emergency-exit research; never send authority."""
+        return self._apply_private_event(
+            account_ref=account_ref,
+            state_key=state_key,
+            dedupe_key=dedupe_key,
+            event_kind=event_kind,
+            payload=payload,
+            received_at=received_at,
+            reduce=reduce,
+            prepare_payload=prepare_payload,
+            identity_payload=None,
+            namespace="crossed_stop",
+            source_id="ALPACA_CROSSED_STOP_RESEARCH",
+            dedupe_namespace="crossed_stop_evidence",
+        )
+
+    def read_crossed_stop_events(self) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        return self._read_private_events("ALPACA_CROSSED_STOP_RESEARCH", None)
+
+    def read_crossed_stop_evidence_cache(self, account_ref: str) -> dict[str, object]:
+        return self._read_evidence_cache("crossed_stop_evidence", account_ref)
+
     def apply_declared_review_event(
         self,
         *,

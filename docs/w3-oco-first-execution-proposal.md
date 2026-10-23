@@ -408,3 +408,27 @@ blocked on its own mapping. The independent version also stays broker-disabled
 until its version binding, deterministic fault tests, broker eligibility and
 all remaining source/risk/protection/release gates pass. Review acceptance does
 not establish that any actual market exit will be admitted or filled.
+
+### Independent declared implementation verified — 2026-10-23
+
+The pinned `CROSSED_STOP_RESIDUAL_EXIT_RESEARCH_V1` manifest is
+[separate from its unchanged OCO parent](../evidence/crossed-stop-residual-exit-research-v1.json).
+`crossed_stop.py` reuses the existing OCO lot book and private Journal to persist
+a sticky declared crossing, exact disjoint residual preparation, a single local
+attempt fence and declared partial exit executions. Original and conflicting
+retries remain idempotent across restart; UNKNOWN OCO and emergency reservations
+cannot be reused. A latched incident blocks new OCO allocations without changing
+old groups or their acknowledgments. A changed parent census after preparation
+blocks its attempt; its old reservation remains held, with no automatic release.
+The target-only `FINAL_TARGET_TOPOLOGY_INVALID` condition does not prevent an
+exact risk-reducing emergency proposal; the parent incident, S and invalid target
+remain unchanged, and ownership/quantity incidents still veto.
+
+This is a **declared-input research component**, not a source-qualified or
+dispatch-compatible order path. Freshness/session/ownership declarations are
+explicitly labeled and cannot grant source acceptance. No new freshness TTL or
+network transport is introduced. The exit execution overlay is not an accepted
+broker execution/risk-release owner. Actual source and risk-version binding,
+native admission, executable crash cleanup, session-boundary behavior and release
+remain required; old protection is never canceled by this component. See the
+[implementation evidence](week3-evidence.md#crossed-stop-independent-decision-and-durability-implementation--2026-10-23).

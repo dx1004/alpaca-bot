@@ -1,0 +1,35 @@
+{
+  "acceptance_basis": "User conditional review approval, corrected independent review, then explicit implementation and validation request",
+  "accepted_on": "2026-10-23",
+  "authority": {
+    "actual_source_qualification_accepted": false,
+    "broker_admission_verified": false,
+    "entry_risk_binding_accepted": false,
+    "formal_paper_authorized": false,
+    "order_authority": false,
+    "protection_coverage_verified": false,
+    "release_accepted": false,
+    "research_semantics_accepted": true,
+    "runtime_authorized": false,
+    "safe_close_accepted": false
+  },
+  "candidate_version": "HYBRID_500_IEX_CROSSED_STOP_RESEARCH_V1",
+  "classification": "INDEPENDENT_EMERGENCY_POLICY_NOT_ROSS_OR_CONTINUOUS_PROTECTION_EQUIVALENT",
+  "coverage_label": "NOT_SIP_EQUIVALENT",
+  "parent_contract_path": "evidence/oco-first-execution-research-v1.json",
+  "parent_contract_sha256": "fa6e29ede5a92428308ad19ba794be5e6e3f0b2a3c216818a54f3ffc9a112d80",
+  "research_policy": {
+    "attempt": "DURABLE_SINGLE_FENCE_NO_TRANSPORT_NO_RETRY_ON_UNKNOWN",
+    "entry": "REQUIRE_TERMINAL_CENSUS_AND_NO_CONFLICTING_BUYS_NOT_CANCEL_ACK",
+    "exit": "EXPLICIT_QUANTITY_SIMPLE_MARKET_DAY_REGULAR_SESSION_ONLY",
+    "new_quantity_stop_free_interval": "EXPLICITLY_ACCEPTED_FOR_RESEARCH_IMPLEMENTATION_VALIDATION_ONLY_NO_TIME_OR_LOSS_BOUND",
+    "old_protection": "PRESERVE_ALL_VALID_AND_UNKNOWN_EXIT_RESERVATIONS",
+    "quantity": "EXACT_UNALLOCATED_PER_FILL_LESS_ALL_EMERGENCY_RESERVATIONS_NO_ROUNDING",
+    "recovery": "REPLAY_IMMUTABLE_PREFIX_VERIFY_CACHE_RETAIN_PARTIAL_AND_UNKNOWN_LOT_RESERVATIONS",
+    "risk": "NO_REENTRY_NO_RISK_RELEASE_NO_NEW_BUDGET",
+    "session": "NO_NEXT_SESSION_QUEUE_SUCCESS_OR_OVERNIGHT_ADAPTATION",
+    "trigger": "DECLARED_FRESH_QUALIFIED_IEX_BID_LE_FROZEN_S_ON_UNALLOCATED_OWNED_FILL_STICKY"
+  },
+  "schema_version": 1,
+  "version": "CROSSED_STOP_RESIDUAL_EXIT_RESEARCH_V1"
+}

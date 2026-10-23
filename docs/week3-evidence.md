@@ -3459,3 +3459,66 @@ pinned OCO-first manifests are unchanged; a separate version binding is still
 required. No code, broker qualification, continuous protection, W3 parent
 completion, order permission or formal-paper acceptance follows from this
 review. Validation: scoped diff checks and review-bundle integrity/format checks.
+
+## Crossed-stop independent decision and durability implementation — 2026-10-23
+
+The user explicitly requested continued implementation and validation after the
+conditional policy acceptance. The new independent manifest pins
+`CROSSED_STOP_RESIDUAL_EXIT_RESEARCH_V1` and its unchanged OCO parent. SHA-256:
+`6f5c6fe8796e9abad2f88edcee46d13e337f762765f45f6ba08c6959e01fc0b1`.
+All operational/source/broker/protection/release authorities remain false.
+
+Implemented in `crossed_stop.py`, reusing the existing Journal and OCO owner:
+
+- Sticky declared fresh IEX bid <= S crossing with no reset on rebound.
+- Exact per-fill residual proposals excluding every OCO allocation, including
+  UNKNOWN ACK, and every prior emergency allocation; no rounding or whole-position
+  liquidation. Exact decimal/precision failures block preparation.
+- Terminal-census, declared current source/ownership/position/availability and
+  regular-session/tradability checks before preparation and attempt. Cancel ACK
+  is not terminality. A changed parent prefix blocks an old preparation; its
+  reservation remains held, not silently recycled.
+- Atomic preparation and local single-attempt fencing, immutable-prefix rebuild,
+  projection/dedupe verification, original and conflicting retry idempotence,
+  partial exits, signed over-exit incidents and physical restart retention.
+- A same-transaction OCO allocation interlock after the emergency latch; existing
+  group retries/ACKs remain possible without removing old protection. No new
+  risk budget, ordinary order intent or broker transport is created.
+
+Independent review found and corrected four defects before acceptance: mutable
+authority aliases, repeated append of known conflicting commands, asymmetric
+cross-ledger execution-ID collision detection, and a parent final-target-only
+incident incorrectly vetoing disposal of fills at/below S. The correction keeps
+the parent incident and S while allowing only this target-topology condition;
+quantity/identity/reverse-position incidents still block. Fresh complete scoped
+review found no further actionable finding. Two independent synthetic probes
+also verified F==S and original/conflicting retry behavior after physical reopen.
+Reviewed source SHA-256:
+`c00edc1d67747d3bc4e04140617476fa3bc6400915e6b1375a7d8a1ad1d65fb1`.
+
+Validation (all private state was synthetic under pytest temporary directories):
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/pytest -q -p no:cacheprovider tests/test_crossed_stop.py tests/test_journal.py tests/test_oco_journal.py tests/test_oco_research.py`:
+  **137 passed**, including 48 new cases. Fault coverage includes lost/unknown
+  attempts, malformed/future/stale declarations, cancel/fill census changes,
+  session/halt/availability changes, physical restart, storage rollback,
+  raw/projection/dedupe corruption, two-connection attempt/reservation races,
+  fractional residuals and over-exits.
+- Scoped Ruff lint/format and strict mypy passed for the four changed/new Python
+  files; `rtk git diff --check` passed.
+
+Public-only Cloud `gemma4:31b` inference was verified for a generic invariant
+question. Its suggestion to treat cancel ACK as terminal was rejected, as was
+any implication that late observations cannot change a terminal census. No local
+code, documents, credentials or account data were exported. The installed project
+Python was used after the bare `python` executable was absent; no global change
+was needed.
+
+Claim ceiling: declarations are not authenticated source proof or fresh official
+calendar acceptance. The local attempt fence is not transmission; declared exits
+are not broker ownership/ACK or risk-release proof. No cancellation, sell,
+credentials access, real market capture, protection continuity, bounded loss,
+actual cleanup, W3-06 parent completion or formal paper start is claimed. Actual
+source/risk-version binding and a supported reviewed broker/cleanup envelope
+remain open. This increment implements the accepted independent policy model
+and durability only, while preserving NOT_SIP_EQUIVALENT and runtime refusal.

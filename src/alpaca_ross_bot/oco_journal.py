@@ -574,6 +574,18 @@ class OcoJournal:
             nonlocal result
             projected, recorded, originals = self._verified_replay()
             result = None if projected is None else self._view(projected)
+            if (
+                kind == "ALLOCATION"
+                and key not in originals
+                and self.journal.read_crossed_stop_events()
+            ):
+                from .crossed_stop import CrossedStopJournal
+
+                emergency = CrossedStopJournal(self).view()
+                if emergency["latched"] or emergency["conflicts"]:
+                    raise JournalError(
+                        "crossed-stop incident blocks new OCO allocations"
+                    )
             if kind == "BOUND_ENTRY":
                 original = originals.get(key)
                 if original is not None:
