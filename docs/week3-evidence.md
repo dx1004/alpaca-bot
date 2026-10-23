@@ -3720,3 +3720,42 @@ W3-06/07/08 parents remain open. Real protected ownership, broker partial-fill
 protection/continuity, cleanup qualification and permitted actual order cycles
 remain separate dependencies. `runtime_authorized=false`; IEX remains
 `NOT_SIP_EQUIVALENT`. No recovery policy was invented for quarantined quantities.
+
+### W3-08 observed engineering execution conversion — 2026-10-23
+
+`paper_execution_adapter.inspect_engineering_executions` now reads the canonical
+private Journal through `inspect_paper_ledger_sources`, at an explicit immutable
+capture/horizon. It converts only source-attributed completed simple engineering
+roundtrips. It accepts no caller-built ownership report, formal enrollment,
+release manifest or performance scope. Existing `paper_performance` remains
+unchanged and continues rejecting nonformal origins.
+
+Each converted row retains exact Fraction quantity/price, original timestamp text
+and submicrosecond remainder, canonical raw bytes/hash, every raw occurrence,
+activity source and the existing owner/lifecycle references. All observations,
+including postings, conflicting variants and unowned executions, remain visible;
+unconverted observations are separate rather than silently dropped. Assignment
+conflicts refuse conversion. Raw source order is retained; decreasing times and
+same-roundtrip opposite-side exact ties are explicit unresolved conditions, not
+repaired by sorting order IDs. Engineering origin is fixed on returned rows.
+
+Independent review found no actionable defect. Five new targeted tests cover
+source precision/provenance, read-only/caller transaction behavior, raw order and
+unconverted observations, fixed-prefix reproduction after later evidence,
+namespace distinction and assignment conflicts. The 231-case combined regression
+(command below) passed, including these tests, ledger source integrations and
+formal performance origin/precision cases. Ruff and mypy checks passed on module
+and tests. A test-only invariant dict annotation was repaired before final static
+validation; it did not change behavior.
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/pytest -q -p no:cacheprovider tests/test_crossed_stop.py tests/test_crossed_stop_source.py tests/test_crossed_stop_risk_binding.py tests/test_journal.py tests/test_paper_engineering.py tests/test_native_oco_requests.py tests/test_paper_execution_adapter.py tests/test_paper_ledger_sources.py tests/test_paper_ledger_sources_integration.py tests/test_paper_performance.py tests/test_paper_performance_precision_integration.py
+231 passed in 129.80s
+```
+
+This closes observed engineering execution conversion only. Native/formal
+ownership, study enrollment, account-day census, fee classification/finality,
+verified performance window cash/equity boundaries and formal calculator input
+conversion remain unaccepted. No new P&L calculation, account capture, broker
+request or paper evaluation occurred. W3-08 remains open; source admission,
+formal eligibility and runtime/dispatch authority are false.

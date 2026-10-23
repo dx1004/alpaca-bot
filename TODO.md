@@ -250,6 +250,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   Performance timestamp repair 2026-10-22: the existing descriptive calculator now retains optional original RFC3339 execution/posting timestamps and uses exact fractional-second keys for window boundaries, chronology and true ties. Ninety-five combined tests, including six independent precision integrations, pass with scoped Ruff/format and strict mypy. [Evidence and preserved gates](docs/week3-evidence.md#descriptive-performance-timestamp-precision-repair--2026-10-22). This removes a real source-conversion precision gap; engineering origin, unknown fees/censuses and actual formal-input conversion remain blocked. Parent remains open.
 
+  - [x] Observed engineering execution conversion, 2026-10-23: direct canonical Journal reads now produce exact source-linked engineering execution rows while retaining all unconverted observations, raw chronology and unresolved ties. Five new cases, independent review, the combined 231-case regression and scoped type/lint/format checks pass. [Evidence and limits](docs/week3-evidence.md#w3-08-observed-engineering-execution-conversion--2026-10-23). No formal scope is manufactured; formal ownership/censuses/performance inputs and W3-08 freeze remain open.
+
 ## Week 4 — Integration, audit, and release freeze
 
 - [ ] **W4-01 [P0] End-to-end deterministic replay**  
