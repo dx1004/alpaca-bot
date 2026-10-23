@@ -118,6 +118,7 @@ class SourceAccount:
         power: str | None = None,
         position: int | Decimal = 0,
         bid: str = "10",
+        available: str | None = None,
     ) -> IncidentRiskRequest:
         positions: tuple[dict[str, object], ...] = (
             (
@@ -132,6 +133,8 @@ class SourceAccount:
             if position
             else ()
         )
+        if positions and available is not None:
+            positions[0]["qty_available"] = available
         open_orders = tuple(
             row
             for row in self.orders.values()

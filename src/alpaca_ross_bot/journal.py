@@ -1080,6 +1080,60 @@ class Journal:
             result.append(item)
         return tuple(result)
 
+    def _guard_source_emergency_reservation(self, intent: Mapping[str, object]) -> None:
+        """Hold source-prepared symbols across simple intent/send writers.
+
+        This conservative immutable-event guard has no release operation. It
+        neither dispatches the emergency proposal nor certifies its ownership.
+        The caller holds the same private write lock as the reservation writer.
+        """
+        symbols: set[str] = set()
+        for event, raw in self.read_crossed_stop_events():
+            if event.event_kind != "SOURCE_PREPARE":
+                continue
+            try:
+                row = json.loads(raw)
+                binding = row["binding"]
+                if (
+                    row["kind"] != "SOURCE_PREPARE"
+                    or event.feed != "paper"
+                    or binding["account_ref"] != self.read_paper_account_ref()
+                    or type(binding["symbol"]) is not str
+                    or not binding["symbol"]
+                    or type(row["data"]["receipt"]) is not dict
+                    or row["data"]["receipt"]["dispatch_authorized"] is not False
+                ):
+                    raise ValueError
+                symbols.add(binding["symbol"])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise JournalError(
+                    "source emergency reservation evidence invalid"
+                ) from exc
+        if not symbols:
+            return
+        try:
+            body = intent["request_body"]
+            if type(body) is not str:
+                raise ValueError
+            request = json.loads(body)
+            if type(request) is not dict or type(request.get("symbol")) is not str:
+                raise ValueError
+        except (KeyError, TypeError, ValueError) as exc:
+            raise JournalError(
+                "source emergency guard requires exact order symbol"
+            ) from exc
+        symbol = request["symbol"]
+        try:
+            UUID(symbol)
+        except ValueError:
+            pass
+        else:
+            raise JournalError("source emergency guard cannot resolve asset-ID aliases")
+        if symbol != symbol.strip() or symbol.casefold() in {
+            saved.casefold() for saved in symbols
+        }:
+            raise JournalError("source emergency reservation blocks new intent/send")
+
     def reserve_order_intent(
         self, client_order_id: str, intent: Mapping[str, object]
     ) -> None:
@@ -1100,6 +1154,7 @@ class Journal:
                 raise JournalError(
                     "client order ID is reserved by native OCO provenance"
                 )
+            self._guard_source_emergency_reservation(intent)
             bound = self._db.execute(
                 "SELECT account_ref FROM paper_account_verifications LIMIT 1"
             ).fetchone()
@@ -1209,6 +1264,11 @@ class Journal:
             raise JournalError("send attempt timestamp must be UTC")
         try:
             self._db.execute("BEGIN IMMEDIATE")
+            intent = self.read_order_intent(client_order_id)
+            if intent is not None:
+                if not isinstance(intent, Mapping):
+                    raise JournalError("saved order intent must be an object")
+                self._guard_source_emergency_reservation(intent)
             cursor = self._db.execute(
                 """INSERT INTO order_send_attempts(client_order_id, started_at)
                 SELECT ?, ? WHERE EXISTS (

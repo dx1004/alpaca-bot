@@ -18,6 +18,7 @@ from .crossed_stop_contract import VERSION as VERSION
 from .crossed_stop_contract import load_crossed_stop_contract
 from .journal import JournalError
 from .oco_journal import OcoJournal, _json
+from .oco_research import OcoResearchState
 
 _ORIGIN = "DECLARED_RESEARCH_INPUT_NOT_SOURCE_OR_BROKER_PROOF"
 _SOURCE_ORIGIN = "SOURCE_REFERENCED_TRIGGER_NOT_EXIT_OR_BROKER_QUALIFICATION"
@@ -195,6 +196,7 @@ class CrossedStopJournal:
         kind, data = item["kind"], item["data"]
         keys = {
             "SOURCE_OBSERVE": {"receipt"},
+            "SOURCE_PREPARE": {"close_id", "request", "receipt"},
             "OBSERVE": {"evidence"},
             "PREPARE": {"close_id", "evidence"},
             "ATTEMPT": {"close_id", "attempt_id", "evidence"},
@@ -249,6 +251,31 @@ class CrossedStopJournal:
             state["origin"] = _SOURCE_ORIGIN
             state.setdefault("source_observations", []).append(receipt)
             state["latched"] = state["latched"] or receipt["crossing_observed"]
+        elif kind == "SOURCE_PREPARE":
+            from .crossed_stop_preparation import derive_source_preparation
+
+            if (
+                state["origin"] != _SOURCE_ORIGIN
+                or not state["latched"]
+                or state["conflicts"]
+                or set(model.incidents) - {"FINAL_TARGET_TOPOLOGY_INVALID"}
+            ):
+                raise JournalError("clean source-latched emergency scope required")
+            receipt = derive_source_preparation(
+                self.owner, horizon=item["horizon"], at=at, request=data["request"]
+            )
+            if _json(receipt) != _json(data["receipt"]):
+                raise JournalError(
+                    "source preparation differs from original raw prefix"
+                )
+            self._reserve_close(
+                state,
+                model,
+                _text(data["close_id"]),
+                _fraction(receipt["reported_available_quantity"]),
+                item["horizon"],
+            )
+            closes[data["close_id"]]["source_preparation"] = receipt
         elif state["origin"] == _SOURCE_ORIGIN:
             raise JournalError("declared exit inputs cannot clear source crossing")
         elif kind in {"OBSERVE", "PREPARE", "ATTEMPT"}:
@@ -292,61 +319,13 @@ class CrossedStopJournal:
                     raise JournalError("position/lot census differs")
                 close_id = _text(data["close_id"])
                 if kind == "PREPARE":
-                    if any(
-                        _fraction(c["filled"]) != _fraction(c["quantity"])
-                        for c in closes.values()
-                    ):
-                        raise JournalError("existing emergency reservation unresolved")
-                    if close_id in closes:
-                        raise JournalError("close identity already reserved")
-                    assigned: dict[str, Fraction] = {}
-                    for group in model.groups:
-                        for part in group.portions:
-                            assigned[part.entry_execution_id] = (
-                                assigned.get(part.entry_execution_id, Fraction(0))
-                                + part.quantity
-                            )
-                    for close in closes.values():
-                        for entry, quantity in close["portions"].items():
-                            assigned[entry] = assigned.get(entry, Fraction(0)) + (
-                                _fraction(quantity)
-                            )
-                    portions = {
-                        e.execution_id: str(
-                            e.quantity - assigned.get(e.execution_id, Fraction(0))
-                        )
-                        for e in model.executions
-                        if e.role == "ENTRY"
-                        and e.quantity > assigned.get(e.execution_id, Fraction(0))
-                    }
-                    quantity = sum(
-                        (_fraction(q) for q in portions.values()), Fraction(0)
+                    self._reserve_close(
+                        state,
+                        model,
+                        close_id,
+                        evidence.available_quantity,
+                        item["horizon"],
                     )
-                    if not quantity or evidence.available_quantity < quantity:
-                        raise JournalError("exact unreserved quantity unavailable")
-                    client_id = (
-                        "cs-"
-                        + hashlib.sha256(_json([self.binding, close_id])).hexdigest()[
-                            :40
-                        ]
-                    )
-                    closes[close_id] = {
-                        "portions": portions,
-                        "quantity": str(quantity),
-                        "filled": "0",
-                        "executions": {},
-                        "attempt": None,
-                        "parent_horizon": item["horizon"],
-                        "request": {
-                            "symbol": model.symbol,
-                            "side": "sell",
-                            "type": "market",
-                            "time_in_force": "day",
-                            "qty": _decimal(quantity),
-                            "client_order_id": client_id,
-                        },
-                        "dispatch_compatible": False,
-                    }
                 else:
                     close = closes.get(close_id)
                     if close is None or close["attempt"] is not None:
@@ -377,6 +356,60 @@ class CrossedStopJournal:
             raise JournalError("unknown crossed-stop operation")
         state["last_at"] = item["at"]
         return state
+
+    def _reserve_close(
+        self,
+        state: dict[str, Any],
+        model: OcoResearchState,
+        close_id: str,
+        available: Fraction,
+        horizon: int,
+    ) -> None:
+        closes = state["closes"]
+        if any(
+            _fraction(c["filled"]) != _fraction(c["quantity"]) for c in closes.values()
+        ):
+            raise JournalError("existing emergency reservation unresolved")
+        if close_id in closes:
+            raise JournalError("close identity already reserved")
+        assigned: dict[str, Fraction] = {}
+        for group in model.groups:
+            for part in group.portions:
+                assigned[part.entry_execution_id] = (
+                    assigned.get(part.entry_execution_id, Fraction(0)) + part.quantity
+                )
+        for close in closes.values():
+            for entry, quantity in close["portions"].items():
+                assigned[entry] = assigned.get(entry, Fraction(0)) + _fraction(quantity)
+        portions = {
+            e.execution_id: str(e.quantity - assigned.get(e.execution_id, Fraction(0)))
+            for e in model.executions
+            if e.role == "ENTRY"
+            and e.quantity > assigned.get(e.execution_id, Fraction(0))
+        }
+        quantity = sum((_fraction(q) for q in portions.values()), Fraction(0))
+        if not quantity or available < quantity:
+            raise JournalError("exact unreserved quantity unavailable")
+        client_id = (
+            "cs-" + hashlib.sha256(_json([self.binding, close_id])).hexdigest()[:40]
+        )
+        closes[close_id] = {
+            "portions": portions,
+            "quantity": str(quantity),
+            "filled": "0",
+            "executions": {},
+            "attempt": None,
+            "parent_horizon": horizon,
+            "request": {
+                "symbol": model.symbol,
+                "side": "sell",
+                "type": "market",
+                "time_in_force": "day",
+                "qty": _decimal(quantity),
+                "client_order_id": client_id,
+            },
+            "dispatch_compatible": False,
+        }
 
     def _replay(
         self,
@@ -476,7 +509,7 @@ class CrossedStopJournal:
                     old = json.loads(raw)
                     if old["key"] == key and old["binding"] == self.binding:
                         item["horizon"] = old["horizon"]
-                        if kind == "SOURCE_OBSERVE":
+                        if kind in {"SOURCE_OBSERVE", "SOURCE_PREPARE"}:
                             data["receipt"] = old["data"]["receipt"]
                         break
             else:
@@ -486,6 +519,16 @@ class CrossedStopJournal:
 
                     data["receipt"] = derive_source_crossing(
                         self.owner, horizon=item["horizon"], at=at
+                    )
+                elif kind == "SOURCE_PREPARE":
+                    from .crossed_stop_preparation import derive_source_preparation
+
+                    data["receipt"] = derive_source_preparation(
+                        self.owner,
+                        horizon=item["horizon"],
+                        at=at,
+                        request=data["request"],
+                        _require_current_census=True,
                     )
             raw = _json(item)
             digest = "sha256:" + hashlib.sha256(raw).hexdigest()
@@ -530,6 +573,37 @@ class CrossedStopJournal:
             close_id,
             evidence.as_of,
             {"close_id": close_id, "evidence": evidence.to_dict()},
+        )
+
+    def prepare_source(
+        self,
+        close_id: str,
+        at: datetime,
+        *,
+        asset_sequence: int,
+        status_sequence: int,
+        status_record_index: int,
+        max_asset_age: timedelta,
+        max_status_age: timedelta,
+    ) -> dict[str, Any]:
+        """Reserve raw-referenced lots locally; not no-halt or dispatch clearance."""
+        from .crossed_stop_preparation import preparation_request
+
+        return self._record(
+            "SOURCE_PREPARE",
+            close_id,
+            at,
+            {
+                "close_id": close_id,
+                "request": preparation_request(
+                    asset_sequence,
+                    status_sequence,
+                    status_record_index,
+                    max_asset_age,
+                    max_status_age,
+                ),
+                "receipt": None,
+            },
         )
 
     def mark_attempt(

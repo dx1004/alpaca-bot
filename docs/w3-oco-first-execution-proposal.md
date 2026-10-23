@@ -476,3 +476,41 @@ unbound source prefixes, preserving their replay shape. Source observations stil
 cannot use the declared preparation API to bypass unaccepted exit ownership or
 source/risk qualification. This closes an implementation connection, not the
 operational risk/protection acceptance gate. [Validation and limits](week3-evidence.md#crossed-stop-explicit-shared-risk-policy-binding--2026-10-23).
+
+### Raw-source local emergency reservation implemented — 2026-10-23
+
+`CrossedStopJournal.prepare_source` now joins the existing source crossing to a
+local exact residual reservation. It uses the canonical risk owner, explicit
+same-slot emergency-policy opt-in, terminal entry census, account capture,
+reported position/available quantity, asset master and raw IEX trading-status
+record. Observation age bounds are mandatory research arguments, with no invented
+runtime defaults. Source and declared modes remain separate; source-mode attempts
+and executions still cannot use the declared APIs.
+
+The supported source seam is entry-only: native/declared groups, source-unqualified
+exit ownership, bound exits, working orders and unresolved local intents block
+preparation. This does not replace the full grouped-position route. The original
+lot owner, risk budget and existing protection are unchanged. `qty_available` is
+observed separately from `qty`; neither proves atomic broker reservation. Initial
+preparation checks current local intent hashes/send fences under the write lock.
+Exact retries/replay retain the original census instead of comparing future state.
+An immutable reservation also interlocks later same-symbol simple intent/send
+writers; case/space aliases and unresolved asset-ID aliases cannot bypass it.
+There is no automatic reservation release.
+
+[Alpaca's Position and Asset definitions](https://alpaca.markets/sdks/python/api_reference/trading/models.html)
+separate available shares from position shares and asset tradability from exchange
+status. [Trading Status](https://docs.alpaca.markets/us/docs/real-time-stock-pricing-data#trading-status)
+is a separate stream: a selected, latest locally observed resumption record is
+required, and a newer halt/status invalidates an older selection. Quote conditions
+and asset tradability are not used as no-halt evidence. Sources checked 2026-10-23.
+
+The receipt explicitly preserves `current_no_halt_proven=false`,
+`continuous_status_coverage_proven=false` and
+`broker_reservation_atomicity_proven=false`. A fresh reported resumption does not
+establish an initial current-state snapshot, uninterrupted delivery, Basic/IEX
+entitlement or the absence of a later unseen halt. Thus this is a **non-dispatching
+local preparation**, not satisfaction or relaxation of the accepted operational
+halt/protection/source gate. Broker admission, native exit ownership, actual
+cleanup/restart execution and W3-06/07 acceptance remain open. No broker call or
+formal paper evaluation occurred. See the [implementation evidence](week3-evidence.md#raw-source-local-emergency-preparation--2026-10-23).

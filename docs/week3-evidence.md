@@ -3759,3 +3759,75 @@ verified performance window cash/equity boundaries and formal calculator input
 conversion remain unaccepted. No new P&L calculation, account capture, broker
 request or paper evaluation occurred. W3-08 remains open; source admission,
 formal eligibility and runtime/dispatch authority are false.
+
+### Raw-source local emergency preparation — 2026-10-23
+
+W3-06 now has `SOURCE_PREPARE` in the existing crossed-stop journal, backed by
+`crossed_stop_preparation.py`. It derives the current explicit policy/held-slot,
+exact bound entry executions and terminal census, fresh account inventory,
+reported available quantity, active/tradable asset master and latest locally
+observed trading resumption from immutable raw references. The command requires
+explicit research observation age arguments. No caller freshness/ownership/halt
+booleans enter this path. The shared close allocator is reused, preserving the
+original declared-event projection shape, disjoint lot portions and durable
+UNKNOWN reservations. The original parent manifests are unchanged.
+
+The entry-only source seam refuses model groups/exits, working orders, bound local
+exits, unsupported quantities and unknown local order commitments. Initial write
+checks current simple intent IDs/hashes/send fences against the latest source-risk
+census under the same write lock. This closes a race found by independent review:
+a new unsent/sent local sell after an otherwise qualified empty-order snapshot
+could otherwise reserve the same shares twice. Receipts retain the exact census
+and reference; later appends cannot rewrite historical replay or exact retries.
+The Journal additionally interlocks subsequent same-symbol simple intent/send
+writers, conservatively rejecting ambiguous asset-ID and case/space aliases.
+No old protection is canceled, no risk slot is released and no source-mode send
+or exit adoption is enabled.
+
+Primary evidence, checked 2026-10-23:
+
+- [Official Position/Asset models](https://alpaca.markets/sdks/python/api_reference/trading/models.html): available shares subtract open orders; asset tradability is a distinct field.
+- [Official Trading Status schema](https://docs.alpaca.markets/us/docs/real-time-stock-pricing-data#trading-status): trading status is separate from quotes, with tape-specific halt/resumption codes.
+
+The implementation never infers current no-halt from a quote, asset master or a
+fresh resume alone. Receipts keep current no-halt, continuous status coverage,
+broker reservation atomicity, source admission, dispatch/runtime and formal paper
+acceptance false. Published fields and offline tests do not establish this
+account's status entitlement, complete status delivery or real broker disposal.
+A generic public-only Cloud `gemma4:31b` analysis returned successfully; its advice
+was non-authorizing and did not establish any missing source/broker fact.
+
+Validation covers exact residual/source ancestry, explicit opt-in, terminal vs
+pending cancellation, missing/malformed/insufficient availability, asset/status
+rejections, superseding halt/catalog, frozen retry/conflict identity, existing
+unknown groups, stale-census races, unsent bound protection, rollback and restart.
+Independent SDET review corrected the local-census race and rechecked the final
+source/risk interfaces. A suspected new cross-scope native preparation bypass was
+re-examined and not established because the current-held/source-prefix gates
+already reject it; no speculative native guard was added.
+
+The source-preparation suite passed 28 cases (318.06s); independent execution also
+passed the same 28 cases (320.33s). Five additional exact-bound argument cases
+passed separately. Final writer/alias and later-prefix retry checks passed 2
+cases (39.28s). The 231-case regression recorded in the preceding W3-08 entry
+also covers existing declared/source crossing, risk bindings, Journal, engineering
+transport, native preparation, source conversion and performance precision/origin.
+Scoped Ruff/format and strict mypy results are recorded after final checks below.
+
+W3-06/07/08 parents remain open. This local source connection is not operational
+source qualification, continuous broker protection, accepted safe close, actual
+order-cycle evidence or formal-paper authorization. No credentials/account state,
+broker request, order/cancel, paid data or formal study was accessed or changed.
+
+Final checks on the seven changed/new Python paths (the two parallel increments):
+Ruff `check --no-cache`, Ruff `format --check`, strict mypy with the isolated
+`/tmp/alpaca-sourceprepare-mypy` cache, and `git diff --check` all passed. The final
+additional source-age/future-timestamp integration passed (1 case, 25.61s), giving
+34 distinct source-preparation cases exercised across the suite/scoped commands.
+No full-suite result is inferred from these bounded checks.
+
+Final independent review matched these SHA-256 prefixes and found no actionable
+remaining issue: preparation `acc9e36903981132`, crossed-stop owner
+`9b92cb18b4c93214`, Journal `032f7c1c5146b504`, source tests `1f496ce1d3494f8b`.
+The alias/future-prefix checks were root-run after the earlier independent suite;
+the final reviewer inspected those changed bytes without repeating the suite.
