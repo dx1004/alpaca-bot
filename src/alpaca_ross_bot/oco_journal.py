@@ -645,6 +645,54 @@ class OcoJournal:
         self.view()
         return True
 
+    def read_verified_at(
+        self, through_sequence: int, decision_at: datetime
+    ) -> OcoJournalView | None:
+        """Read one decision-visible prefix without opening a write transaction.
+
+        Current immutable history, projection and deduplication must first agree;
+        a historical read never repairs corrupt current state. Callers already
+        holding a transaction retain its ownership. Otherwise a read transaction
+        pins one SQLite snapshot across verification and prefix replay. Source-
+        bound receipts retain their original derivation clocks/horizons.
+        """
+        self.journal.require_private_order_state()
+        if type(through_sequence) is not int or through_sequence < 0:
+            raise JournalError("invalid historical OCO source horizon")
+        if type(decision_at) is not datetime or decision_at.utcoffset() != timedelta(0):
+            raise JournalError("UTC historical OCO decision required")
+        owns_read = not self.journal._db.in_transaction
+        if owns_read:
+            self.journal._db.execute("BEGIN")
+        try:
+            if self.journal.read_paper_account_ref() != self.initial.account_ref:
+                raise JournalError("historical OCO account is not bound to journal")
+            if through_sequence > self.journal.read_evidence_sequence():
+                raise JournalError("invalid historical OCO source horizon")
+            self._verified_replay()
+            projected: object | None = None
+            first: dict[str, str] = {}
+            for event, payload in self.journal.read_oco_research_events():
+                if event.sequence > through_sequence:
+                    continue
+                item = _object(
+                    json.loads(payload),
+                    {"schema", "binding", "kind", "operation", "dedupe_key"},
+                )
+                if item["binding"] != self.binding:
+                    continue
+                if not event.visible_at(decision_at):
+                    raise JournalError("historical OCO prefix is not decision-visible")
+                key = self._operation_key(item["kind"], item["operation"])
+                digest = event.payload_ref
+                conflict = key in first and first[key] != digest
+                first.setdefault(key, digest)
+                projected = self._reduce(projected, item, conflict, event.sequence)
+            return None if projected is None else self._view(projected)
+        finally:
+            if owns_read:
+                self.journal._db.rollback()
+
     def bind_entry_census(
         self,
         event_id: str,

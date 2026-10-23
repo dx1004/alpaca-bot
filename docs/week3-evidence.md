@@ -2744,3 +2744,48 @@ quantity consistency do not establish local order ownership, broker ACK
 provenance, continuous stop protection, actual strategy admission, runtime
 authority or W3-06/07/08 completion. No account connection or broker action was
 performed for this validation.
+
+## Historical OCO prefix for request provenance — 2026-10-22
+
+The next native request/ACK integration must not derive old request terms from
+today's OCO allocation cache. `OcoJournal.read_verified_at` now verifies current
+immutable events, projection and deduplication, then replays only the specified
+entry-scope prefix whose events were available at the decision time. It returns
+the original model/source receipt without creating a request, ACK or broker
+operation. Existing schemas and operational authority flags are unchanged.
+
+Outside a transaction, a deferred read transaction pins one SQLite snapshot
+across current-integrity verification and historical replay. Inside a caller's
+transaction it neither starts a nested transaction nor commits/rolls back the
+caller's work, including on failure. A WAL two-connection test commits a later
+fill during verification and checks that the reader still returns the original
+snapshot. Other focused cases cover source-bound partial/terminal receipts,
+later target/quantity changes, unknown reservations, scoped conflicts, foreign
+scope isolation, invalid horizons/clocks and corrupted current evidence/cache.
+Historical reads do not repair state or clear current vetoes.
+
+Seventy focused journal/entry-evidence tests passed, together with scoped strict
+mypy and Ruff/format checks. Independent final review found no actionable issue
+and passed 17 historical-reader cases. Reviewed source SHA-256 is
+`216d11bfc0dbb607854d6274766684d0478846eb31791e82f5f3f991efcc4bef`;
+test SHA-256 is
+`98d3e02248273c902b8910a7c2196e26ded32823da66ca2bb6620cd10eeb46d9`.
+Full regression passed 1,947 tests, with the existing websockets legacy
+deprecation warning. Repository-wide Ruff check/format (152 files) and strict
+mypy (154 files) also passed. Full regression used the previously approved
+execution route for the isolated sandbox asyncio limitation, with no application
+workaround. Commands:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-oco-history-full-20261022 tests
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff check --no-cache src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff format --check --no-cache src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/mypy --strict --cache-dir /tmp/alpaca-oco-history-full-mypy src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```
+
+The integration contract in
+`w3-oco-first-execution-proposal.md` now
+specifies immutable request/attempt/correlation boundaries; the native request
+registry, actual dispatch/ACK ownership, protection and close/runtime gates
+remain unimplemented or unaccepted. W3-06/07/08 parents remain open. No account
+access or broker action occurred.

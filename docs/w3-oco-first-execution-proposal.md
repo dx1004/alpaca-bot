@@ -141,3 +141,50 @@ and its limits are recorded in
 No support submission is required by this proposal. Only the new research
 acceptance scope is granted. Credentials, runtime authorization, the original
 production gates and broker state remain unchanged.
+
+## Native request/ACK provenance integration contract — 2026-10-22
+
+This is the next implementation contract, not an accepted broker mapping or
+authorization to send requests. Reuse the existing OCO allocation book and
+canonical account-risk slot; do not create a second sizing or risk owner.
+
+1. A private request record must predate dispatch and bind the exact candidate
+   manifests, account, entry scope, positive reservation origin, source-bound
+   entry census and disjoint group allocation. Derive quantities and provisional
+   prices from that frozen prefix, never from the caller's claimed position.
+   Preserve exact request bytes and their client ID. Freeze a historical owner
+   view; later fills, target changes or terminal reconciliation must not rewrite
+   an earlier request. A historical read must verify current immutable/cache
+   integrity and reject unavailable prefix evidence without mutating state.
+   Historical absence of a later conflict is not current clearance: all current
+   source/risk/conflict/protection vetoes still apply to any future dispatch.
+2. Persist a single dispatch-attempt marker before any future transport call.
+   A prepared request is not a dispatch attempt; a matching GET is not proof
+   that this process sent it. Keep request provenance, attempt, HTTP response,
+   observed broker identity and protection acceptance as separate facts.
+   This implementation stage does not provide a dispatcher.
+3. Correlation requires fresh same-account authentication, exact root client ID,
+   symbol, side, requested quantity, order type/class, time in force and prices.
+   Bind root/stop IDs and group ID from the retained nested response, without
+   inventing equality or derivation rules for the child client ID. A historical
+   correlation receipt pins the original request, response/capture hashes,
+   source horizon and decision time; later observations cannot silently upgrade
+   or reinterpret it. Replacement links require qualified ancestry, not summed
+   snapshots. Unknown status does not imply an accepted/live stop.
+4. A timeout, missing ACK, HTTP rejection or lookup miss retains the reservation
+   and uncertain attempt. It cannot permit another POST. Changed request or
+   broker identities under an existing key must retain the original evidence
+   and latch a conflict across restart. Distinct requests cannot share a client
+   ID, broker root/stop ID or broker group assignment.
+5. Only a verified mapping may associate immutable execution activities with
+   local lot portions. Deduplicate exact activity IDs; retain conflicting,
+   fractional and signed over-exit facts. Do not round them or release the
+   account-risk slot from capture-local quantity agreement. Recovery of a
+   completed scope must still preserve the existing quarantine boundary.
+
+Required integration evidence includes lost ACK, duplicate/conflicting identity,
+cross-account/scope collision, changed/future/backdated source references,
+late-fill replay, physical restart, two-connection races and transaction
+rollback. A matched group still does not prove initial/late-fill stop coverage,
+sibling-stop continuity or safe timed liquidation. Those remain separate W3-06
+requirements before W3-07 actual order cycles; none is waived by this contract.

@@ -439,3 +439,276 @@ def test_early_exit_late_fill_and_terminal_census_are_rebuilt_exactly(
     reopened = _journal(tmp_path, bind=False)
     assert OcoJournal(reopened, _initial()).view() == final
     reopened.close()
+
+
+def _stored_rows(journal: Journal) -> tuple[object, ...]:
+    return (
+        tuple(journal._db.execute("SELECT * FROM events ORDER BY sequence")),
+        tuple(journal._db.execute("SELECT * FROM state ORDER BY key")),
+    )
+
+
+def test_historical_prefix_keeps_original_quantity_target_and_unknown_hold(
+    tmp_path: Path,
+) -> None:
+    journal = _journal(tmp_path)
+    owner = OcoJournal(journal, _initial())
+    base = journal.read_oco_research_events()[0][0].available_at
+    owner.observe_execution(_entry(), base)
+    original = owner.allocate_group("original-group", _parts(), base)
+    original_horizon = journal.read_evidence_sequence()
+    terminal = owner.reconcile_entry_terminal("initial-census", ("fill-1",), base)
+    terminal_horizon = journal.read_evidence_sequence()
+    later = base + timedelta(seconds=1)
+    owner.observe_execution(_entry("later-fill", "2", "19/2"), later)
+    final = owner.reconcile_entry_terminal(
+        "later-census", ("fill-1", "later-fill"), later
+    )
+    before = _stored_rows(journal)
+    assert owner.read_verified_at(original_horizon, base) == original
+    assert owner.read_verified_at(terminal_horizon, base) == terminal
+    historical = owner.read_verified_at(terminal_horizon, later)
+    assert historical is not None
+    assert historical.model.entry_quantity == 2
+    assert historical.model.final_target == Fraction(57, 5)
+    assert historical.model.groups[0].acknowledgement == "UNKNOWN"
+    assert historical.model.reserved_quantity == 2
+    assert final.model.entry_quantity == 4
+    assert final.model.final_target == Fraction(219, 20)
+    assert _stored_rows(journal) == before
+    assert not any(
+        value
+        for name, value in historical.model.authority.items()
+        if name != "research_semantics_accepted"
+    )
+    journal.close()
+
+
+def test_historical_reader_is_safe_inside_existing_transaction(tmp_path: Path) -> None:
+    journal = _journal(tmp_path)
+    owner = OcoJournal(journal, _initial())
+    at = journal.read_oco_research_events()[0][0].available_at
+    expected = owner.observe_execution(_entry(), at)
+    horizon = journal.read_evidence_sequence()
+    before = _stored_rows(journal)
+    journal._db.execute("BEGIN IMMEDIATE")
+    assert owner.read_verified_at(horizon, at) == expected
+    assert journal._db.in_transaction
+    assert _stored_rows(journal) == before
+    journal._db.rollback()
+    assert _stored_rows(journal) == before
+    journal.close()
+
+
+def test_historical_failure_keeps_callers_uncommitted_transaction(
+    tmp_path: Path,
+) -> None:
+    journal = _journal(tmp_path)
+    owner = OcoJournal(journal, _initial())
+    bind = journal.read_oco_research_events()[0][0]
+    journal._db.execute("BEGIN IMMEDIATE")
+    journal._db.execute(
+        "INSERT INTO state(key,value_json) VALUES(?,?)", ("caller-owned", "1")
+    )
+    with pytest.raises(JournalError, match="decision-visible"):
+        owner.read_verified_at(bind.sequence, bind.available_at - timedelta(seconds=1))
+    assert journal._db.in_transaction
+    assert journal.read_state("caller-owned") == 1
+    journal._db.rollback()
+    assert journal.read_state("caller-owned") is None
+    journal.close()
+
+
+def test_historical_reader_uses_one_snapshot_across_concurrent_commit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    journal = _journal(tmp_path)
+    owner = OcoJournal(journal, _initial())
+    at = journal.read_oco_research_events()[0][0].available_at
+    expected = owner.observe_execution(_entry(), at)
+    horizon = journal.read_evidence_sequence()
+    writer = _journal(tmp_path, bind=False)
+    other = OcoJournal(writer, _initial())
+    verified = owner._verified_replay
+
+    def concurrent_append() -> tuple[
+        object | None, dict[str, set[str]], dict[str, dict[str, object]]
+    ]:
+        result = verified()
+        assert journal._db.in_transaction
+        other.observe_execution(_entry("concurrent-fill"), at + timedelta(seconds=1))
+        assert writer.read_evidence_sequence() == horizon + 1
+        assert journal.read_evidence_sequence() == horizon
+        return result
+
+    monkeypatch.setattr(owner, "_verified_replay", concurrent_append)
+    changes = journal._db.total_changes
+    assert owner.read_verified_at(horizon, at) == expected
+    assert not journal._db.in_transaction
+    assert journal._db.total_changes == changes
+    assert journal.read_evidence_sequence() == horizon + 1
+    writer.close()
+    journal.close()
+
+
+def test_prefix_before_binding_is_none_and_later_invisible_scope_is_refused(
+    tmp_path: Path,
+) -> None:
+    journal = _journal(tmp_path)
+    before_bind = journal.read_evidence_sequence()
+    owner = OcoJournal(journal, _initial())
+    bind_event = journal.read_oco_research_events()[0][0]
+    assert owner.read_verified_at(before_bind, bind_event.available_at) is None
+    with pytest.raises(JournalError, match="decision-visible"):
+        owner.read_verified_at(
+            bind_event.sequence, bind_event.available_at - timedelta(microseconds=1)
+        )
+    later = bind_event.available_at + timedelta(seconds=1)
+    owner.observe_execution(_entry(), later)
+    before = _stored_rows(journal)
+    earlier = owner.read_verified_at(bind_event.sequence, bind_event.available_at)
+    assert earlier is not None and earlier.model.entry_quantity == 0
+    with pytest.raises(JournalError, match="decision-visible"):
+        owner.read_verified_at(
+            journal.read_evidence_sequence(), bind_event.available_at
+        )
+    assert _stored_rows(journal) == before
+    journal.close()
+
+
+@pytest.mark.parametrize("horizon", [True, -1, 10_000, 1.0])
+def test_historical_reader_rejects_noncanonical_or_future_horizon(
+    tmp_path: Path,
+    horizon: object,
+) -> None:
+    journal = _journal(tmp_path)
+    owner = OcoJournal(journal, _initial())
+    at = journal.read_oco_research_events()[0][0].available_at
+    before = _stored_rows(journal)
+    with pytest.raises(JournalError, match="horizon"):
+        owner.read_verified_at(horizon, at)  # type: ignore[arg-type]
+    assert _stored_rows(journal) == before
+    journal.close()
+
+
+def test_historical_reader_rejects_naive_decision(tmp_path: Path) -> None:
+    journal = _journal(tmp_path)
+    owner = OcoJournal(journal, _initial())
+    with pytest.raises(JournalError, match="UTC"):
+        owner.read_verified_at(
+            journal.read_evidence_sequence(), NOW.replace(tzinfo=None)
+        )
+    journal.close()
+
+
+def test_historical_reader_rejects_non_utc_decision(tmp_path: Path) -> None:
+    journal = _journal(tmp_path)
+    owner = OcoJournal(journal, _initial())
+    with pytest.raises(JournalError, match="UTC"):
+        owner.read_verified_at(
+            journal.read_evidence_sequence(),
+            datetime.fromisoformat("2026-10-21T14:00:00+01:00"),
+        )
+    journal.close()
+
+
+def test_historical_prefix_does_not_apply_another_scopes_invisible_tail(
+    tmp_path: Path,
+) -> None:
+    journal = _journal(tmp_path)
+    owner = OcoJournal(journal, _initial())
+    at = journal.read_oco_research_events()[0][0].available_at
+    original = owner.observe_execution(_entry(), at)
+    other = OcoJournal(journal, replace(_initial(), entry_scope="other-entry"))
+    other_at = journal.read_oco_research_events()[-1][0].available_at
+    other.observe_execution(
+        replace(_entry("other-fill"), entry_scope="other-entry"),
+        other_at + timedelta(seconds=1),
+    )
+    before = _stored_rows(journal)
+    assert owner.read_verified_at(journal.read_evidence_sequence(), at) == original
+    assert _stored_rows(journal) == before
+    journal.close()
+
+
+def test_source_bound_historical_receipt_survives_later_source_observation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from test_account_risk_owner import account_sources
+    from test_observation_candidate_binding import CID, new_decision
+    from test_oco_entry_evidence import _initial as source_initial
+    from test_oco_entry_evidence import _prepare
+    from test_risk_ledger_audit import POLICY
+
+    with account_sources(tmp_path, monkeypatch) as (source, risk):
+        at = _prepare(source, risk, new_decision())
+        owner = OcoJournal(source.journal, source_initial())
+        original = owner.bind_entry_census("original-partial", at, POLICY, at)
+        horizon = source.journal.read_evidence_sequence()
+        later = at + timedelta(seconds=1)
+        source.order(CID, later, "canceled", 2)
+        risk.observe(
+            "later-terminal-source",
+            source.selection(later, cash="480", position=2),
+            later,
+        )
+        current = owner.bind_entry_census("later-terminal", later, POLICY, later)
+        decision = max(
+            event.available_at for event, _ in source.journal.read_oco_research_events()
+        )
+        before = _stored_rows(source.journal)
+        historical = owner.read_verified_at(horizon, decision)
+        assert historical == original
+        assert historical is not None and historical.entry_binding is not None
+        assert historical.entry_binding["entry"]["terminal_observed"] is False
+        assert historical.model.entry_terminal_reconciled is False
+        assert current.entry_binding is not None
+        assert current.entry_binding["entry"]["terminal_observed"] is True
+        assert current.model.entry_terminal_reconciled is True
+        assert _stored_rows(source.journal) == before
+
+
+def test_historical_conflict_latch_is_scoped_to_original_prefix(tmp_path: Path) -> None:
+    journal = _journal(tmp_path)
+    owner = OcoJournal(journal, _initial())
+    at = journal.read_oco_research_events()[0][0].available_at
+    original = owner.observe_execution(_entry(), at)
+    horizon = journal.read_evidence_sequence()
+    conflict = owner.observe_execution(_entry(quantity="3"), at)
+    before = _stored_rows(journal)
+    assert owner.read_verified_at(horizon, at) == original
+    assert owner.read_verified_at(journal.read_evidence_sequence(), at) == conflict
+    assert conflict.model.entry_quantity == 2
+    assert "OPERATION_IDENTITY_CONFLICT" in conflict.issues
+    assert _stored_rows(journal) == before
+    journal.close()
+
+
+@pytest.mark.parametrize("fault", ["cache", "dedupe", "raw"])
+def test_historical_reader_never_bypasses_current_integrity_failure(
+    tmp_path: Path,
+    fault: str,
+) -> None:
+    journal = _journal(tmp_path)
+    owner = OcoJournal(journal, _initial())
+    bind = journal.read_oco_research_events()[0][0]
+    owner.observe_execution(_entry(), bind.available_at)
+    if fault == "cache":
+        _state_row(journal, owner.state_key, None)
+    elif fault == "dedupe":
+        key = next(iter(journal.read_oco_research_evidence_cache(ACCOUNT)))
+        _state_row(journal, "oco_research_evidence:" + ACCOUNT + ":" + key, None)
+    else:
+        event = journal.read_oco_research_events()[-1][0]
+        journal._db.execute("DROP TRIGGER events_no_update")
+        journal._db.execute(
+            "UPDATE events SET payload=? WHERE sequence=?", (b"{}", event.sequence)
+        )
+        journal._db.commit()
+    before = _stored_rows(journal)
+    with pytest.raises(JournalError):
+        owner.read_verified_at(bind.sequence, bind.available_at)
+    assert _stored_rows(journal) == before
+    journal.close()
