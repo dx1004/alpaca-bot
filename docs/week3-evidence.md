@@ -2789,3 +2789,73 @@ specifies immutable request/attempt/correlation boundaries; the native request
 registry, actual dispatch/ACK ownership, protection and close/runtime gates
 remain unimplemented or unaccepted. W3-06/07/08 parents remain open. No account
 access or broker action occurred.
+
+## Prepared native OCO request provenance — 2026-10-22
+
+The next W3-06 increment adds a separate private request-provenance namespace,
+reusing the existing OCO allocation book and canonical account-risk owner.
+Preparation derives exact quantity, provisional target and stop from a verified
+historical allocation, then requires a fresh source-bound entry/risk census at
+the same evidence horizon. It pins the original positive reservation, allocation,
+entry-binding and owner references, request bytes/hash and candidate manifests.
+It cannot create an ordinary dispatch-compatible order intent, reserve another
+risk slot, send an order, record an ACK or accept broker protection.
+
+An identical retry keeps its original receipt and source horizon even after
+later observations; this is historical provenance, not refreshed clearance.
+Noncolliding changes to an existing group retain the original receipt and latch
+an explicit conflict. Simple/native client-ID uniqueness is checked under the
+same SQLite write lock in both directions. Independent review additionally
+found that the changed-command branch needed the same collision protection.
+The repaired branch rejects an unrelated claimed ID before any append, while
+preserving idempotent reads of the same group's already-recorded conflict.
+Replay also rejects a cross-key alias. Three new regressions passed, and final
+independent review found no remaining actionable issue and passed five selected
+non-race cases on the repaired bytes.
+
+Public request basis: the official [OCO documentation](https://docs.alpaca.markets/us/docs/orders-at-alpaca)
+and pinned Trading API 2.0.1 schema already identified above. The prepared shape
+uses the documented standalone OCO example's nested take-profit/stop-loss fields
+and omits top-level `limit_price`. The generic create schema's prose is less
+specific about that omission; no broker-tested acceptance is claimed. The
+existing entry's `day` time in force is retained; no GTC/extended-hours policy
+is added. Source retrieval's sandbox DNS fault was isolated and resolved by
+tool-level approval for the same read-only public fetch; no application or
+global networking changes were made. Resolved source-retrieval fault packet:
+
+```text
+status: ENV_FAULT (resolved)
+category: sandbox_network_dns
+evidence: curl exit 6 for the public pinned schema; approved identical GET succeeded and its hash was verified
+affected_scope: public schema retrieval only
+safe_to_continue: public-source verification and offline repository work
+recommended_action: none outstanding; retain tool-level escalation rather than an application/network workaround
+```
+
+The final full regression passed 1,973 tests, including all 26 new synthetic
+request-provenance cases, with the existing websockets legacy deprecation
+warning. Repository-wide Ruff check/format passed (154 files) and strict mypy
+passed (156 files). Tests cover source-derived exact terms, no extra budget or
+send-compatible intent, stale/unbound input vetoes, frozen retries, physical
+restart, cache/raw corruption, write-then-fail rollback, scope isolation, both
+directions of simple/native ID collision and actual two-connection races.
+Reviewed source SHA-256 is
+`b79bfaecf8a1abee75cee30f2739acb5434fd2c49313fbb4121de7699922e00f`;
+Journal SHA-256 is
+`f9e879e862faee1f6eac405d8dc0d68288ab884f3999c03128b38f610786b219`;
+test SHA-256 is
+`cb0015ff92704fc56cefff25a32ad2f2e7d569e3742249c0c63ad1734341b272`.
+The full suite used the approved execution route for the previously isolated
+sandbox asyncio limitation, without an application workaround. Commands:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-native-request-full-20261022 tests
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff check --no-cache src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff format --check --no-cache src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/mypy --strict --cache-dir /tmp/alpaca-native-request-full-mypy src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+```
+
+Actual send-attempt/ACK provenance, native source-group ownership, continuous
+initial/late-fill protection, sibling-stop continuity, timed close/runtime,
+W3-07 real cycles and W3-08 final registration remain open. No account access,
+broker request, cancellation, reset, paid data or formal paper start occurred.

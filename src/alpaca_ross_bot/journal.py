@@ -693,6 +693,131 @@ class Journal:
     def read_oco_research_evidence_cache(self, account_ref: str) -> dict[str, object]:
         return self._read_evidence_cache("oco_research_evidence", account_ref)
 
+    def apply_native_oco_request_event(
+        self,
+        *,
+        account_ref: str,
+        state_key: str,
+        dedupe_key: str,
+        event_kind: str,
+        payload: bytes,
+        received_at: datetime,
+        reduce: Callable[[object | None, bool, int], object],
+        prepare_payload: Callable[[bytes], bytes],
+    ) -> EventEnvelope | None:
+        """Keep prepared native request provenance outside transport authority."""
+        return self._apply_private_event(
+            account_ref=account_ref,
+            state_key=state_key,
+            dedupe_key=dedupe_key,
+            event_kind=event_kind,
+            payload=payload,
+            received_at=received_at,
+            reduce=reduce,
+            prepare_payload=prepare_payload,
+            identity_payload=None,
+            namespace="native_oco_request",
+            source_id="ALPACA_NATIVE_OCO_REQUEST",
+            dedupe_namespace="native_oco_request_evidence",
+        )
+
+    def read_native_oco_request_events(
+        self,
+    ) -> tuple[tuple[EventEnvelope, bytes], ...]:
+        return self._read_private_events("ALPACA_NATIVE_OCO_REQUEST", None)
+
+    def read_native_oco_request_evidence_cache(
+        self, account_ref: str
+    ) -> dict[str, object]:
+        return self._read_evidence_cache("native_oco_request_evidence", account_ref)
+
+    def _native_oco_request_client_ids(self) -> set[str]:
+        """Conservatively reserve immutable native command/receipt identities.
+
+        This structural guard grants no source or send authority. Its caller
+        holds the existing write lock, making simple/native CID claims atomic.
+        """
+        clients: set[str] = set()
+        bound = self.read_paper_account_ref()
+        for event, payload in self.read_native_oco_request_events():
+            try:
+                item = json.loads(payload)
+                if (
+                    type(item) is not dict
+                    or set(item)
+                    != {
+                        "schema",
+                        "binding",
+                        "command",
+                        "receipt",
+                        "source_horizon",
+                        "outcome",
+                        "dedupe_key",
+                    }
+                    or json.dumps(
+                        item, sort_keys=True, separators=(",", ":"), allow_nan=False
+                    ).encode()
+                    != payload
+                    or type(item["schema"]) is not int
+                    or item["schema"] != 1
+                    or event.source_id != "ALPACA_NATIVE_OCO_REQUEST"
+                    or event.feed != "paper"
+                    or event.event_kind != "PREPARE_NATIVE_OCO"
+                    or item["outcome"]
+                    not in {
+                        "PREPARED_NOT_BROKER_VALIDATED",
+                        "REQUEST_IDENTITY_CONFLICT",
+                    }
+                ):
+                    raise ValueError
+                binding, command, receipt = (
+                    item["binding"],
+                    item["command"],
+                    item["receipt"],
+                )
+                if (
+                    type(binding) is not dict
+                    or binding["account_ref"] != bound
+                    or type(command) is not dict
+                    or set(command) != {"group_id", "client_order_id", "decision_at"}
+                    or type(receipt) is not dict
+                    or receipt.get("binding") != binding
+                    or receipt.get("group_id") != command["group_id"]
+                    or item["dedupe_key"]
+                    != json.dumps(
+                        [binding["entry_scope"], command["group_id"]],
+                        separators=(",", ":"),
+                    )
+                ):
+                    raise ValueError
+                for identity in (
+                    binding["account_ref"],
+                    binding["entry_scope"],
+                    command["group_id"],
+                    command["decision_at"],
+                ):
+                    if (
+                        type(identity) is not str
+                        or not identity
+                        or identity != identity.strip()
+                    ):
+                        raise ValueError
+                for identity in (
+                    command["client_order_id"],
+                    receipt["client_order_id"],
+                ):
+                    if (
+                        type(identity) is not str
+                        or not identity
+                        or identity != identity.strip()
+                        or len(identity) > 128
+                    ):
+                        raise ValueError
+                    clients.add(identity)
+            except (ValueError, KeyError, TypeError, OverflowError) as exc:
+                raise JournalError("native OCO identity evidence is malformed") from exc
+        return clients
+
     def read_order_send_started_at(self, client_order_id: str) -> str | None:
         row = self._db.execute(
             "SELECT started_at FROM order_send_attempts WHERE client_order_id=?",
@@ -824,6 +949,10 @@ class Journal:
         encoded = json.dumps(intent, sort_keys=True, allow_nan=False)
         try:
             self._db.execute("BEGIN IMMEDIATE")
+            if client_order_id in self._native_oco_request_client_ids():
+                raise JournalError(
+                    "client order ID is reserved by native OCO provenance"
+                )
             bound = self._db.execute(
                 "SELECT account_ref FROM paper_account_verifications LIMIT 1"
             ).fetchone()

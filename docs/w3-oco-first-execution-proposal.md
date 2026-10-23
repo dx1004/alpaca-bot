@@ -129,6 +129,14 @@ interpreter now retain account-bound nested group and per-execution activity
 observations, including transport failures, bounded pagination and temporal
 conflicts. These observations are not yet bound to local exit intent/ACK
 ownership; the allocation book's native exit/group facts remain declared.
+The [prepared-request adapter](../src/alpaca_ross_bot/native_oco_requests.py)
+now pins exact OCO request bytes to the existing source-bound entry, positive
+reservation and disjoint allocation at one verified historical prefix. It keeps
+original provenance on retry and separates noncolliding identity conflicts from
+attempts to reuse another request's client ID. The ordinary intent primitive
+also checks these private native identities under its existing write lock.
+Preparation creates neither a dispatch-compatible intent nor a send attempt;
+source-to-ACK ownership and broker acceptance remain unqualified.
 continuous runtime supervision, qualified completed-slot recovery and actual
 broker protection/close acceptance remain open. There is no broker dispatcher;
 every operational authority remains false. Local source-derived incident receipts
