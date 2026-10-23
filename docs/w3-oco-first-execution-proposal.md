@@ -212,3 +212,21 @@ keeps `send_proven=false` and `ack_proven=false`. Native dispatch-attempt and ra
 POST/ACK provenance, qualified execution ownership, protection continuity and
 safe close/runtime acceptance remain open. No dispatcher or broker authority is
 introduced by this increment.
+
+### Injected attempt boundary implementation scope
+
+`native_oco_attempts.py` implements the contract's durable attempt and
+raw-outcome boundary with an explicitly injected test callback. It has no default
+network transport, credentials, CLI or broker-client wiring. Every observation
+is labeled `INJECTED_TEST_CALLBACK_NOT_BROKER_PROOF`; callers cannot relabel it
+as actual broker evidence. The marker describes committed pre-call intent,
+not proof that any bytes reached a broker. Raw response matching grants no ACK,
+ownership, protection or runtime acceptance. Unknown/crashed outcomes consume
+the attempt without replay or allocation release. Caller-owned transactions
+must be rejected before callback execution, rather than committed on the
+caller's behalf. The existing ordinary-order sender remains separate.
+
+The integrated validation is recorded in
+[Week 3 evidence](week3-evidence.md#injected-native-oco-precall-and-raw-outcome-provenance--2026-10-22).
+This completed engineering increment does not implement real POST/ACK adoption
+or qualify actual protection, close or runtime behavior.

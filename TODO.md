@@ -204,6 +204,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   Prepared-request/GET association increment 2026-10-22: immutable native association receipts and raw client-ID lookup are implemented and independently reviewed. First broker assignments, historical prefixes and sticky conflicts are retained; capture-local quantity agreement grants no send, ACK, ownership, risk release or protection authority. Integration and final regression evidence is recorded in [Week 3 evidence](docs/week3-evidence.md#prepared-request-get-association-and-reported-source-stages--2026-10-22). Actual admission, native send/ACK ownership, continuous protection and safe close/runtime remain open; parent remains unaccepted.
 
+  Injected native attempt/outcome increment verified 2026-10-22: a committed pre-call fence binds the original prepared bytes; crashes, unknown results and failed outcome writes never replay the fake callback or release allocation. Independent durability/transaction review and the combined 2096-test regression, global Ruff/format and strict mypy passed. [Scope and evidence](docs/week3-evidence.md#injected-native-oco-precall-and-raw-outcome-provenance--2026-10-22). Origin is fixed to injected test evidence, with no broker sender, actual ACK/ownership or protection acceptance. Actual inputs, continuous protection/close/runtime and W3-06/07 parents remain open.
+
 - [!] **W3-07 [P1] Run isolated Alpaca paper API engineering tests**
   Depends: W3-04..W3-06, credentials available. Minimal non-strategy orders in isolated state only.  
   Accept: complete order lifecycle/reconciliation evidence; test activity cannot enter the formal paper sample. If credentials are unavailable, mark blocked without fabricating acceptance.

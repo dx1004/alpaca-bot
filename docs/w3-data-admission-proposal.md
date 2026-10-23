@@ -180,6 +180,45 @@ GET, metadata name or matching observed price cannot prove the missing mapping
 or completeness guarantee. Native IEX protocol capabilities are a research lead,
 not an available entitlement or permission to switch the selected Alpaca source.
 No subscription, direct-feed connection, new condition policy or runtime gate
-change is authorized or performed. A qualified mapping/history contract remains
-necessary before implementing a positive actual-trigger admission path; local
-health/provenance work cannot silently substitute for it.
+change is authorized or performed. A qualified policy for the selected Alpaca
+interface remains necessary before actual-trigger admission. This does not
+require proving native TOPS equivalence or obtaining a vendor completeness
+watermark; local health alone also cannot replace the required reconstruction.
+
+### Controlling acceptance scope — correction, 2026-10-22
+
+The October 19 accepted manifest's retained requirements control this work.
+They use provider-reported event/local-receipt age, a reviewed versioned source
+policy and decision-time from-open reconstruction. The native-protocol unknowns
+above are limitations on stronger claims, not additional universal prerequisites
+that an October 22 research note may impose retroactively.
+
+The next policy may rely on documented Alpaca-reported conditions, timestamp
+semantics and historical query/pagination/revision evidence without asserting
+native clock/flag equivalence, absolute lossless delivery or revision finality.
+It must still reconstruct the first eligible RTH trade, setup path and low since
+open from available evidence. First locally observed trade is not an authorized
+substitute. Unknown conditions, unresolved known gaps, missing required bars,
+clock conflicts and unavailable inputs still veto admission. Metadata names
+alone do not select a whitelist; unsupported eligibility choices require user
+policy acceptance. All accepted ages, candidate identities and runtime gates
+remain unchanged. No positive actual-source qualification follows from this
+scope correction.
+
+The original cumulative-volume source-age baseline remains preserved and
+unqualified. This correction concerns the independent V2 reported-input
+requirements; it does not restore the original source-age claim.
+
+### Selected-interface policy evidence inventory — 2026-10-22
+
+| Published Alpaca interface | Supported policy input | Still requires explicit review |
+| --- | --- | --- |
+| [Latest trade](https://docs.alpaca.markets/us/reference/stocklatesttradesingle-1) and [aggregation FAQ](https://docs.alpaca.markets/us/docs/market-data-faq#how-are-bars-aggregated) | Latest trade excludes price-ineligible conditions; aggregation distinguishes open/close, high/low and volume by tape and minute/daily type, combining multiple codes strictly per field | Which price-update semantics define each strategy purpose; bar aggregation alone is not an adopted trigger whitelist |
+| [Condition metadata](https://docs.alpaca.markets/us/reference/stockmetaconditions-1) and [latest quotes](https://docs.alpaca.markets/us/reference/stocklatestquotes-1) | Separate singular trade/quote metadata by tape; latest quotes reports feed-selected best bid/ask | The quote page supplies no explicit condition inclusion algorithm; names alone do not choose quote admissibility |
+| [Historical trades](https://docs.alpaca.markets/us/reference/stocktradesingle-1) and [quotes](https://docs.alpaca.markets/us/reference/stockquotesingle-1) | Explicit feed/range/sort and inclusive boundaries; follow pagination tokens even on short pages | Overlap/deduplication, ties, revisions and known-gap handling; `asof` is symbol mapping, not historical knowledge time |
+| [Stock stream](https://docs.alpaca.markets/us/docs/real-time-stock-pricing-data) | Reported nanosecond timestamps, quote sizes in round lots, late-bar updates and separate correction/cancel observations | Preserve exact availability and revision lineage; do not import native-clock or finality claims |
+
+Independent retrieval checked these first-party pages, and the coordinator
+rechecked the FAQ matrix. This inventory selects no new trading/quote policy.
+The next concrete contract must separate source-documented facts from any
+remaining eligibility choice, so only genuine policy decisions reach the user.

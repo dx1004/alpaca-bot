@@ -3047,3 +3047,86 @@ finality, fees/window snapshots and the final `paper_performance` adapter remain
 open. Source-admission/formal/runtime/dispatch flags remain false. W3-06 actual
 input/protection and W3-07 protected actual cycles remain open; no parent
 acceptance, broker/account access, order or formal paper start occurred.
+
+## Injected native OCO precall and raw-outcome provenance — 2026-10-22
+
+The critical-path audit found a concrete implementable transport-evidence seam
+without changing strategy/data/protection policy. `NativeOcoAttempts` binds one
+committed pre-call intent to the original prepared request, exact body/hash,
+account/CID/group and immutable source prefix. Only the newly committed original
+intent may invoke the explicitly supplied fake callback. There is no default
+transport, credentials, CLI or PaperOrderHttp wiring. All observations are fixed
+as INJECTED_TEST_CALLBACK_NOT_BROKER_PROOF; a caller cannot select actual origin.
+
+Raw status/body bytes or controlled unknown/error categories are stored in a
+separate outcome transaction. Duplicate calls return original evidence without
+another callback; changed commands retain original references and sticky
+conflicts. Crash, timeout, invalid completion clock or outcome-write failure
+retains the consumed fence and cannot release allocation. Raw matching reuses
+the existing native topology parser but grants no ACK or execution ownership;
+responses containing fills remain unqualified without a source execution census.
+Existing ordinary-order intent/send/cancel machinery is unchanged.
+
+Independent review identified an outcome-side transaction boundary: a callback
+or clock may open its own transaction after the initial caller check. The new
+guard refuses outcome persistence without committing or rolling back that
+external work; the original committed fence remains consumed. Regression cases
+cover both callback and clock variants. The public-only remote `gemma4:31b`
+analysis ran without repository/account export; its claims that signed broker
+receipts are required or that an ACK proves ownership/protection were rejected.
+
+The focused implementation run passed 24 cases in 172.08 seconds. Two independent
+integration cases passed in 22.96 seconds: another connection sees the committed
+precall before callback, and outcome write-then-fail rollback followed by physical
+reopen never replays the callback. They also preserve original risk/lifecycle
+state, UNKNOWN allocation acknowledgment and ordinary native-CID refusal.
+Production was frozen before the combined regression. The final combined run
+passed 2096 tests in 587.57 seconds, including the final test-only typing edits,
+with only the existing websockets legacy deprecation warning. Repository-wide
+Ruff check/format passed (166 files); strict mypy passed 168 files. This accepts
+the injected engineering increment only, not actual transport or W3 parents.
+The approved execution route handled the previously isolated sandbox asyncio
+limitation without an application workaround.
+
+Final combined validation commands:
+
+```text
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --basetemp /tmp/alpaca-native-attempt-full-20261022 tests
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/mypy --strict --cache-dir /tmp/alpaca-native-attempt-full-mypy src tests scripts/qualify_risk_inputs.py scripts/run_paper_engineering.py scripts/reconcile_paper_orders.py scripts/configure_paper_credentials.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff check --no-cache src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff format --check --no-cache src tests scripts/run_paper_engineering.py scripts/qualify_risk_inputs.py
+```
+
+Frozen SHA-256 values: native attempts
+`263ad33fe4d2d8b05adbf9e5fc078a818353c1ff28877555d372ba64fa531870`;
+journal `d2e0253efb85778e13311f8151e2056c54f426af12c6464f2324633201f2d5e8`;
+focused tests `f40acd3521dbbbfb6c7377fd541353b7c76171c201eeffca09ec6918a55d9288`;
+independent integration tests
+`1e2875ac07746b766d3d04bc20debc5fb0aa89ba4d37da7f3ed9e24fd403b64f`.
+
+Actual-market qualification, real authenticated native POST/ACK ownership,
+first/late-fill protection, sibling-stop continuity and safe timed close/runtime
+remain open. W3-07 actual protected cycles and W3-08 final registration remain
+open. No real account, network callback, order, cancellation or paper start was
+used for this increment. This evidence validates a needed injected-test boundary,
+not the requested W3 end state or an enabled sender.
+
+## Source-admission requirement scope correction — 2026-10-22
+
+A separate read-only requirements audit compared the October 19 accepted
+observation-age manifest's retained requirements with the later source research
+notes. It identified requirement inflation: native TOPS flags/clock equivalence,
+absolute lossless delivery and a vendor-issued completeness watermark were not
+accepted as universal prerequisites. The [controlling-scope correction](w3-data-admission-proposal.md#controlling-acceptance-scope--correction-2026-10-22)
+withdraws that implication without changing either accepted manifest.
+
+The valid next work is an independently reviewed policy for the selected
+Alpaca-reported conditions, timestamps, historical ranges/pagination and
+point-in-time revisions. From-open reconstruction, unknown-condition/known-gap
+vetoes, required bars and the accepted age limits remain mandatory. No regular-
+only shortcut, first-locally-observed substitute, finality delay or new whitelist
+was adopted. Actual entry qualification remains unaccepted until its policy and
+evidence pass; source-native unknowns no longer create an extra blanket refusal.
+Existing research-component runtime flags are not a new native-equivalence
+requirement and are not being toggled by this audit. This documentation
+correction requires no order, new capture or broker contact.
