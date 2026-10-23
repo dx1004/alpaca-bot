@@ -3349,3 +3349,44 @@ No full-suite rerun or actual market/account capture was needed for this
 increment. It resolves the pending source-policy choice, not the remaining
 history/source-admission, binding, protection, order-cycle or release gates.
 No W3 parent is checked complete and no broker action or formal paper occurred.
+
+## Targeted protection research and admission counterexample — 2026-10-22
+
+The user requested research to fill the remaining execution gaps. A bounded
+Sol Low primary-source retrieval and coordinator review revisited only the
+precise retail Trading API contracts, reusing prior engineering work. The
+[research follow-up and recovery matrix](w3-oco-first-execution-proposal.md#targeted-protection-research-follow-up--2026-10-22)
+separates documented OCO support from pending-entry reservations, fractional
+residual eligibility, sibling-stop replacement continuity and close cleanup.
+The complex-order wash exception is explicit; the ordinary stop-sell rejection
+table cannot be generalized to every OCO request. Simple fractional DAY support
+does not prove fractional OCO. Single-position DELETE creates a closing order;
+it does not document an atomic protective-order handoff.
+
+The new immutable research record
+`evidence/w3-protection-route-research-20261022.json` contains three exact
+rational checks. In the first, frozen S=9.50, target 11.00 and hypothetical
+broker market base 9.49 satisfy the target separation but fail the documented
+market-base separation. This is a potential initial/late-fill admission failure,
+not merely a timed-close issue. Another case shows a nonempty conditional
+marketable-target region; the third shows a cent-grid boundary failure. No
+IEX bid/broker-base equivalence or identical PATCH revalidation is assumed.
+
+Independent review recomputed all inequalities and found the claim scope clean:
+the cases refute universal fixed-S admission through this post-fill OCO route,
+not all architectures. They establish no actual broker result or complete
+protection route. The justified next research item is a supported protective
+action for newly owned quantity when price is already through S. An already
+qualified protected seed and safe cleanup envelope are prerequisites for an
+isolated amendment experiment; creating an unprotected partial position to
+bootstrap that experiment remains prohibited.
+
+The required public-only Cloud synthesis returned `gemma4:31b`; no local or
+private material was exported. Its generic atomicity obligations are not
+adopted as universal requirements. Primary sources and exact calculations
+control the conclusions. No repeated synthetic suite, new dispatcher, account
+capture, broker request, support contact, policy change or W3 completion is
+claimed. JSON integrity, exact calculations and documentation diff checks are
+the relevant validation for this research-only increment.
+Independent final document review also found the scope clean. Research-record
+SHA-256: `6cd4397e690a345016279cf79de720bb22cd621129bfae9978627ca2cb024be3`.

@@ -1,0 +1,86 @@
+{
+  "actual_broker_behavior_verified": false,
+  "actual_orders_submitted": false,
+  "assumptions": [
+    "CURRENT_MARKET_BASE_IS_AN_EXPLICIT_HYPOTHETICAL_INPUT_NOT_IEX_BID_EQUIVALENCE",
+    "CURRENT_ADMISSION_CONSTRAINTS_ARE_NOT_ASSUMED_TO_REVALIDATE_EVERY_PATCH_IDENTICALLY",
+    "NO_GUARANTEE_OF_FILL_OR_UNIVERSAL_FLAT_BY_DEADLINE",
+    "NO_INVENTED_FIRST_FILL_GRACE_PERIOD"
+  ],
+  "cases": [
+    {
+      "any_cent_grid_target_marketable_at_declared_bid": false,
+      "broker_market_base": "9.49",
+      "case_id": "INITIAL_OR_LATE_FILL_MARKET_ALREADY_BELOW_FIXED_STOP",
+      "classification": "EXACT_DOCUMENTED_CONSTRAINT_CHECK_NOT_BROKER_OBSERVATION",
+      "observed_bid": "9.48",
+      "proposed_target_marketable_at_declared_bid": false,
+      "stop": "9.50",
+      "stop_below_market_base_by_at_least_cent": false,
+      "stop_below_target_by_at_least_cent": true,
+      "target": "11.00"
+    },
+    {
+      "any_cent_grid_target_marketable_at_declared_bid": true,
+      "broker_market_base": "10.00",
+      "case_id": "TARGET_AMENDMENT_CONDITIONALLY_MARKETABLE",
+      "classification": "EXACT_DOCUMENTED_CONSTRAINT_CHECK_NOT_BROKER_OBSERVATION",
+      "observed_bid": "9.99",
+      "proposed_target_marketable_at_declared_bid": true,
+      "stop": "9.50",
+      "stop_below_market_base_by_at_least_cent": true,
+      "stop_below_target_by_at_least_cent": true,
+      "target": "9.80"
+    },
+    {
+      "any_cent_grid_target_marketable_at_declared_bid": false,
+      "broker_market_base": "9.505",
+      "case_id": "NO_CENT_GRID_MARKETABLE_TARGET_BELOW_STOP_PLUS_CENT",
+      "classification": "EXACT_DOCUMENTED_CONSTRAINT_CHECK_NOT_BROKER_OBSERVATION",
+      "observed_bid": "9.505",
+      "proposed_target_marketable_at_declared_bid": false,
+      "stop": "9.50",
+      "stop_below_market_base_by_at_least_cent": false,
+      "stop_below_target_by_at_least_cent": true,
+      "target": "9.51"
+    }
+  ],
+  "classification": "TARGETED_PROTECTION_FEASIBILITY_RESEARCH_NOT_EXECUTION_ACCEPTANCE",
+  "experiment_dispatch_authorized": false,
+  "formal_paper_authorized": false,
+  "open_contracts": [
+    "FIRST_AND_LATE_FILL_OCO_ADMISSION_INCLUDING_PRICE_ALREADY_THROUGH_STOP",
+    "EXACT_FRACTIONAL_RESIDUAL_OCO_ELIGIBILITY",
+    "DISJOINT_GROUP_RESERVATIONS_WITH_CANCEL_PENDING_ENTRY",
+    "SIBLING_STOP_CONTINUITY_DURING_TARGET_REPLACEMENT",
+    "SAFE_CLOSE_AND_CRASH_RECOVERY"
+  ],
+  "protection_accepted": false,
+  "researched_on": "2026-10-22",
+  "runtime_authorized": false,
+  "safe_seed_position_verified": false,
+  "schema_version": 1,
+  "sources": [
+    {
+      "scope": "OCO_PRICE_REPLACEMENT_AND_ADVANCED_STOP_BASE_PRICE_CONSTRAINTS",
+      "url": "https://docs.alpaca.markets/us/docs/orders-at-alpaca"
+    },
+    {
+      "scope": "EXPLICIT_COMPLEX_ORDER_WASH_EXCEPTION_NOT_PENDING_ENTRY_ADMISSION_PROOF",
+      "url": "https://docs.alpaca.markets/us/docs/user-protection"
+    },
+    {
+      "scope": "REPLACEMENT_ACK_NOT_FINAL_PENDING_STATE_RESTRICTIONS",
+      "url": "https://docs.alpaca.markets/us/reference/patchorderbyorderid-1"
+    },
+    {
+      "scope": "CREATES_CLOSING_ORDER_NOT_DOCUMENTED_PROTECTION_HANDOFF",
+      "url": "https://docs.alpaca.markets/us/reference/deleteopenposition-1"
+    },
+    {
+      "scope": "SIMPLE_DAY_ORDER_SUPPORT_NOT_FRACTIONAL_OCO_CLASS_PROOF",
+      "url": "https://docs.alpaca.markets/us/docs/fractional-trading"
+    }
+  ],
+  "timezone": "America/Los_Angeles"
+}

@@ -257,3 +257,54 @@ The integrated validation is recorded in
 [Week 3 evidence](week3-evidence.md#injected-native-oco-precall-and-raw-outcome-provenance--2026-10-22).
 This completed engineering increment does not implement real POST/ACK adoption
 or qualify actual protection, close or runtime behavior.
+
+## Targeted protection research follow-up — 2026-10-22
+
+The user asked to research the remaining partial-fill, continuity and
+close/crash gaps. This follow-up reuses completed engineering and prior source
+inventory; it creates no new trading policy or experiment authority.
+
+| Specific route | Current primary-source support | Exact unresolved contract |
+| --- | --- | --- |
+| OCO for newly owned partial quantity while entry cancellation resolves | The [retail protection guide](https://docs.alpaca.markets/us/docs/user-protection) explicitly exempts complex OCO orders from the ordinary wash check. | Exact pending-entry admission, disjoint group reservations and every actual residual quantity still need qualification. The simple stop-sell rejection table is not a universal OCO prohibition. |
+| Fractional residual | The [fractional guide](https://docs.alpaca.markets/us/docs/fractional-trading) and order-type table support several simple DAY order types. | Simple fractional support does not prove fractional OCO class support; conflicting create-reference wording is not silently resolved in favor of admission. Do not round residuals. |
+| Amend existing OCO target only | The [order guide](https://docs.alpaca.markets/us/docs/orders-at-alpaca#oco-orders) supports price replacement. | The [PATCH reference](https://docs.alpaca.markets/us/reference/patchorderbyorderid-1) does not establish sibling continuity or final replacement from HTTP success. Preserve old protection and reconcile old/new identities and executions. |
+| Close with an existing protective OCO | [Single-position close](https://docs.alpaca.markets/us/reference/deleteopenposition-1) creates a closing order and accepts fractional quantity precision. | It does not document a reservation bypass or protection-preserving handoff. Bulk cancel-then-close is not a continuity solution. |
+
+### New admission counterexample affecting initial and late fills
+
+The advanced-stop rule uses both the OCO target and current market price as
+sell-stop bases. A newly submitted fixed stop must be at least one cent below
+the applicable base. For an explicit hypothetical broker market base 9.49,
+fixed S=9.50 and target 11.00, target separation is valid but market-base
+separation fails. A partial entry can therefore be observed after price has
+already crossed S without a valid new fixed-S OCO admission under the documented
+constraint. Raising its target does not repair that failed market-base check.
+This affects protection of a new lot, not just end-of-day liquidation.
+
+The [exact rational cases](../evidence/w3-protection-route-research-20261022.json)
+also show a nonempty conditional marketable-target region and a cent-grid
+counterexample below S+0.01. The broker's market base is an explicit hypothetical
+input, not asserted equal to an IEX bid. These are documented-constraint checks,
+not actual broker observations or proof that every PATCH revalidates identical
+constraints. They refute universal admission through this route, not every
+possible broker architecture.
+
+### Recovery behavior and evidence to qualify next
+
+| Observed interruption | Required behavior retained | Evidence still needed |
+| --- | --- | --- |
+| Initial OCO POST timeout/crash | Keep durable allocation/attempt; do not repeat POST from timeout or lookup miss. | Actual authenticated send/response ancestry and exact group/execution mapping; existing injected tests are reused, not promoted. |
+| Target PATCH unknown or rejected | Preserve valid stop, retain original/future replacement identity and reconcile; HTTP success is not completion. | Old/new order lineage, both legs and execution stream plus GET observations through replacement/fill races. A successful sample does not establish all-time continuity. |
+| Late entry after an early exit or completed scope | Retain exact ownership, invalidate terminal census and quarantine rather than restore an entry budget. | A supported protective action for every new residual, including price already through S; local ownership arithmetic cannot supply it. |
+| Deadline or crash cleanup with reserved protective quantity | Do not cancel valid exits to force a second independent close; do not assume DELETE is atomic or immediately flat. | Supported close/reservation behavior, recovery of unknown results and flat/orphan reconciliation. No overnight adaptation is inferred. |
+
+An isolated target-amendment experiment is a possible *component* investigation,
+not presently a runnable full-cycle test. Before dispatch it needs an already
+qualified, owned protected seed, source/account checks and a reviewed safe
+cleanup/restart envelope. Do not manufacture the seed through an unprotected
+partial entry or treat repeated rejection probes as positive protection proof.
+First/late-fill admission when price is already through S is the critical
+research item; another fake dispatcher, a successful target amendment or a
+whole-share-only observation cannot close it. No broker request was made and
+no contact with Alpaca was sent or made a universal prerequisite.
