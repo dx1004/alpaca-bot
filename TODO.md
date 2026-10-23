@@ -212,6 +212,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   - [x] Crossed-stop independent research decision/durability component, 2026-10-23: separately pinned accepted policy; exact residuals, UNKNOWN reservations, single local attempt, restart/rollback/conflicts and OCO allocation interlock verified with 137 related tests, scoped lint/format/type checks and independent review. [Evidence and strict limits](docs/week3-evidence.md#crossed-stop-independent-decision-and-durability-implementation--2026-10-23). Inputs/exits remain declared; actual source/risk binding, broker admission, cleanup and W3-06 parent acceptance remain open. No broker action or formal paper authority.
 
+  - [x] Crossed-stop source-trigger connection, 2026-10-23: raw quote/metadata and official session interval join the original source-bound entry/shared slot at an immutable visible prefix; exact census, retry/conflict, source/declared isolation and risk-veto preservation pass 108 related tests and independent review. [Evidence and limits](docs/week3-evidence.md#crossed-stop-immutable-source-trigger-binding--2026-10-23). Synthetic source integration only; actual admission, operational emergency-risk binding, native exit ownership/cleanup and W3-06 parent acceptance remain open.
+
 - [!] **W3-07 [P1] Run isolated Alpaca paper API engineering tests**
   Depends: W3-04..W3-06, credentials available. Minimal non-strategy orders in isolated state only.  
   Accept: complete order lifecycle/reconciliation evidence; test activity cannot enter the formal paper sample. If credentials are unavailable, mark blocked without fabricating acceptance.

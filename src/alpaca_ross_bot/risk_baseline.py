@@ -55,14 +55,14 @@ def _timestamp(value: object) -> datetime:
     return parsed
 
 
-def _session_open(
+def _session_interval(
     journal: Journal,
     sequence: int,
     account_ref: str,
     day: date,
     at: datetime,
     max_age: timedelta,
-) -> datetime:
+) -> tuple[datetime, datetime]:
     if type(sequence) is not int or sequence < 1:
         raise ValueError("calendar sequence is invalid")
     stored = journal.read_event(sequence)
@@ -130,7 +130,7 @@ def _session_open(
     if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
         raise ValueError("calendar response is invalid")
     days: set[date] = set()
-    opens: list[datetime] = []
+    sessions: list[tuple[datetime, datetime]] = []
     for row in rows:
         raw_day = row.get("date")
         if type(raw_day) is not str:
@@ -151,10 +151,21 @@ def _session_open(
         if clocks[0] >= clocks[1]:
             raise ValueError("calendar open must precede close")
         if row_day == day:
-            opens.append(clocks[0])
-    if len(opens) != 1:
+            sessions.append((clocks[0], clocks[1]))
+    if len(sessions) != 1:
         raise ValueError("calendar session is closed or missing")
-    return opens[0]
+    return sessions[0]
+
+
+def _session_open(
+    journal: Journal,
+    sequence: int,
+    account_ref: str,
+    day: date,
+    at: datetime,
+    max_age: timedelta,
+) -> datetime:
+    return _session_interval(journal, sequence, account_ref, day, at, max_age)[0]
 
 
 def session_open_from_evidence(
@@ -166,6 +177,20 @@ def session_open_from_evidence(
     max_age: timedelta,
 ) -> datetime:
     """Read official calendar evidence without granting baseline acceptance."""
+    return session_interval_from_evidence(
+        journal, calendar_sequence, account_ref, session_day, decision_at, max_age
+    )[0]
+
+
+def session_interval_from_evidence(
+    journal: Journal,
+    calendar_sequence: int,
+    account_ref: str,
+    session_day: date,
+    decision_at: datetime,
+    max_age: timedelta,
+) -> tuple[datetime, datetime]:
+    """Same validated official evidence; retain early closes and DST explicitly."""
     _utc(decision_at)
     if (
         type(session_day) is not date
@@ -176,7 +201,7 @@ def session_open_from_evidence(
     journal.require_private_order_state()
     if journal.read_paper_account_ref() != account_ref:
         raise ValueError("calendar account is not bound")
-    return _session_open(
+    return _session_interval(
         journal, calendar_sequence, account_ref, session_day, decision_at, max_age
     )
 

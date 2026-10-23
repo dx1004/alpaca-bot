@@ -1,4 +1,4 @@
-"""Durable declared crossed-stop decisions, NOT source or broker qualification.
+"""Durable crossed-stop research decisions, NOT source or broker qualification.
 
 Reuses the OCO lot book and private journal. No transport, callback, credentials,
 order-intent primitive, risk release or authority to modify old protection.
@@ -24,6 +24,7 @@ _MANIFEST = Path(__file__).resolve().parents[2] / (
     "evidence/crossed-stop-residual-exit-research-v1.json"
 )
 _ORIGIN = "DECLARED_RESEARCH_INPUT_NOT_SOURCE_OR_BROKER_PROOF"
+_SOURCE_ORIGIN = "SOURCE_REFERENCED_TRIGGER_NOT_EXIT_OR_BROKER_QUALIFICATION"
 
 
 class _KnownConflict(Exception):
@@ -202,6 +203,7 @@ class CrossedStopJournal:
             raise JournalError("exact crossed-stop event schema required")
         kind, data = item["kind"], item["data"]
         keys = {
+            "SOURCE_OBSERVE": {"receipt"},
             "OBSERVE": {"evidence"},
             "PREPARE": {"close_id", "evidence"},
             "ATTEMPT": {"close_id", "attempt_id", "evidence"},
@@ -219,7 +221,7 @@ class CrossedStopJournal:
             raise JournalError("crossed-stop operation key differs")
         _text(identity[2])
         if (
-            kind != "OBSERVE"
+            kind not in {"OBSERVE", "SOURCE_OBSERVE"}
             and identity[2]
             != data["execution_id" if kind == "EXECUTION" else "close_id"]
         ):
@@ -245,7 +247,20 @@ class CrossedStopJournal:
         model = view.model
         kind, data = item["kind"], item["data"]
         closes = state["closes"]
-        if kind in {"OBSERVE", "PREPARE", "ATTEMPT"}:
+        if kind == "SOURCE_OBSERVE":
+            from .crossed_stop_source import derive_source_crossing
+
+            if state["origin"] == _ORIGIN and state["last_at"] is not None:
+                raise JournalError("declared and source crossing modes cannot mix")
+            receipt = derive_source_crossing(self.owner, horizon=item["horizon"], at=at)
+            if _json(receipt) != _json(data["receipt"]):
+                raise JournalError("source crossing differs from original raw prefix")
+            state["origin"] = _SOURCE_ORIGIN
+            state.setdefault("source_observations", []).append(receipt)
+            state["latched"] = state["latched"] or receipt["crossing_observed"]
+        elif state["origin"] == _SOURCE_ORIGIN:
+            raise JournalError("declared exit inputs cannot clear source crossing")
+        elif kind in {"OBSERVE", "PREPARE", "ATTEMPT"}:
             evidence = DeclaredExitEvidence.parse(data["evidence"])
             if (evidence.account_ref, evidence.symbol, evidence.entry_scope) != (
                 model.account_ref,
@@ -451,7 +466,7 @@ class CrossedStopJournal:
         if self.journal._db.in_transaction:
             raise JournalError("crossed-stop requires own transaction")
         key = _json([self.binding["entry_scope"], kind, _text(identity)]).decode()
-        item = {
+        item: dict[str, Any] = {
             "binding": self.binding,
             "kind": kind,
             "key": key,
@@ -470,9 +485,17 @@ class CrossedStopJournal:
                     old = json.loads(raw)
                     if old["key"] == key and old["binding"] == self.binding:
                         item["horizon"] = old["horizon"]
+                        if kind == "SOURCE_OBSERVE":
+                            data["receipt"] = old["data"]["receipt"]
                         break
             else:
                 item["horizon"] = self.journal.read_evidence_sequence()
+                if kind == "SOURCE_OBSERVE":
+                    from .crossed_stop_source import derive_source_crossing
+
+                    data["receipt"] = derive_source_crossing(
+                        self.owner, horizon=item["horizon"], at=at
+                    )
             raw = _json(item)
             digest = "sha256:" + hashlib.sha256(raw).hexdigest()
             if key in result["conflicts"] and digest in seen.get(key, set()):
@@ -505,6 +528,10 @@ class CrossedStopJournal:
         return self._record(
             "OBSERVE", identity, evidence.as_of, {"evidence": evidence.to_dict()}
         )
+
+    def observe_source(self, identity: str, at: datetime) -> dict[str, Any]:
+        """Derive the risk-selected raw quote; no caller truth/freshness flags."""
+        return self._record("SOURCE_OBSERVE", identity, at, {"receipt": None})
 
     def prepare(self, close_id: str, evidence: DeclaredExitEvidence) -> dict[str, Any]:
         return self._record(

@@ -3522,3 +3522,71 @@ actual cleanup, W3-06 parent completion or formal paper start is claimed. Actual
 source/risk-version binding and a supported reviewed broker/cleanup envelope
 remain open. This increment implements the accepted independent policy model
 and durability only, while preserving NOT_SIP_EQUIVALENT and runtime refusal.
+
+## Crossed-stop immutable source-trigger binding — 2026-10-23
+
+Previous goal turn: progress (committed independent policy/durability component).
+This continuation targets its missing source connection, not another declared
+dispatcher. `crossed_stop_source.py` now derives the trigger from an existing
+source-bound OCO entry, its original positive reservation and immutable current
+risk-selected raw quote/metadata. The source-bound simple-entry seam already
+supports partial whole-share entry observations; fractional/native ownership
+limitations are unchanged. No new risk budget, sizing or source policy was added.
+
+The same private write transaction pins a complete visible source horizon and
+stores the derived receipt. Replay independently recomputes and compares it.
+The original decision/horizon remains fixed on retry; changed clocks preserve
+the first receipt and latch an idempotent conflict. Source/declared modes cannot
+mix, and source-mode preparation/attempt through declared flags is refused.
+Existing declared caches retain their original shape and origin. No runtime
+dispatch path or accepted source/risk/exit authority is introduced.
+
+The receipt references current risk evidence, original positive reservation,
+bound entry capture/census hash, selected quote hash/index, metadata and official
+calendar. Current entry activity IDs, exact quantities/prices and nanosecond
+timestamps must match the original bound executions; equal total alone cannot
+substitute new lots. The reused pinned reported-price policy enforces conditions,
+metadata, latest locally observable quote and quote/receipt age. Calendar open
+and close are derived from the same previously validated official capture; the
+old open-only API preserves its result and validation while a new interval API
+retains early closes. Decision and quote must be within that official interval.
+
+Independent review found two defects and verified their correction: an invisible
+risk suffix could otherwise silently select an older state, and a same-total
+execution-identity rewrite could otherwise reuse the old entry binding. A
+separate synthetic probe confirmed the latter refusal even when the canonical
+risk state still reported no issues. Final production review was clean at:
+
+- `crossed_stop_source.py`: `56c74ce3815d4ce9730a567d8c0941e1bd77198561a76fc1100bb7fdcf756ed0`.
+- `crossed_stop.py`: `67086397b330c38352db53f04bcb424c01ea00cdf43b68afcc35667daaf02c41`.
+- `risk_baseline.py`: `36beccca2369bf4b4dfe1e0e67b8a13e1b2cdad96710889e0dedf253b8d02477`.
+
+Risk veto and daily-stop latch are different existing states, both diagnostic
+only here. Tests confirm that they are retained while a valid fresh crossing can
+be observed, without enabling an exit. The initial identity-veto test appended a
+newer quote and incorrectly expected reuse of the old one; the correct latest
+quote refusal was preserved and added as a separate regression, rather than
+relaxing production freshness.
+
+Validation:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/pytest -q -p no:cacheprovider tests/test_crossed_stop_source.py tests/test_crossed_stop.py tests/test_risk_baseline.py tests/test_risk_baseline_rollover.py`:
+  **108 passed**, including 13 new source-integration cases, in 55.83 seconds.
+  Coverage includes positive raw joins, exact retry/rebound, conflicting retry,
+  mode isolation, stale/invisible prefixes, changed lot IDs, physical reopen,
+  early close, recomputed-hash receipt forgery, risk stop/veto and superseded quote.
+- Scoped Ruff lint/format and strict mypy passed for all four changed/new Python
+  files. Pinned parent contracts remain unchanged; diff and review-bundle checks
+  verify the final document/source set.
+- Public-only `gemma4:31b` inference was verified for generic provenance invariants;
+  no local code, account data or credentials were exported. Its general advice
+  was checked against the existing deterministic policy rather than treated as
+  source or execution authority.
+
+Remaining W3-06 gates: accepted actual data/strategy inputs, emergency-version
+operational risk binding, source-to-native-exit ownership and reservations,
+supported first/late-fill and sibling-stop behavior, real disposal/crash cleanup
+and release acceptance. This source-reference connection is not proof of those
+gates. W3-07 actual cycles and formal paper remain blocked on their real
+dependencies. No actual account, credentials, market capture or broker request
+was accessed in this increment; NOT_SIP_EQUIVALENT and runtime refusal remain.

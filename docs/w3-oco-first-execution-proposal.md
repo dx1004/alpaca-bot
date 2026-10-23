@@ -432,3 +432,28 @@ broker execution/risk-release owner. Actual source and risk-version binding,
 native admission, executable crash cleanup, session-boundary behavior and release
 remain required; old protection is never canceled by this component. See the
 [implementation evidence](week3-evidence.md#crossed-stop-independent-decision-and-durability-implementation--2026-10-23).
+
+### Immutable source-referenced crossing implemented — 2026-10-23
+
+`CrossedStopJournal.observe_source` now derives the crossing without caller
+bid/freshness/ownership flags. It joins the existing source-bound entry and
+original positive shared-risk slot to the complete decision-visible risk prefix,
+its selected raw IEX quote/metadata, and the account-bound official calendar.
+The receipt retains the exact original horizon, quote index/hash, entry census
+hash and risk/reservation/calendar references. Both official open and close are
+used; early closes and New York timezone conversion are not replaced by a fixed
+session end. New local quotes can invalidate the older selected quote.
+
+Source and declared modes cannot mix within one scope. In particular, a source
+trigger cannot reach the declared preparation/attempt API by supplying boolean
+clearance. Source risk veto and daily-stop diagnostics are retained, not cleared;
+a fresh crossing can be recorded as an incident without authorizing new risk.
+Equal cumulative quantity is insufficient: current entry execution IDs, exact
+quantities/prices and timestamps must still match the bound census. A changed
+or advanced census requires rebind before a new observation.
+
+This completes the source-reference observation connection only, verified with
+synthetic immutable captures. It does not accept whole-source admission, native
+exit ownership/reservations, fractional entry seams, the emergency version's
+operational risk binding or real broker disposal. No actual account/capture was
+accessed. [Evidence and retained gates](week3-evidence.md#crossed-stop-immutable-source-trigger-binding--2026-10-23).
