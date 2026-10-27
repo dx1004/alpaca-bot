@@ -4183,7 +4183,7 @@ continues to require whole, disjoint, source-bound lots and the same reservation
 
 Validation:
 
-- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider tests/test_native_owned_entry.py -q`: 8 passed in 137.14s. Coverage includes the fresh downstream risk observation, disjoint second-group preparation, physical owner reopen and original-horizon retry, preserved exits/reserve/zero capacity, daily-stop and fractional vetoes, mode-change identity conflict, unknown/null/extra request policy rejection and stale native account evidence.
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider tests/test_native_owned_entry.py -q`: 8 passed in 137.14s. Coverage includes the fresh downstream risk observation, disjoint second-group preparation, owner reconstruction and original-horizon retry, preserved exits/reserve/zero capacity, daily-stop and fractional vetoes, mode-change identity conflict, unknown/null/extra request policy rejection and stale native account evidence.
 - `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider tests/test_oco_entry_evidence.py tests/test_oco_journal.py tests/test_oco_exit_evidence.py tests/test_native_oco_requests.py tests/test_native_risk_registry.py tests/test_native_account_risk_owner.py -q`: 134 related regression cases passed in 321.99s. This is separate from the eight new cases, not a claimed full-repository run.
 - Ruff check (`--no-cache`), Ruff format check (`--no-cache`) and mypy with `/tmp/alpaca-late-native-entry-mypy` passed for the four changed production modules and the new test file. Independent source review found no concrete blocking defect after the downstream replay test was added.
 
@@ -4200,3 +4200,127 @@ stop continuity, supported close/recovery, actual input admission and real
 isolated W3-07 cycles remain independent incomplete requirements. All executable
 gates, `NOT_SIP_EQUIVALENT`, separate Ross baseline and runtime/order authority
 false remain in force; W3-06/07/08 parents stay open.
+
+### Native-account crossed-stop residual preparation — 2026-10-26
+
+`CrossedStopJournal.prepare_native_source` adds an explicit native-account mode
+to the existing SOURCE_PREPARE operation. The legacy entry-only method still
+refuses groups. The new mode requires the accepted accounting-policy identity,
+the original positive held slot, source-bound terminal entry, complete native
+exit/group coverage and independently rederived current account ownership.
+It compares the selected risk snapshot's source/census/order/exit facts to the
+rebuilt registry and pins the native request inventory in the receipt.
+
+The exact unallocated lots are reserved locally. Full original group portions
+remain excluded even after native fills; their stops and allocations are not
+canceled, resized, replaced or recycled. A working native child whose reported
+remainder exceeds its group's exact residual vetoes preparation. Pending or
+unknown order states and inconsistent fill/status combinations also veto it;
+the accounting layer still retains their raw positive facts. Stable reported
+children do not prove continuous protection or atomic broker reservations.
+
+Current native PREPARED conflicts, uncovered commitments, newer unreconciled
+native captures and newer account captures require refresh before another local
+reservation. A backdated decision cannot ignore already-recorded future-visible
+native captures. Official session, asset, status, quantity-availability and local
+intent checks remain. Reported availability is not broker clearance. The exact
+legacy emergency exception for FINAL_TARGET_TOPOLOGY_INVALID remains available
+so an invalid profit target does not abandon owned residual inventory; its issue
+and daily-stop/capacity restrictions remain intact.
+
+SOURCE_PREPARE remains the event kind used by the Journal's symbol interlock.
+Another simple intent/send, a competing OCO allocation and a second unresolved
+emergency reservation cannot reuse these lots. Source-mode ATTEMPT is still
+disabled; the request remains dispatch-incompatible and all admission, no-halt,
+atomicity, protection, runtime and formal-paper authorities remain false.
+Injected transport origin is copied explicitly into the native ownership proof.
+
+The integrated fixture exposed an existing parsing error: source entry receipts
+serialize exact prices as rational text (9.40 becomes 47/5), while the crossing
+code used the vendor decimal parser. Bound receipt values now use the existing
+canonical positive rational parser; raw vendor activities still require exact
+decimal text. No rounding or broader raw-input format was introduced.
+
+Validation is synthetic source integration only:
+
+- `tests/test_native_crossed_stop_preparation.py`: 12 cases passed in the initial
+  13-case run. Its newer-account test incorrectly added quotes/metadata/lifecycle
+  data too, triggering a different earlier source veto. After isolating only the
+  new account capture, that case passed separately in 77.10s (12 deselected).
+  This is split evidence, not a claimed single-run 13-pass result. Coverage
+  includes exact residuals, full group exclusion, unchanged risk/protection,
+  genuine SQLite close/reopen, retry/interlocks, overhang, unavailable quantity,
+  native request conflict, capture clocks/supersession, policy identity, daily
+  stop, invalid target topology and unknown/changing native status.
+
+No broker connection, order/cancel, source subscription purchase, service or
+formal paper evaluation occurred. Native close transport/fill ownership,
+continuous protection, actual source admission and isolated W3-07 cycles remain
+unaccepted. W3-06/07/08 parents, the separate Ross baseline and
+NOT_SIP_EQUIVALENT remain unchanged.
+
+### Transaction-scoped causal risk replay reuse — 2026-10-26
+
+The integrated preparation/restart/interlock tests exposed repeated derivation
+of the same historical risk prefixes. The first four selected cases took
+1235.10s (three passed; one intended rejection had an assertion-message mismatch).
+After correcting that assertion, an intermediate scoped-reuse version passed
+the same four selections in 782.26s. These are development observations, not a
+runtime SLA, profitability result or broker-protection proof.
+
+Only successful qualified private causal-prefix reductions are reused. Ordinary
+constructors and current raw/projection/deduplication proof bodies still run.
+Existing transaction roots in OCO verification, native registry reads and
+crossed-stop replay/write callbacks delimit reuse; no new transaction or current
+proof bypass was added. Scopes end before their owned commit/rollback. The
+SQLite epoch does not by itself identify a transaction: correctness also relies
+on these inspected synchronous lexical boundaries.
+
+Every lookup retains account, UTC, horizon and private-storage checks. Keys and
+guards cover connection identity, SQL changes/schema/data version, evidence
+horizon, fee/contract bytes, transitive historical fee dependencies and both
+validated engineering/formal path resolutions. Nested successful calls and hits
+propagate their actual dependencies. Rebuilds recheck them before storing a
+result. Unqualified/vetoed results, failures and in-flight cycles are not reused.
+Returned objects are copied without changing insertion order. A completed scope
+is permanently closed, including in copied ContextVar contexts.
+
+`tests/test_causal_risk_memo.py`: the final 17-case run passed in 7.99s. It covers
+equivalence/order/copies and real hits, scope/exception cleanup, source/cache
+mutation and rollback, schema/fee/private-mode faults, new SQLite snapshots,
+transitive child-hit dependency closure, actual injected native HTTP scope-path
+aliasing, invalid headers, unqualified results, cycles, mid-rebuild mutation and
+closed-context reactivation. The strengthened two dependency cases also passed
+separately with counters proving a hit before mutation (2 passed in 6.67s).
+
+Remaining runtime work is material: a normal signal-free single-preparation test passed in 103.91s, including
+fixture setup. Its total counts were 149 current risk rebuilds, 1222 risk
+reductions and 88 causal rebuilds. At fixture completion the counter was already
+95 current rebuilds at 41.629s; the preparation call added 54 current rebuilds
+across approximately 62.4s. These are synthetic scenario timings, not a live
+execution SLA. They show repeated current verification remains; no real-time
+freshness, first-fill protection or operational throughput is accepted. Further runtime
+integration must address that bottleneck without weakening verification.
+
+Environment evidence: Ruff's readonly-checkout cache fault was resolved with
+supported --no-cache checks. A separate bounded cProfile/pytest diagnostic using
+faulthandler and an asynchronous SIGALRM exception exited with SIGSEGV and left
+no stats. Its root cause is unestablished; no global tooling was reset. The
+affected route was stopped, and ordinary pytest plus signal-free Python counters
+verified unaffected work. This is an isolated diagnostic workaround, not a claim
+that cProfile was repaired. Python 3.12.14 and SQLite 3.53.1 were read locally.
+
+Primary engineering references: SQLite documents snapshot visibility and
+same-connection writes in [isolation](https://www.sqlite.org/isolation.html);
+[total_changes](https://www.sqlite.org/c3ref/total_changes.html) is not a complete
+mutation/transaction identifier. Python documents explicit token reset and
+context copying in [contextvars](https://docs.python.org/3/library/contextvars.html).
+The [signal warning](https://docs.python.org/3.12/library/signal.html#note-on-signal-handlers-and-exceptions)
+explains asynchronous-exception hazards but does not establish this crash's
+cause. Public-only retrieval and a generic gemma4:31b Cloud critique were checked;
+unsupported model claims were rejected and no local/private data was exported.
+
+Final related verification for these two increments:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider tests/test_crossed_stop.py tests/test_crossed_stop_source.py tests/test_crossed_stop_preparation.py tests/test_crossed_stop_risk_binding.py tests/test_oco_journal.py tests/test_oco_entry_evidence.py tests/test_oco_exit_evidence.py tests/test_native_oco_requests.py tests/test_native_oco_http.py tests/test_native_risk_registry.py tests/test_native_account_risk_owner.py tests/test_native_owned_entry.py tests/test_account_risk_owner.py -q`: 300 passed in 991.37s. This related regression is separate from the 17 memo cases and split 13 native-residual cases, not a full-repository claim.
+- Ruff check/format check with --no-cache and strict mypy using `/tmp/alpaca-native-residual-final-mypy` passed for all eight changed/new production modules and both new test files. Independent source reviews accepted the semantic, dependency-closure, root-scope and copied-context fixes; test verification remained with the coordinator. All verification processes are terminal.

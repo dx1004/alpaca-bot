@@ -8,6 +8,7 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
+from ._causal_risk_memo import causal_risk_verification_scope
 from .journal import Journal, JournalError
 from .native_risk_registry import POLICY as NATIVE_POLICY
 from .oco_entry_evidence import derive_entry_census, derive_native_owned_entry_census
@@ -590,6 +591,14 @@ class OcoJournal:
         return result
 
     def _verified_replay(
+        self,
+    ) -> tuple[object | None, dict[str, set[str]], dict[str, dict[str, Any]]]:
+        if self.journal._db.in_transaction:
+            with causal_risk_verification_scope(self.journal):
+                return self._verified_replay_uncached()
+        return self._verified_replay_uncached()
+
+    def _verified_replay_uncached(
         self,
     ) -> tuple[object | None, dict[str, set[str]], dict[str, dict[str, Any]]]:
         cached = self.journal.read_state(self.state_key)

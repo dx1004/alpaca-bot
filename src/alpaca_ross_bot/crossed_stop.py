@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from fractions import Fraction
 from typing import Any
 
+from ._causal_risk_memo import causal_risk_verification_scope
 from .crossed_stop_contract import MANIFEST_SHA256 as MANIFEST_SHA256
 from .crossed_stop_contract import VERSION as VERSION
 from .crossed_stop_contract import load_crossed_stop_contract
@@ -414,6 +415,12 @@ class CrossedStopJournal:
     def _replay(
         self,
     ) -> tuple[dict[str, Any], dict[str, str], dict[str, set[str]]]:
+        with causal_risk_verification_scope(self.journal):
+            return self._replay_verified()
+
+    def _replay_verified(
+        self,
+    ) -> tuple[dict[str, Any], dict[str, str], dict[str, set[str]]]:
         state = self._empty()
         first: dict[str, str] = {}
         seen: dict[str, set[str]] = {}
@@ -500,7 +507,11 @@ class CrossedStopJournal:
         }
         result: dict[str, Any] | None = None
 
-        def prepare(_: bytes) -> bytes:
+        def prepare(payload: bytes) -> bytes:
+            with causal_risk_verification_scope(self.journal):
+                return prepare_verified(payload)
+
+        def prepare_verified(_: bytes) -> bytes:
             nonlocal result
             result, first, seen = self._replay()
             # Exact repeat reuses original prefix; changed commands latch conflict.
@@ -538,9 +549,10 @@ class CrossedStopJournal:
 
         def reduce(_: object, conflict: bool, sequence: int) -> object:
             nonlocal result
-            assert result is not None
-            result = self._reduce(result, item, conflict)
-            return result
+            with causal_risk_verification_scope(self.journal):
+                assert result is not None
+                result = self._reduce(result, item, conflict)
+                return result
 
         try:
             self.journal.apply_crossed_stop_event(
@@ -596,6 +608,37 @@ class CrossedStopJournal:
             {
                 "close_id": close_id,
                 "request": preparation_request(
+                    asset_sequence,
+                    status_sequence,
+                    status_record_index,
+                    max_asset_age,
+                    max_status_age,
+                ),
+                "receipt": None,
+            },
+        )
+
+    def prepare_native_source(
+        self,
+        close_id: str,
+        at: datetime,
+        *,
+        asset_sequence: int,
+        status_sequence: int,
+        status_record_index: int,
+        max_asset_age: timedelta,
+        max_status_age: timedelta,
+    ) -> dict[str, Any]:
+        """Reserve only source-owned unallocated lots; no dispatch clearance."""
+        from .crossed_stop_preparation import native_preparation_request
+
+        return self._record(
+            "SOURCE_PREPARE",
+            close_id,
+            at,
+            {
+                "close_id": close_id,
+                "request": native_preparation_request(
                     asset_sequence,
                     status_sequence,
                     status_record_index,

@@ -13,7 +13,8 @@ from zoneinfo import ZoneInfo
 from .account_risk_owner import AccountRiskOwner
 from .crossed_stop_contract import load_crossed_stop_contract
 from .journal import JournalError
-from .oco_journal import OcoJournal, _json
+from .native_risk_registry import POLICY as NATIVE_POLICY
+from .oco_journal import OcoJournal, _fraction, _json
 from .posted_ledger import _exact, _timestamp
 from .reported_price_policy import (
     assess_reported_price_record,
@@ -86,12 +87,16 @@ def derive_source_crossing(
             )
     bound_entries = {
         row["execution_id"]: (
-            _exact(row["quantity"], positive=True),
-            _exact(row["price"], positive=True),
+            _fraction(row["quantity"]),
+            _fraction(row["price"]),
             _timestamp(row["transaction_time"]),
         )
         for row in bound["entry"]["executions"]
     }
+    if any(
+        quantity <= 0 or price <= 0 for quantity, price, _ in bound_entries.values()
+    ):
+        raise JournalError("bound source entry quantities and prices must be positive")
     if current_entries != bound_entries:
         raise JournalError("source entry executions changed; rebind before observation")
     for stamp in (
@@ -239,6 +244,17 @@ def derive_source_crossing(
             "NO_FRESHNESS_SESSION_OR_RISK_CLEARANCE_FOR_DISPATCH",
         ],
     }
+    if bound.get("ownership_policy") == NATIVE_POLICY:
+        result["ownership_policy"] = NATIVE_POLICY
+        result["classification"] = (
+            "RAW_PRICE_AND_NATIVE_ACCOUNT_ENTRY_REFERENCED_CROSSING_NOT_ADMISSION"
+        )
+        result["limitations"] = [
+            "REPORTED_IEX_BID_NOT_BROKER_BASE_OR_NBBO",
+            "EXPLICIT_NATIVE_ACCOUNT_OBSERVATION_NOT_BROKER_CLEARANCE",
+            "NATIVE_GROUP_RESERVATION_ATOMICITY_UNPROVEN",
+            "NO_FRESHNESS_SESSION_OR_RISK_CLEARANCE_FOR_DISPATCH",
+        ]
     if emergency_binding is not None:
         result["emergency_risk_policy_opt_in_observed"] = True
         result["emergency_risk_binding"] = emergency_binding

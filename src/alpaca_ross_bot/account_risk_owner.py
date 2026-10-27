@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from ._causal_risk_memo import memoized_causal_risk_prefix
 from .crossed_stop_contract import CrossedStopContract, load_crossed_stop_contract
 from .entry_strategy import EntryDecision
 from .equity_fees import planned_charge_bounds
@@ -163,6 +164,41 @@ class AccountRiskOwner:
 
     @classmethod
     def _read_native_causal_evidence_at(
+        cls,
+        journal: Journal,
+        account_ref: str,
+        decision_at: datetime,
+        fee_policy: Path,
+        *,
+        through_sequence: int,
+    ) -> tuple[dict[str, Any] | None, tuple[int, ...]]:
+        """Retain fresh basic checks even for an already verified exact prefix."""
+        _utc(decision_at)
+        journal.require_private_order_state()
+        if (
+            type(through_sequence) is not int
+            or not 0 <= through_sequence <= journal.read_evidence_sequence()
+            or journal.read_paper_account_ref() != account_ref
+        ):
+            raise JournalError("bound causal risk horizon required")
+        return memoized_causal_risk_prefix(
+            journal,
+            account_ref=account_ref,
+            version=VERSION,
+            decision_at=decision_at,
+            fee_policy=fee_policy,
+            through_sequence=through_sequence,
+            rebuild=lambda: cls._rebuild_native_causal_evidence_at(
+                journal,
+                account_ref,
+                decision_at,
+                fee_policy,
+                through_sequence=through_sequence,
+            ),
+        )
+
+    @classmethod
+    def _rebuild_native_causal_evidence_at(
         cls,
         journal: Journal,
         account_ref: str,

@@ -13,6 +13,7 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
+from ._causal_risk_memo import causal_risk_verification_scope
 from .journal import Journal, JournalError
 from .paper_order_contract import decode_broker_json
 
@@ -122,14 +123,15 @@ def derive_native_registry(
     if owns:
         journal._db.execute("BEGIN")
     try:
-        return _derive_native_registry(
-            journal,
-            context,
-            capture_sequence=capture_sequence,
-            decision_at=decision_at,
-            max_age=max_age,
-            through_sequence=through_sequence,
-        )
+        with causal_risk_verification_scope(journal):
+            return _derive_native_registry(
+                journal,
+                context,
+                capture_sequence=capture_sequence,
+                decision_at=decision_at,
+                max_age=max_age,
+                through_sequence=through_sequence,
+            )
     finally:
         if owns:
             journal._db.rollback()

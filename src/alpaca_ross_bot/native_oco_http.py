@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
 
+from ._causal_risk_memo import record_path_resolution
 from .journal import Journal, JournalError
 from .native_oco_requests import (
     _AUTHORITY,
@@ -80,6 +81,8 @@ def _check_scope_proof(journal: Journal, pre: dict[str, Any]) -> None:
             formal_account_ref=scope_data["formal_account_ref"],
             formal_runtime_root=Path(scope_data["formal_runtime_root"]),
         )
+        formal_target = scope.formal_runtime_root.resolve()
+        engineering_target = journal._runtime_root.resolve()
         scope.validate(journal._runtime_root)
         events = journal.read_engineering_events()
         scopes = [(event, raw) for event, raw in events if event.event_kind == "SCOPE"]
@@ -109,6 +112,8 @@ def _check_scope_proof(journal: Journal, pre: dict[str, Any]) -> None:
             _clock(pre["started_at"]),
             submission=False,
         )
+        record_path_resolution(journal, scope.formal_runtime_root, formal_target)
+        record_path_resolution(journal, journal._runtime_root, engineering_target)
     except (ValueError, KeyError, TypeError, IndexError) as exc:
         raise JournalError("native HTTP authenticated scope proof differs") from exc
 
