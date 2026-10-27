@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from .journal import Journal, JournalError
-from .oco_entry_evidence import derive_entry_census
+from .native_risk_registry import POLICY as NATIVE_POLICY
+from .oco_entry_evidence import derive_entry_census, derive_native_owned_entry_census
 from .oco_research import (
     CANDIDATE,
     MANIFEST_SHA256,
@@ -231,8 +232,7 @@ class OcoJournal:
             row = _object(
                 operation, {"request", "source_horizon", "receipt", "outcome"}
             )
-            request = _object(
-                row["request"],
+            request_fields = (
                 {"event_id", "decision_at", "fee_policy"}
                 if kind == "BOUND_ENTRY"
                 else {
@@ -241,8 +241,20 @@ class OcoJournal:
                     "group_id",
                     "capture_sequence",
                     "max_age_microseconds",
-                },
+                }
             )
+            if (
+                kind == "BOUND_ENTRY"
+                and isinstance(row["request"], dict)
+                and "ownership_policy" in row["request"]
+            ):
+                request_fields.add("ownership_policy")
+            request = _object(row["request"], request_fields)
+            if "ownership_policy" in request and (
+                type(request["ownership_policy"]) is not str
+                or request["ownership_policy"] != NATIVE_POLICY
+            ):
+                raise JournalError("pinned native entry ownership policy required")
             identity = _text(request["event_id"])
             stamp = datetime.fromisoformat(_text(request["decision_at"]))
             if (
@@ -396,7 +408,12 @@ class OcoJournal:
         self, kind: str, request: dict[str, Any], horizon: int
     ) -> dict[str, Any]:
         if kind == "BOUND_ENTRY":
-            return derive_entry_census(
+            derive = (
+                derive_native_owned_entry_census
+                if request.get("ownership_policy") == NATIVE_POLICY
+                else derive_entry_census
+            )
+            return derive(
                 self.journal,
                 self.initial,
                 decision_at=datetime.fromisoformat(request["decision_at"]),
@@ -874,6 +891,32 @@ class OcoJournal:
                     "event_id": event_id,
                     "decision_at": decision_at.isoformat(),
                     "fee_policy": str(fee_policy.resolve()),
+                },
+                "source_horizon": None,
+                "receipt": None,
+                "outcome": "PENDING_DERIVATION",
+            },
+            received_at,
+        )
+
+    def bind_native_entry_census(
+        self,
+        event_id: str,
+        decision_at: datetime,
+        fee_policy: Path,
+        received_at: datetime,
+    ) -> OcoJournalView:
+        """Explicit native-account observation mode; no new entry or risk grant."""
+        if type(decision_at) is not datetime or decision_at.utcoffset() != timedelta(0):
+            raise JournalError("UTC native entry-census decision required")
+        return self._record(
+            "BOUND_ENTRY",
+            {
+                "request": {
+                    "event_id": event_id,
+                    "decision_at": decision_at.isoformat(),
+                    "fee_policy": str(fee_policy.resolve()),
+                    "ownership_policy": NATIVE_POLICY,
                 },
                 "source_horizon": None,
                 "receipt": None,

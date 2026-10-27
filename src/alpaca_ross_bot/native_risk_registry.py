@@ -148,7 +148,10 @@ def _derive_native_registry(
     # owner, while this registry must not recursively instantiate either owner.
     from .native_oco_evidence import _fill, _instant, _order, inspect_native_oco_capture
     from .native_oco_http import native_http_inventory
-    from .oco_entry_evidence import _derive_native_entry_census
+    from .oco_entry_evidence import (
+        _derive_native_entry_census,
+        derive_native_owned_entry_census,
+    )
     from .oco_exit_evidence import derive_native_exit_census
     from .oco_journal import OcoJournal
     from .oco_research import (
@@ -305,7 +308,12 @@ def _derive_native_registry(
                 operation = item["operation"]
                 if not 0 <= operation["source_horizon"] < event.sequence:
                     raise JournalError("native entry causal horizon does not decrease")
-                derived_entry = _derive_native_entry_census(
+                derive_entry = (
+                    derive_native_owned_entry_census
+                    if operation["request"].get("ownership_policy") == POLICY
+                    else _derive_native_entry_census
+                )
+                derived_entry = derive_entry(
                     journal,
                     initial,
                     decision_at=datetime.fromisoformat(

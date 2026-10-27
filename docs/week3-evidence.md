@@ -4151,3 +4151,52 @@ not operational protection or W3-06/07/08 parent acceptance. Actual source/risk
 admission, current status continuity, first/late-fill protection, supported
 stop/close cleanup and real isolated cycles remain gated. `NOT_SIP_EQUIVALENT`
 and `runtime_authorized=false` remain in force.
+
+### Native-owned late-entry binding and disjoint preparation — 2026-10-26
+
+The remaining local source seam was reproduced with a complete injected account
+book: entry quantity two, one source-bound native sell, then a further entry
+fill. The risk owner correctly observed cumulative entry three and open position
+two, while the OCO owner still held entry two. Its legacy source binding refused
+`NATIVE_FINALITY_PENDING`; native request preparation used that same strict
+legacy derivation, preventing a fresh proof for a second disjoint allocation.
+
+`OcoJournal.bind_native_entry_census` now records the explicit
+`NATIVE_ACCOUNT_RISK_OBSERVATION_V1` ownership policy in its exact BOUND_ENTRY
+request and separately labeled receipt. Legacy requests and `bind_entry_census`
+remain strict and byte-compatible. Existing event IDs cannot change modes
+without retaining their original receipt and latching an identity conflict.
+The native path accepts only a fully qualified native-owned current slot whose
+risk issues are empty or exactly `NATIVE_FINALITY_PENDING`; source issues,
+daily-stop/veto, fractional sizing incidents, mixed simple exits and model
+incidents still reject it. Original positive reservation provenance remains
+strict. This observation does not create another slot or relax the risk budget.
+
+The canonical model keeps all prior entry identities/economics, native exits,
+original allocations and reservation reference. Only newly reported owned entry
+facts are added. Registry replay selects the exact recorded mode and rederives
+it through the private, strictly decreasing risk prefix. A fresh account-risk
+observation after the new binding verifies this causal path; it is not inferred
+from reopening a risk prefix that predates the new binding. A subsequent
+NativeOcoRequests preparation selects the same explicit fresh entry proof and
+continues to require whole, disjoint, source-bound lots and the same reservation.
+
+Validation:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider tests/test_native_owned_entry.py -q`: 8 passed in 137.14s. Coverage includes the fresh downstream risk observation, disjoint second-group preparation, physical owner reopen and original-horizon retry, preserved exits/reserve/zero capacity, daily-stop and fractional vetoes, mode-change identity conflict, unknown/null/extra request policy rejection and stale native account evidence.
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider tests/test_oco_entry_evidence.py tests/test_oco_journal.py tests/test_oco_exit_evidence.py tests/test_native_oco_requests.py tests/test_native_risk_registry.py tests/test_native_account_risk_owner.py -q`: 134 related regression cases passed in 321.99s. This is separate from the eight new cases, not a claimed full-repository run.
+- Ruff check (`--no-cache`), Ruff format check (`--no-cache`) and mypy with `/tmp/alpaca-late-native-entry-mypy` passed for the four changed production modules and the new test file. Independent source review found no concrete blocking defect after the downstream replay test was added.
+
+Resolved ENV_FAULT: the first format check tried to create a Ruff cache in the
+read-only checkout. The supported `--no-cache` check then succeeded; no global
+permissions, sandbox policy or application behavior changed. Repository edits
+used scoped tool-level escalation under the current read-only workspace policy.
+
+Only injected source-shaped tests ran. No account connection, broker operation,
+service, data purchase or formal paper run occurred. This connects late entry
+facts and local request provenance, not actual first/late-fill protection or
+broker admission through S. Crossed-stop source preparation with native groups,
+stop continuity, supported close/recovery, actual input admission and real
+isolated W3-07 cycles remain independent incomplete requirements. All executable
+gates, `NOT_SIP_EQUIVALENT`, separate Ross baseline and runtime/order authority
+false remain in force; W3-06/07/08 parents stay open.

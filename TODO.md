@@ -226,6 +226,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   - [x] Native account-risk ownership integration, 2026-10-23: versioned opt-in joins native source exits to full-account ownership, cash/quantity/equity/fees and once-only terminal accounting; causal replay, historical attribution, frozen partial risk and fractional/late-activity vetoes pass synthetic integration/fault checks. [Evidence and limits](docs/week3-evidence.md#native-account-risk-ownership-integration--2026-10-23). No broker invocation, operational protection acceptance or W3-06/07/08 parent completion.
 
+  - [x] Native-owned late-entry census and disjoint preparation, 2026-10-26: explicit native accounting policy adds newly reported whole entry facts without changing the original positive reservation, prior exits or lot allocations; fresh downstream risk replay, mode-conflict, stale/policy-shape and risk-veto tests pass. [Evidence and limits](docs/week3-evidence.md#native-owned-late-entry-binding-and-disjoint-preparation--2026-10-26). Local request provenance only; crossed-stop native residual preparation, broker protection/admission/close and W3-06/07/08 parent acceptance remain open.
+
 - [!] **W3-07 [P1] Run isolated Alpaca paper API engineering tests**
   Depends: W3-04..W3-06, credentials available. Minimal non-strategy orders in isolated state only.  
   Accept: complete order lifecycle/reconciliation evidence; test activity cannot enter the formal paper sample. If credentials are unavailable, mark blocked without fabricating acceptance.

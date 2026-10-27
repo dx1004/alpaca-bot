@@ -15,7 +15,8 @@ from pathlib import Path
 from typing import Any
 
 from .journal import JournalError
-from .oco_entry_evidence import derive_entry_census
+from .native_risk_registry import POLICY as NATIVE_POLICY
+from .oco_entry_evidence import derive_entry_census, derive_native_owned_entry_census
 from .oco_journal import OcoJournal
 from .paper_order_contract import decode_broker_json
 
@@ -174,7 +175,15 @@ class NativeOcoRequests:
             )
         if command["client_order_id"] == self.binding["entry_scope"]:
             raise JournalError("native OCO client ID must differ from entry scope")
-        fresh = derive_entry_census(
+        ownership_policy = view.entry_binding.get("ownership_policy")
+        if ownership_policy is not None and ownership_policy != NATIVE_POLICY:
+            raise JournalError("unsupported native OCO entry ownership policy")
+        derive_entry = (
+            derive_native_owned_entry_census
+            if ownership_policy == NATIVE_POLICY
+            else derive_entry_census
+        )
+        fresh = derive_entry(
             self.journal,
             self.owner.initial,
             decision_at=decision,

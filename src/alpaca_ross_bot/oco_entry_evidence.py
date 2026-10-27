@@ -14,6 +14,7 @@ from typing import Any
 from .account_risk_owner import AccountRiskOwner
 from .incident_risk import IncidentRiskRequest
 from .journal import Journal, JournalError
+from .native_risk_registry import POLICY as NATIVE_POLICY
 from .oco_research import OcoResearchState
 from .order_lifecycle import LifecycleState, OrderProjection
 from .posted_ledger import _exact, _timestamp
@@ -74,6 +75,26 @@ def _derive_native_entry_census(
     )
 
 
+def derive_native_owned_entry_census(
+    journal: Journal,
+    initial: OcoResearchState,
+    *,
+    decision_at: datetime,
+    through_sequence: int,
+    fee_policy: Path,
+) -> dict[str, Any]:
+    """Observe entry lots in the explicit native accounting mode, not clearance."""
+    return _derive_entry_census(
+        journal,
+        initial,
+        decision_at=decision_at,
+        through_sequence=through_sequence,
+        fee_policy=fee_policy,
+        risk_reader=AccountRiskOwner._read_native_causal_evidence_at,
+        ownership_policy=NATIVE_POLICY,
+    )
+
+
 def _derive_entry_census(
     journal: Journal,
     initial: OcoResearchState,
@@ -82,9 +103,12 @@ def _derive_entry_census(
     through_sequence: int,
     fee_policy: Path,
     risk_reader: Any,
+    ownership_policy: str | None = None,
 ) -> dict[str, Any]:
     """Derive a receipt at one immutable prefix; reported observations aren't final."""
     _utc(decision_at)
+    if ownership_policy not in (None, NATIVE_POLICY):
+        raise JournalError("unsupported entry ownership observation policy")
     if (
         type(through_sequence) is not int
         or not 0 <= through_sequence <= journal.read_evidence_sequence()
@@ -110,13 +134,33 @@ def _derive_entry_census(
         or not isinstance(held, dict)
         or snapshot.get("qualified") is not True
         or snapshot.get("issues") != []
-        or risk.get("issues") != []
+        or risk.get("issues")
+        not in ([[], ["NATIVE_FINALITY_PENDING"]] if ownership_policy else [[]])
         or risk.get("source_snapshot_qualified") is not True
         or risk.get("veto") is not False
         or risk.get("daily_stop_latched") is not False
         or risk.get("runtime_authorized") is not False
     ):
         raise JournalError("current held source risk is missing, vetoed or unqualified")
+    if ownership_policy is not None:
+        native = snapshot.get("native")
+        owned = held.get("native_ownership")
+        if (
+            risk.get("_native_policy") != NATIVE_POLICY
+            or not isinstance(native, dict)
+            or native.get("policy") != NATIVE_POLICY
+            or native.get("risk_issues") != []
+            or native.get("runtime_authorized") is not False
+            or not isinstance(native.get("context"), dict)
+            or native["context"].get("policy") != NATIVE_POLICY
+            or native["context"].get("active_scope") != initial.entry_scope
+            or not isinstance(owned, dict)
+            or owned.get("policy") != NATIVE_POLICY
+            or owned.get("runtime_authorized") is not False
+            or "quantity_incident" in held
+            or held.get("exits") != {}
+        ):
+            raise JournalError("qualified current native entry ownership required")
     selection = IncidentRiskRequest.from_dict(snapshot["selection"])
     observed = datetime.fromisoformat(snapshot["observed_at"])
     risk_at = datetime.fromisoformat(risk["at"])
@@ -296,7 +340,7 @@ def _derive_entry_census(
     exact_sources = references(tuple(row[0] for row in source_refs))
     if exact_sources != source_refs:
         raise JournalError("entry-census source reference hashes differ")
-    return {
+    receipt = {
         "schema": 1,
         "classification": "LOCAL_REPORTED_ENTRY_CENSUS_NOT_SOURCE_ADMISSION",
         "formal_sample_eligible": False,
@@ -341,3 +385,9 @@ def _derive_entry_census(
             "FULL_SOURCE_AND_PROTECTION_ACCEPTANCE_UNQUALIFIED",
         ],
     }
+    if ownership_policy is not None:
+        receipt["ownership_policy"] = ownership_policy
+        receipt["classification"] = (
+            "LOCAL_REPORTED_NATIVE_OWNED_ENTRY_CENSUS_NOT_SOURCE_ADMISSION"
+        )
+    return receipt
