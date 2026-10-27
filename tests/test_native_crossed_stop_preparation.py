@@ -412,3 +412,46 @@ def test_unknown_or_changing_native_order_state_vetoes_new_residual_reservation(
     assert source.journal.read_evidence_sequence() == count
     assert not emergency.view()["closes"]
     assert risk.view() == before
+
+
+def test_native_anchored_intent_handoff_preserves_existing_group_and_risk(
+    native_ready: Any,
+) -> None:
+    book, emergency, at, assets, statuses = native_ready
+    source, risk, owner, _, _ = book
+    before = risk.view()
+    original = owner.view()
+    prepared = emergency.prepare_native_source(
+        "native-handoff",
+        at,
+        asset_sequence=assets,
+        status_sequence=statuses,
+        status_record_index=0,
+        max_asset_age=timedelta(seconds=1),
+        max_status_age=timedelta(seconds=1),
+        for_handoff=True,
+    )
+    state = emergency.bind_source_intent("native-handoff", at)
+    close = state["closes"]["native-handoff"]
+    receipt = close["source_intent_binding"]
+    cid = json.loads(receipt["intent"]["request_body"])["client_order_id"]
+    assert close["quantity"] == "1"
+    assert (
+        close["portions"]
+        == prepared["closes"]["native-handoff"]["source_preparation"]["reservation"][
+            "portions"
+        ]
+    )
+    risk.bind_exit("native-handoff-role", at + timedelta(seconds=1), cid, "CLOSE")
+    after = risk.view()
+    assert after["held"]["client_order_id"] == CID
+    assert after["held"]["exits"][cid] == "CLOSE"
+    assert after["pending_open_loss_reserve"] == before["pending_open_loss_reserve"]
+    assert after["additional_local_cash_hold"] == before["additional_local_cash_hold"]
+    assert after["capacity"] == "0"
+    assert owner.view() == original
+    assert close["filled"] == "0" and close["attempt"] is None
+    assert not receipt["source_fill_ownership_accepted"]
+    with pytest.raises(JournalError, match="source emergency"):
+        source.journal.mark_order_send_attempt(cid, at + timedelta(seconds=2))
+    assert not source.journal.has_order_send_attempt(cid)

@@ -4324,3 +4324,42 @@ Final related verification for these two increments:
 
 - `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider tests/test_crossed_stop.py tests/test_crossed_stop_source.py tests/test_crossed_stop_preparation.py tests/test_crossed_stop_risk_binding.py tests/test_oco_journal.py tests/test_oco_entry_evidence.py tests/test_oco_exit_evidence.py tests/test_native_oco_requests.py tests/test_native_oco_http.py tests/test_native_risk_registry.py tests/test_native_account_risk_owner.py tests/test_native_owned_entry.py tests/test_account_risk_owner.py -q`: 300 passed in 991.37s. This related regression is separate from the 17 memo cases and split 13 native-residual cases, not a full-repository claim.
 - Ruff check/format check with --no-cache and strict mypy using `/tmp/alpaca-native-residual-final-mypy` passed for all eight changed/new production modules and both new test files. Independent source reviews accepted the semantic, dependency-closure, root-scope and copied-context fixes; test verification remained with the coordinator. All verification processes are terminal.
+
+
+### Anchored source-close intent and same-slot risk binding — 2026-10-27 UTC
+
+Explicit handoff-enabled preparation now records a versioned exact reservation:
+original execution portions, quantity and canonical request. Full replay checks
+it against the existing allocator. Legacy preparation bytes remain readable and
+cannot silently upgrade. SOURCE_BIND_INTENT atomically writes the canonical
+four-field intent and immutable handoff receipt. Original preparation, entry
+reservation, emergency policy and causal risk references remain pinned. Exact
+retries have no duplicate effect; failed appends roll back both records; an
+existing identical orphan intent is never adopted.
+
+AccountRiskOwner retains the canonical CLOSE role in a separate recoverable
+transaction. Additional lineage checks prevent attaching a source close to a
+different entry slot. Shared structural validation and exact anchored lots,
+request, references and deduplication checks use the role event's original
+horizon. Later conflicts cannot rewrite earlier lineage. No recursive owner
+reconstruction or automatic recovery orchestration is added by that guard.
+
+Verification used synthetic private temporary journals only:
+
+- `tests/test_source_close_handoff.py`: 15 passed in 329.11s, followed by a separate orphan/race selection of 2 passed, 15 deselected in 61.93s. The first run predates those last two tests; this is split 17-case evidence. Cases cover append rollback/retry, physical SQLite close/reopen, first-role/retry clocks, legacy refusal, wrong-slot reducer rejection, five hash-and-dedupe-consistent mutations, exact quantity anchoring, historical future-conflict isolation and strict boolean options. Mutation negatives target the lineage reader; positive API integration checks its wiring. Wrong-slot reducer coverage is not a real A-to-B account lifecycle.
+- `tests/test_native_crossed_stop_preparation.py -k native_anchored_intent_handoff`: final strengthened case 1 passed, 13 deselected in 189.72s. Groups, pending loss reserve and additional cash hold remain unchanged, capacity stays zero, and the original entry receives the CLOSE role. The earlier case passed in 164.82s before added budget assertions. No single-run 18-case claim is made.
+- Related regression: 139 passed in 473.47s across `tests/test_crossed_stop.py`, `tests/test_crossed_stop_source.py`, `tests/test_crossed_stop_preparation.py`, `tests/test_crossed_stop_risk_binding.py`, `tests/test_account_risk_owner.py` and `tests/test_native_account_risk_owner.py`. Production functionality did not change after launch. A prior pre-anchor run passed 136 in 448.41s and is not final-version evidence.
+- All pytest commands used `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider` with `-q`; focused selections also used `-x`. The orphan/race selection used `-k 'orphan or race'`. Two genuinely independent Journal writers race behind a barrier; timeouts are test budgets, not runtime latency acceptance.
+- Ruff check/format check with `--no-cache` and strict mypy with `/tmp/alpaca-source-handoff-final-mypy` passed for the four production files and two test files. Two optional-index test errors were resolved by an explicit non-None assertion, then all six files passed. Independent source review found and verified repairs for weak structural validation and missing exact-lot anchoring; final source/test reviews approved. All execution handles are terminal. No full-repository result is claimed.
+
+Generic reserve/send guards remain unchanged and block the designated CLOSE.
+Source ATTEMPT, source-fill adoption, runtime and dispatch remain disabled; no
+risk slot or native protective allocation is released. No broker/account access,
+credentials, network order/cancel, purchase, service or formal paper occurred.
+Ross remains separate and IEX remains NOT_SIP_EQUIVALENT.
+
+Still open: source-bound close execution/fill observation, native residual
+finality, protection-preserving disposal/recovery, current-proof throughput,
+actual source/risk admission and W3-07 real isolated cycles. First/late-fill and
+sibling-stop continuity are not established here. W3-06/07/08 parents remain open;
+W3-08 freeze waits for accepted dependencies.

@@ -7,24 +7,27 @@ Status observations establish neither continuous coverage nor current no-halt.
 
 import hashlib
 from datetime import datetime, timedelta
+from fractions import Fraction
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
 from .account_risk_owner import AccountRiskOwner
 from .crossed_stop_source import derive_source_crossing
-from .journal import JournalError
+from .journal import Journal, JournalError
 from .market_input_checks import _datetime_ns, _timestamp_ns
 from .native_oco_requests import NativeOcoRequests
 from .native_risk_registry import POLICY as NATIVE_POLICY
 from .native_risk_registry import TERMINAL, derive_native_registry
 from .oco_journal import OcoJournal, OcoJournalView, _json
-from .paper_order_contract import decode_broker_json
+from .paper_order_contract import decode_broker_json, validate_saved_request
 from .posted_ledger import _exact
 from .risk_account_inputs import KIND as ACCOUNT_CAPTURE_KIND
 from .risk_account_inputs import SOURCE as ACCOUNT_CAPTURE_SOURCE
 from .risk_evidence_request import IncidentRiskRequest
 from .scanner_discovery_audit import _raw
+
+HANDOFF_RESERVATION_CONTRACT = "SOURCE_CLOSE_INTENT_HANDOFF_V1"
 
 _ASSET_URL = (
     "https://paper-api.alpaca.markets/v2/assets?status=active&asset_class=us_equity"
@@ -295,18 +298,28 @@ def derive_source_preparation(
     }
     if native_mode:
         fields.add("ownership_policy")
+    handoff = "reservation_contract" in request
+    if handoff:
+        fields.add("reservation_contract")
     if (
         set(request) != fields
         or any(
             type(value) is not int
             for name, value in request.items()
-            if name != "ownership_policy"
+            if name not in {"ownership_policy", "reservation_contract"}
         )
         or (
             native_mode
             and (
                 type(request["ownership_policy"]) is not str
                 or request["ownership_policy"] != NATIVE_POLICY
+            )
+        )
+        or (
+            handoff
+            and (
+                type(request["reservation_contract"]) is not str
+                or request["reservation_contract"] != HANDOFF_RESERVATION_CONTRACT
             )
         )
     ):
@@ -320,6 +333,8 @@ def derive_source_preparation(
     )
     if native_mode:
         rebuilt["ownership_policy"] = NATIVE_POLICY
+    if handoff:
+        rebuilt["reservation_contract"] = HANDOFF_RESERVATION_CONTRACT
     if rebuilt != request:
         raise JournalError("noncanonical source preparation request")
     crossing = derive_source_crossing(owner, horizon=horizon, at=at)
@@ -580,3 +595,240 @@ def derive_source_preparation(
             "RAW_NATIVE_ACCOUNT_PREPARATION_NOT_BROKER_CLEARANCE"
         )
     return receipt
+
+
+def source_close_handoff_lineage(
+    journal: Journal,
+    client_order_id: str,
+    *,
+    through_sequence: int,
+    at: datetime,
+) -> dict[str, Any] | None:
+    """Slot/lot lineage only; no current source or fill-ownership qualification."""
+    from .crossed_stop import _validate_crossed_stop_item
+
+    binding_keys = {
+        "account_ref",
+        "symbol",
+        "entry_scope",
+        "limit",
+        "stop",
+        "version",
+        "candidate",
+        "manifest_sha256",
+        "parent_candidate",
+        "parent_sha256",
+        "emergency_version",
+        "emergency_manifest_sha256",
+    }
+    rows = []
+    relevant = []
+    for event, raw in journal._read_private_events(
+        "ALPACA_CROSSED_STOP_RESEARCH", through_sequence
+    ):
+        item = decode_broker_json(raw)
+        if not isinstance(item, dict) or set(item) != {
+            "binding",
+            "kind",
+            "key",
+            "at",
+            "data",
+            "horizon",
+        }:
+            raise JournalError("source close lineage exact event schema differs")
+        binding = item["binding"]
+        if (
+            not isinstance(binding, dict)
+            or set(binding) != binding_keys
+            or any(
+                type(value) is not str or not value or value != value.strip()
+                for value in binding.values()
+            )
+        ):
+            raise JournalError("source close lineage binding schema differs")
+        _validate_crossed_stop_item(binding, item)
+        if (
+            _json(item) != raw
+            or event.feed != "paper"
+            or event.event_kind != item["kind"]
+            or type(item["horizon"]) is not int
+            or not 0 <= item["horizon"] < event.sequence
+        ):
+            raise JournalError("source close lineage event metadata differs")
+        rows.append((event, item))
+        if item["kind"] in {"SOURCE_PREPARE", "SOURCE_BIND_INTENT"}:
+            expected = (
+                "cs-"
+                + hashlib.sha256(
+                    _json([binding, item["data"]["close_id"]])
+                ).hexdigest()[:40]
+            )
+            if expected == client_order_id:
+                relevant.append(binding)
+    if not relevant:
+        return None
+    if any(binding != relevant[0] for binding in relevant):
+        raise JournalError("source close lineage is ambiguous")
+    binding = relevant[0]
+    scoped = [(event, item) for event, item in rows if item["binding"] == binding]
+    seen: dict[str, dict[str, Any]] = {}
+    for event, item in scoped:
+        if (
+            not event.visible_at(at)
+            or event.external_clock_conflict
+            or item["at"] != event.available_at.isoformat()
+        ):
+            raise JournalError("source close lineage is not decision-visible")
+        stamp = datetime.fromisoformat(item["at"])
+        if stamp.utcoffset() != timedelta(0) or stamp.isoformat() != item["at"]:
+            raise JournalError("source close lineage clock differs")
+        key = item["key"]
+        if key in seen:
+            raise JournalError("source close lineage has duplicate/conflicting claims")
+        seen[key] = {"hash": event.payload_ref, "sequence": event.sequence}
+    cache = {}
+    for key, value in journal.read_crossed_stop_evidence_cache(
+        binding["account_ref"]
+    ).items():
+        identity = decode_broker_json(key)
+        if (
+            not isinstance(identity, list)
+            or len(identity) != 3
+            or any(type(part) is not str for part in identity)
+            or _json(identity).decode() != key
+            or not isinstance(value, dict)
+            or set(value) != {"hash", "sequence"}
+            or type(value["sequence"]) is not int
+            or type(value["hash"]) is not str
+        ):
+            raise JournalError("source close lineage deduplication schema differs")
+        if (
+            identity[0] == binding["entry_scope"]
+            and value["sequence"] <= through_sequence
+        ):
+            cache[key] = value
+    if cache != seen:
+        raise JournalError("source close lineage deduplication differs")
+    matches = [
+        (event, item)
+        for event, item in scoped
+        if item["kind"] == "SOURCE_BIND_INTENT"
+        and "cs-"
+        + hashlib.sha256(_json([binding, item["data"]["close_id"]])).hexdigest()[:40]
+        == client_order_id
+    ]
+    if len(matches) != 1:
+        raise JournalError("source close handoff lineage is missing or ambiguous")
+    event, item = matches[0]
+    receipt = item["data"]["receipt"]
+    receipt_keys = {
+        "schema",
+        "classification",
+        "reservation_contract",
+        "decision_at",
+        "source_horizon",
+        "binding",
+        "close_id",
+        "preparation_ref",
+        "entry_reservation_ref",
+        "emergency_binding_ref",
+        "prior_risk_ref",
+        "portions",
+        "intent",
+        "source_fill_ownership_accepted",
+        "dispatch_authorized",
+        "runtime_authorized",
+    }
+    if (
+        not isinstance(receipt, dict)
+        or set(receipt) != receipt_keys
+        or type(receipt["schema"]) is not int
+        or receipt["schema"] != 1
+        or receipt["classification"]
+        != "LOCAL_SOURCE_CLOSE_INTENT_NOT_SEND_OR_FILL_OWNERSHIP"
+        or receipt["reservation_contract"] != HANDOFF_RESERVATION_CONTRACT
+        or receipt["binding"] != binding
+        or receipt["close_id"] != item["data"]["close_id"]
+        or receipt["decision_at"] != item["at"]
+        or type(receipt["source_horizon"]) is not int
+        or receipt["source_horizon"] != item["horizon"]
+    ):
+        raise JournalError("source close handoff exact receipt differs")
+    for flag in (
+        "source_fill_ownership_accepted",
+        "dispatch_authorized",
+        "runtime_authorized",
+    ):
+        if receipt[flag] is not False:
+            raise JournalError("source close handoff cannot grant authority")
+    intent = receipt["intent"]
+    if (
+        not isinstance(intent, dict)
+        or set(intent)
+        != {"paper_endpoint", "paper_account_ref", "purpose", "request_body"}
+        or intent != journal.read_order_intent(client_order_id)
+    ):
+        raise JournalError("source close canonical intent changed")
+    request = validate_saved_request(intent["request_body"])
+    if (
+        _json(request).decode() != intent["request_body"]
+        or request["client_order_id"] != client_order_id
+        or request["symbol"] != binding["symbol"]
+        or request["side"] != "sell"
+        or request["type"] != "market"
+        or intent["paper_account_ref"] != binding["account_ref"]
+        or intent["paper_endpoint"] != "https://paper-api.alpaca.markets"
+        or intent["purpose"] != "ENGINEERING_TEST"
+    ):
+        raise JournalError("source close canonical request differs")
+    for name in (
+        "preparation_ref",
+        "entry_reservation_ref",
+        "emergency_binding_ref",
+        "prior_risk_ref",
+    ):
+        ref = receipt[name]
+        if (
+            not isinstance(ref, list)
+            or len(ref) != 2
+            or type(ref[0]) is not int
+            or not 0 < ref[0] <= item["horizon"]
+            or type(ref[1]) is not str
+        ):
+            raise JournalError("source close lineage reference schema differs")
+        source = journal.read_event(ref[0])
+        if (
+            source is None
+            or source[0].payload_ref != ref[1]
+            or not source[0].visible_at(at)
+            or source[0].external_clock_conflict
+        ):
+            raise JournalError("source close lineage reference unavailable")
+    prep_saved = journal.read_event(receipt["preparation_ref"][0])
+    assert prep_saved is not None
+    prep = decode_broker_json(prep_saved[1])
+    if (
+        not isinstance(prep, dict)
+        or prep_saved[0].source_id != "ALPACA_CROSSED_STOP_RESEARCH"
+        or prep_saved[0].event_kind != "SOURCE_PREPARE"
+        or prep.get("binding") != binding
+        or prep["data"]["close_id"] != receipt["close_id"]
+        or prep["data"]["receipt"]["crossing"]["entry_reservation_ref"]
+        != receipt["entry_reservation_ref"]
+        or prep["data"]["receipt"]["crossing"]["emergency_risk_binding"]["binding_ref"]
+        != receipt["emergency_binding_ref"]
+    ):
+        raise JournalError("source close original preparation linkage differs")
+    reservation = prep["data"]["receipt"].get("reservation")
+    if (
+        not isinstance(reservation, dict)
+        or set(reservation)
+        != {"contract", "close_id", "portions", "quantity", "request"}
+        or reservation["contract"] != HANDOFF_RESERVATION_CONTRACT
+        or reservation["close_id"] != receipt["close_id"]
+        or reservation["portions"] != receipt["portions"]
+        or reservation["request"] != request
+        or Fraction(reservation["quantity"]) != Fraction(str(request["qty"]))
+    ):
+        raise JournalError("source close exact anchored reservation differs")
+    return receipt | {"handoff_ref": [event.sequence, event.payload_ref]}

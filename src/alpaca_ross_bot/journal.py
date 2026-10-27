@@ -1176,6 +1176,97 @@ class Journal:
             self._db.rollback()
             raise
 
+    def _reserve_source_close_intent_locked(
+        self,
+        client_order_id: str,
+        intent: Mapping[str, object],
+        *,
+        preparation_ref: list[object],
+        binding: Mapping[str, object],
+        close_id: str,
+    ) -> None:
+        """Internal CrossedStop writer primitive; never a send-guard exception."""
+        self.require_private_order_state()
+        if not self._db.in_transaction:
+            raise JournalError("source close intent requires the existing writer lock")
+        if set(intent) != {
+            "paper_endpoint",
+            "paper_account_ref",
+            "purpose",
+            "request_body",
+        }:
+            raise JournalError("canonical source close intent schema required")
+        body = intent["request_body"]
+        if not isinstance(body, str):
+            raise JournalError("canonical source close request required")
+        request = validate_saved_request(body)
+        canonical = json.dumps(
+            request, sort_keys=True, separators=(",", ":"), allow_nan=False
+        )
+        expected = (
+            "cs-"
+            + hashlib.sha256(
+                json.dumps(
+                    [dict(binding), close_id], sort_keys=True, separators=(",", ":")
+                ).encode()
+            ).hexdigest()[:40]
+        )
+        if (
+            body != canonical
+            or client_order_id != expected
+            or request.get("client_order_id") != client_order_id
+            or request.get("symbol") != binding.get("symbol")
+            or request.get("side") != "sell"
+            or request.get("type") != "market"
+            or intent["paper_endpoint"] != "https://paper-api.alpaca.markets"
+            or intent["paper_account_ref"] != self.read_paper_account_ref()
+            or binding.get("account_ref") != intent["paper_account_ref"]
+            or intent["purpose"] != "ENGINEERING_TEST"
+            or len(preparation_ref) != 2
+            or type(preparation_ref[0]) is not int
+        ):
+            raise JournalError("source close intent identity differs")
+        saved = self.read_event(preparation_ref[0])
+        if (
+            saved is None
+            or saved[0].payload_ref != preparation_ref[1]
+            or saved[0].source_id != "ALPACA_CROSSED_STOP_RESEARCH"
+            or saved[0].event_kind != "SOURCE_PREPARE"
+            or saved[0].feed != "paper"
+        ):
+            raise JournalError("source close preparation reference unavailable")
+        prepared = json.loads(saved[1])
+        if (
+            prepared["binding"] != dict(binding)
+            or prepared["data"]["close_id"] != close_id
+            or prepared["data"]["receipt"]["dispatch_authorized"] is not False
+        ):
+            raise JournalError("source close preparation scope differs")
+        reservation = prepared["data"]["receipt"].get("reservation")
+        if (
+            not isinstance(reservation, dict)
+            or set(reservation)
+            != {"contract", "close_id", "portions", "quantity", "request"}
+            or reservation["contract"] != "SOURCE_CLOSE_INTENT_HANDOFF_V1"
+            or reservation["close_id"] != close_id
+            or reservation["request"] != request
+        ):
+            raise JournalError(
+                "source close intent must match the anchored reservation"
+            )
+        if (
+            self.read_order_intent(client_order_id) is not None
+            or client_order_id in self._native_oco_request_client_ids()
+        ):
+            raise JournalError("source close client ID is already reserved")
+        self._db.execute(
+            "INSERT INTO order_intents(client_order_id, intent_json) VALUES (?, ?)",
+            (
+                client_order_id,
+                json.dumps(dict(intent), sort_keys=True, allow_nan=False),
+            ),
+        )
+
     def read_order_intent(self, client_order_id: str) -> object | None:
         row = self._db.execute(
             "SELECT intent_json FROM order_intents WHERE client_order_id=?",

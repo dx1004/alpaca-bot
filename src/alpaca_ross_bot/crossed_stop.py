@@ -1,7 +1,8 @@
 """Durable crossed-stop research decisions, NOT source or broker qualification.
 
-Reuses the OCO lot book and private journal. No transport, callback, credentials,
-order-intent primitive, risk release or authority to modify old protection.
+Reuses the OCO lot book and private journal. An explicit anchored handoff can
+reserve a local canonical intent; no transport, credentials, risk release or
+authority to modify old protection is provided.
 """
 
 from __future__ import annotations
@@ -151,6 +152,37 @@ class DeclaredExitEvidence:
         return parsed
 
 
+def _validate_crossed_stop_item(binding: dict[str, Any], item: dict[str, Any]) -> None:
+    if set(item) != {"binding", "kind", "key", "at", "data", "horizon"}:
+        raise JournalError("exact crossed-stop event schema required")
+    kind, data = item["kind"], item["data"]
+    keys = {
+        "SOURCE_OBSERVE": {"receipt"},
+        "SOURCE_PREPARE": {"close_id", "request", "receipt"},
+        "SOURCE_BIND_INTENT": {"close_id", "receipt"},
+        "OBSERVE": {"evidence"},
+        "PREPARE": {"close_id", "evidence"},
+        "ATTEMPT": {"close_id", "attempt_id", "evidence"},
+        "EXECUTION": {"close_id", "execution_id", "quantity"},
+    }
+    if kind not in keys or type(data) is not dict or set(data) != keys[kind]:
+        raise JournalError("exact crossed-stop operation schema required")
+    identity = json.loads(item["key"])
+    if (
+        type(identity) is not list
+        or len(identity) != 3
+        or identity[:2] != [binding["entry_scope"], kind]
+        or _json(identity).decode() != item["key"]
+    ):
+        raise JournalError("crossed-stop operation key differs")
+    _text(identity[2])
+    if (
+        kind not in {"OBSERVE", "SOURCE_OBSERVE"}
+        and identity[2] != data["execution_id" if kind == "EXECUTION" else "close_id"]
+    ):
+        raise JournalError("crossed-stop command identity differs")
+
+
 class CrossedStopJournal:
     """Immutable replay and transaction-fenced, non-dispatchable exit proposals."""
 
@@ -192,34 +224,7 @@ class CrossedStopJournal:
         }
 
     def _validate_item(self, item: dict[str, Any]) -> None:
-        if set(item) != {"binding", "kind", "key", "at", "data", "horizon"}:
-            raise JournalError("exact crossed-stop event schema required")
-        kind, data = item["kind"], item["data"]
-        keys = {
-            "SOURCE_OBSERVE": {"receipt"},
-            "SOURCE_PREPARE": {"close_id", "request", "receipt"},
-            "OBSERVE": {"evidence"},
-            "PREPARE": {"close_id", "evidence"},
-            "ATTEMPT": {"close_id", "attempt_id", "evidence"},
-            "EXECUTION": {"close_id", "execution_id", "quantity"},
-        }
-        if kind not in keys or type(data) is not dict or set(data) != keys[kind]:
-            raise JournalError("exact crossed-stop operation schema required")
-        identity = json.loads(item["key"])
-        if (
-            type(identity) is not list
-            or len(identity) != 3
-            or identity[:2] != [self.binding["entry_scope"], kind]
-            or _json(identity).decode() != item["key"]
-        ):
-            raise JournalError("crossed-stop operation key differs")
-        _text(identity[2])
-        if (
-            kind not in {"OBSERVE", "SOURCE_OBSERVE"}
-            and identity[2]
-            != data["execution_id" if kind == "EXECUTION" else "close_id"]
-        ):
-            raise JournalError("crossed-stop command identity differs")
+        _validate_crossed_stop_item(self.binding, item)
 
     def _reduce(
         self, state: dict[str, Any], item: dict[str, Any], conflict: bool
@@ -253,8 +258,6 @@ class CrossedStopJournal:
             state.setdefault("source_observations", []).append(receipt)
             state["latched"] = state["latched"] or receipt["crossing_observed"]
         elif kind == "SOURCE_PREPARE":
-            from .crossed_stop_preparation import derive_source_preparation
-
             if (
                 state["origin"] != _SOURCE_ORIGIN
                 or not state["latched"]
@@ -262,8 +265,8 @@ class CrossedStopJournal:
                 or set(model.incidents) - {"FINAL_TARGET_TOPOLOGY_INVALID"}
             ):
                 raise JournalError("clean source-latched emergency scope required")
-            receipt = derive_source_preparation(
-                self.owner, horizon=item["horizon"], at=at, request=data["request"]
+            receipt = self._source_preparation_receipt(
+                state, data["close_id"], item["horizon"], at, data["request"]
             )
             if _json(receipt) != _json(data["receipt"]):
                 raise JournalError(
@@ -277,6 +280,17 @@ class CrossedStopJournal:
                 item["horizon"],
             )
             closes[data["close_id"]]["source_preparation"] = receipt
+        elif kind == "SOURCE_BIND_INTENT":
+            receipt = self._source_intent_receipt(
+                state, _text(data["close_id"]), item["horizon"], at
+            )
+            if receipt != data["receipt"]:
+                raise JournalError("source intent handoff differs from original prefix")
+            intent = receipt["intent"]
+            cid = json.loads(intent["request_body"])["client_order_id"]
+            if self.journal.read_order_intent(cid) != intent:
+                raise JournalError("source intent handoff is missing or changed")
+            closes[data["close_id"]]["source_intent_binding"] = receipt
         elif state["origin"] == _SOURCE_ORIGIN:
             raise JournalError("declared exit inputs cannot clear source crossing")
         elif kind in {"OBSERVE", "PREPARE", "ATTEMPT"}:
@@ -357,6 +371,158 @@ class CrossedStopJournal:
             raise JournalError("unknown crossed-stop operation")
         state["last_at"] = item["at"]
         return state
+
+    def _source_preparation_receipt(
+        self,
+        state: dict[str, Any],
+        close_id: str,
+        horizon: int,
+        at: datetime,
+        request: dict[str, Any],
+        *,
+        require_current_census: bool = False,
+    ) -> dict[str, Any]:
+        from .crossed_stop_preparation import (
+            HANDOFF_RESERVATION_CONTRACT,
+            derive_source_preparation,
+        )
+
+        receipt = derive_source_preparation(
+            self.owner,
+            horizon=horizon,
+            at=at,
+            request=request,
+            _require_current_census=require_current_census,
+        )
+        if request.get("reservation_contract") == HANDOFF_RESERVATION_CONTRACT:
+            view = self.owner.read_verified_at(horizon, at)
+            assert view is not None
+            projected = json.loads(_json(state))
+            self._reserve_close(
+                projected,
+                view.model,
+                close_id,
+                _fraction(receipt["reported_available_quantity"]),
+                horizon,
+            )
+            close = projected["closes"][close_id]
+            receipt["reservation"] = {
+                "contract": HANDOFF_RESERVATION_CONTRACT,
+                "close_id": close_id,
+                "portions": close["portions"],
+                "quantity": close["quantity"],
+                "request": close["request"],
+            }
+        return receipt
+
+    def _source_intent_receipt(
+        self, state: dict[str, Any], close_id: str, horizon: int, at: datetime
+    ) -> dict[str, Any]:
+        """Pin a local canonical intent, not send/fill ownership or release."""
+        from pathlib import Path
+
+        from .account_risk_owner import AccountRiskOwner
+
+        close = state["closes"].get(close_id)
+        if (
+            state["origin"] != _SOURCE_ORIGIN
+            or not state["latched"]
+            or state["conflicts"]
+            or not isinstance(close, dict)
+            or "source_preparation" not in close
+            or close["attempt"] is not None
+            or _fraction(close["filled"]) != 0
+        ):
+            raise JournalError("clean unattempted source reservation required")
+        from .crossed_stop_preparation import HANDOFF_RESERVATION_CONTRACT
+
+        prep = close["source_preparation"]
+        reservation = prep.get("reservation")
+        if (
+            not isinstance(reservation, dict)
+            or set(reservation)
+            != {"contract", "close_id", "portions", "quantity", "request"}
+            or reservation["contract"] != HANDOFF_RESERVATION_CONTRACT
+            or reservation["close_id"] != close_id
+            or reservation["portions"] != close["portions"]
+            or reservation["quantity"] != close["quantity"]
+            or reservation["request"] != close["request"]
+        ):
+            raise JournalError("source preparation lacks an exact handoff reservation")
+        prepared = [
+            (event, json.loads(raw))
+            for event, raw in self.journal.read_crossed_stop_events()
+            if event.sequence <= horizon
+            and event.event_kind == "SOURCE_PREPARE"
+            and json.loads(raw).get("binding") == self.binding
+            and json.loads(raw)["data"]["close_id"] == close_id
+            and json.loads(raw)["data"]["receipt"] == prep
+        ]
+        if len(prepared) != 1:
+            raise JournalError("unique original source preparation required")
+        event, _ = prepared[0]
+        view = self.owner.read_verified_at(horizon, at)
+        if (
+            view is None
+            or view.entry_binding is None
+            or set(view.issues) - {"FINAL_TARGET_TOPOLOGY_INVALID"}
+        ):
+            raise JournalError("source intent lot ownership is unresolved")
+        risk, refs = AccountRiskOwner._read_native_causal_evidence_at(
+            self.journal,
+            self.binding["account_ref"],
+            at,
+            Path(view.entry_binding["fee_policy"]),
+            through_sequence=horizon,
+        )
+        held = None if risk is None else risk.get("held")
+        crossing = prep["crossing"]
+        if (
+            risk is None
+            or not refs
+            or not isinstance(held, dict)
+            or held.get("client_order_id") != self.binding["entry_scope"]
+            or held.get("symbol") != self.binding["symbol"]
+            or risk.get("veto") is not False
+            or "quantity_incident" in held
+            or not set(risk.get("issues", []))
+            <= {
+                "NATIVE_FINALITY_PENDING",
+                "DAILY_STOP_LATCHED",
+                "FINAL_TARGET_TOPOLOGY_INVALID",
+            }
+            or risk.get("source_snapshot_qualified") is not True
+            or held.get("emergency_execution_binding", {}).get("binding_ref")
+            != crossing["emergency_risk_binding"]["binding_ref"]
+            or view.entry_binding["reservation_ref"]
+            != crossing["entry_reservation_ref"]
+        ):
+            raise JournalError("source handoff cannot change the original risk slot")
+        prior = self.journal.read_event(refs[-1])
+        assert prior is not None
+        return {
+            "schema": 1,
+            "classification": "LOCAL_SOURCE_CLOSE_INTENT_NOT_SEND_OR_FILL_OWNERSHIP",
+            "reservation_contract": HANDOFF_RESERVATION_CONTRACT,
+            "decision_at": at.isoformat(),
+            "source_horizon": horizon,
+            "binding": self.binding,
+            "close_id": close_id,
+            "preparation_ref": [event.sequence, event.payload_ref],
+            "entry_reservation_ref": crossing["entry_reservation_ref"],
+            "emergency_binding_ref": crossing["emergency_risk_binding"]["binding_ref"],
+            "prior_risk_ref": [prior[0].sequence, prior[0].payload_ref],
+            "portions": close["portions"],
+            "intent": {
+                "paper_endpoint": "https://paper-api.alpaca.markets",
+                "paper_account_ref": self.binding["account_ref"],
+                "purpose": "ENGINEERING_TEST",
+                "request_body": _json(close["request"]).decode(),
+            },
+            "source_fill_ownership_accepted": False,
+            "dispatch_authorized": False,
+            "runtime_authorized": False,
+        }
 
     def _reserve_close(
         self,
@@ -520,7 +686,11 @@ class CrossedStopJournal:
                     old = json.loads(raw)
                     if old["key"] == key and old["binding"] == self.binding:
                         item["horizon"] = old["horizon"]
-                        if kind in {"SOURCE_OBSERVE", "SOURCE_PREPARE"}:
+                        if kind in {
+                            "SOURCE_OBSERVE",
+                            "SOURCE_PREPARE",
+                            "SOURCE_BIND_INTENT",
+                        }:
                             data["receipt"] = old["data"]["receipt"]
                         break
             else:
@@ -532,15 +702,38 @@ class CrossedStopJournal:
                         self.owner, horizon=item["horizon"], at=at
                     )
                 elif kind == "SOURCE_PREPARE":
-                    from .crossed_stop_preparation import derive_source_preparation
-
-                    data["receipt"] = derive_source_preparation(
-                        self.owner,
-                        horizon=item["horizon"],
-                        at=at,
-                        request=data["request"],
-                        _require_current_census=True,
+                    data["receipt"] = self._source_preparation_receipt(
+                        result,
+                        data["close_id"],
+                        item["horizon"],
+                        at,
+                        data["request"],
+                        require_current_census=True,
                     )
+                elif kind == "SOURCE_BIND_INTENT":
+                    data["receipt"] = self._source_intent_receipt(
+                        result, data["close_id"], item["horizon"], at
+                    )
+                    from pathlib import Path
+
+                    from .account_risk_owner import AccountRiskOwner
+
+                    view = self.owner.read_verified_at(item["horizon"], at)
+                    assert view is not None and view.entry_binding is not None
+                    risk_record = self.journal.read_event(
+                        data["receipt"]["prior_risk_ref"][0]
+                    )
+                    assert risk_record is not None
+                    original_census = json.loads(risk_record[1])["census"]
+                    current = AccountRiskOwner(
+                        self.journal,
+                        self.binding["account_ref"],
+                        Path(view.entry_binding["fee_policy"]),
+                    )
+                    if _json(current._census()) != _json(original_census):
+                        raise JournalError(
+                            "local census changed before source intent handoff"
+                        )
             raw = _json(item)
             digest = "sha256:" + hashlib.sha256(raw).hexdigest()
             if key in result["conflicts"] and digest in seen.get(key, set()):
@@ -551,6 +744,17 @@ class CrossedStopJournal:
             nonlocal result
             with causal_risk_verification_scope(self.journal):
                 assert result is not None
+                if kind == "SOURCE_BIND_INTENT" and not conflict:
+                    receipt = data["receipt"]
+                    intent = receipt["intent"]
+                    cid = json.loads(intent["request_body"])["client_order_id"]
+                    self.journal._reserve_source_close_intent_locked(
+                        cid,
+                        intent,
+                        preparation_ref=receipt["preparation_ref"],
+                        binding=self.binding,
+                        close_id=data["close_id"],
+                    )
                 result = self._reduce(result, item, conflict)
                 return result
 
@@ -597,25 +801,30 @@ class CrossedStopJournal:
         status_record_index: int,
         max_asset_age: timedelta,
         max_status_age: timedelta,
+        for_handoff: bool = False,
     ) -> dict[str, Any]:
         """Reserve raw-referenced lots locally; not no-halt or dispatch clearance."""
-        from .crossed_stop_preparation import preparation_request
+        from .crossed_stop_preparation import (
+            HANDOFF_RESERVATION_CONTRACT,
+            preparation_request,
+        )
 
+        if type(for_handoff) is not bool:
+            raise JournalError("explicit boolean handoff preparation option required")
+        request: dict[str, Any] = preparation_request(
+            asset_sequence,
+            status_sequence,
+            status_record_index,
+            max_asset_age,
+            max_status_age,
+        )
+        if for_handoff:
+            request["reservation_contract"] = HANDOFF_RESERVATION_CONTRACT
         return self._record(
             "SOURCE_PREPARE",
             close_id,
             at,
-            {
-                "close_id": close_id,
-                "request": preparation_request(
-                    asset_sequence,
-                    status_sequence,
-                    status_record_index,
-                    max_asset_age,
-                    max_status_age,
-                ),
-                "receipt": None,
-            },
+            {"close_id": close_id, "request": request, "receipt": None},
         )
 
     def prepare_native_source(
@@ -628,25 +837,39 @@ class CrossedStopJournal:
         status_record_index: int,
         max_asset_age: timedelta,
         max_status_age: timedelta,
+        for_handoff: bool = False,
     ) -> dict[str, Any]:
         """Reserve only source-owned unallocated lots; no dispatch clearance."""
-        from .crossed_stop_preparation import native_preparation_request
+        from .crossed_stop_preparation import (
+            HANDOFF_RESERVATION_CONTRACT,
+            native_preparation_request,
+        )
 
+        if type(for_handoff) is not bool:
+            raise JournalError("explicit boolean handoff preparation option required")
+        request = native_preparation_request(
+            asset_sequence,
+            status_sequence,
+            status_record_index,
+            max_asset_age,
+            max_status_age,
+        )
+        if for_handoff:
+            request["reservation_contract"] = HANDOFF_RESERVATION_CONTRACT
         return self._record(
             "SOURCE_PREPARE",
             close_id,
             at,
-            {
-                "close_id": close_id,
-                "request": native_preparation_request(
-                    asset_sequence,
-                    status_sequence,
-                    status_record_index,
-                    max_asset_age,
-                    max_status_age,
-                ),
-                "receipt": None,
-            },
+            {"close_id": close_id, "request": request, "receipt": None},
+        )
+
+    def bind_source_intent(self, close_id: str, at: datetime) -> dict[str, Any]:
+        """Atomically persist the prepared canonical intent; all sends stay barred."""
+        return self._record(
+            "SOURCE_BIND_INTENT",
+            close_id,
+            at,
+            {"close_id": close_id, "receipt": None},
         )
 
     def mark_attempt(

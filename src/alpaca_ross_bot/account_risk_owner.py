@@ -1061,6 +1061,42 @@ class AccountRiskOwner:
                 raise JournalError(
                     "exit request differs from declared frozen risk plan"
                 )
+            from .crossed_stop_preparation import source_close_handoff_lineage
+
+            lineage = source_close_handoff_lineage(
+                self.journal, cid, through_sequence=item["source_horizon"], at=at
+            )
+            if lineage is not None:
+                if (
+                    role != "CLOSE"
+                    or held["client_order_id"] != lineage["binding"]["entry_scope"]
+                    or held["symbol"] != lineage["binding"]["symbol"]
+                    or held.get("emergency_execution_binding", {}).get("binding_ref")
+                    != lineage["emergency_binding_ref"]
+                ):
+                    raise JournalError(
+                        "source close cannot be reparented to another risk slot"
+                    )
+                reserved = self.journal.read_event(lineage["entry_reservation_ref"][0])
+                assert reserved is not None
+                origin = json.loads(reserved[1])
+                if (
+                    origin.get("kind") != "RESERVE"
+                    or origin.get("account_ref") != self.account_ref
+                    or origin.get("plan", {}).get("client_order_id")
+                    != held["client_order_id"]
+                    or _bytes(origin.get("research_signal"))
+                    != _bytes(held.get("research_signal"))
+                ):
+                    raise JournalError("source close original risk reservation differs")
+                held.setdefault("source_close_bindings", {})[cid] = {
+                    "handoff_ref": lineage["handoff_ref"],
+                    "preparation_ref": lineage["preparation_ref"],
+                    "entry_reservation_ref": lineage["entry_reservation_ref"],
+                    "portions": lineage["portions"],
+                    "source_fill_ownership_accepted": False,
+                    "runtime_authorized": False,
+                }
             prior = held["exits"].get(cid)
             if prior is not None and prior != role:
                 raise JournalError("exit role cannot be reassigned")
