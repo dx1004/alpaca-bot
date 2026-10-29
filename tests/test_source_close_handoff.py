@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from datetime import timedelta
 from fractions import Fraction
 from threading import Barrier
@@ -365,3 +366,123 @@ def test_racing_independent_writer_connections_create_one_canonical_handoff(
         == first["closes"]["residual"]["source_intent_binding"]["intent"]
     )
     assert not source.journal.has_order_send_attempt(cid)
+
+
+def test_reported_fill_without_source_send_fence_cannot_release_risk(
+    ready: Any,
+) -> None:
+    """Injected reports cannot turn a local unsent handoff into owned disposal."""
+    source, risk, _, emergency, at, _, _ = ready
+    state, cid = handoff(ready)
+    later = at + timedelta(seconds=1)
+    risk.bind_exit("unsent-source-close-role", later, cid, "CLOSE")
+    before = risk.view()
+    assert before is not None
+    # Source-shaped facts are deliberately unexpected: no send marker is planted
+    # and no transport, permission check or source proof is mocked.
+    source.order(cid, later, "filled", 2)
+    source.fill(cid, later, 2, "9.49")
+    from alpaca_ross_bot.incident_risk import IncidentRiskRequest
+    from alpaca_ross_bot.order_reconciliation import RestBatch
+    from alpaca_ross_bot.paper_order_http import PaperHttpResponse
+    from alpaca_ross_bot.risk_account_inputs import ENDPOINT, KIND, SCHEMA, SOURCE
+    from test_account_risk_owner import RECON_POLICY
+    from test_risk_ledger_audit import ACCOUNT, REF, calendar, request
+
+    # The ordinary SourceAccount.selection helper requires MATCHED and therefore
+    # cannot exercise this deliberately inconsistent capture. Retain real REST
+    # differences and an independently stored account capture instead.
+    report = source.reconciler.apply_rest_batch(
+        RestBatch(
+            REF,
+            later,
+            later,
+            source.reconciler.view()["watermark"],
+            (),
+            (),
+            {
+                key: PaperHttpResponse(200, json.dumps(row).encode())
+                for key, row in source.orders.items()
+            },
+            {
+                str(row["id"]): tuple(
+                    fill for fill in source.fills if fill["order_id"] == row["id"]
+                )
+                for row in source.orders.values()
+            },
+            True,
+            True,
+        ),
+        RECON_POLICY,
+        at=later,
+    )
+    assert report.status == "DIFFERENCES"
+    rows = [
+        request(
+            "/v2/account",
+            ACCOUNT
+            | {
+                "cash": "498.98",
+                "equity": "498.98",
+                "buying_power": "498.98",
+                "non_marginable_buying_power": "498.98",
+                "multiplier": "1",
+            },
+            later,
+        ),
+        request("/v2/positions", [], later),
+        request("/v2/orders?status=open&limit=500&nested=false", [], later),
+        request(
+            "/v2/account/activities?direction=desc&page_size=100", source.fills, later
+        ),
+        request(
+            "/v2/account/activities?direction=desc&page_size=100&page_token="
+            + str(source.fills[-1]["id"]),
+            [],
+            later,
+        ),
+    ]
+    capture = source.journal.append_next(
+        source_id=SOURCE,
+        feed="paper",
+        event_kind=KIND,
+        payload=json.dumps(
+            {
+                "schema": SCHEMA,
+                "account_ref": REF,
+                "endpoint": ENDPOINT,
+                "requests": rows,
+            }
+        ).encode(),
+        system_first_seen_at=later,
+        processed_at=later,
+    ).sequence
+    selection = replace(
+        IncidentRiskRequest.from_dict(before["last_snapshot"]["selection"]),
+        capture_sequence=capture,
+        calendar_sequence=calendar(source.journal, later),
+        mark_refs=(),
+    )
+    risk.observe("unsent-source-close-report", selection, later)
+    after = risk.view()
+    assert after is not None
+    assert not after["last_snapshot"]["qualified"]
+    assert after["held"] is not None
+    assert after["held"]["client_order_id"] == CID
+    assert after["completed"] == before["completed"]
+    assert after["pending_open_loss_reserve"] == before["pending_open_loss_reserve"]
+    assert after["additional_local_cash_hold"] == before["additional_local_cash_hold"]
+    assert Fraction(after["capacity"]) == 0
+    assert not source.journal.has_order_send_attempt(cid)
+    assert emergency.view()["closes"]["residual"]["filled"] == "0"
+    assert (
+        state["closes"]["residual"]["source_intent_binding"][
+            "source_fill_ownership_accepted"
+        ]
+        is False
+    )
+    differences = report.differences
+    assert any(
+        row["code"] == "INTENT_NOT_SENT" and row["subject"] == cid
+        for row in differences
+    )

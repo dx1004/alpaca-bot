@@ -4363,3 +4363,59 @@ finality, protection-preserving disposal/recovery, current-proof throughput,
 actual source/risk admission and W3-07 real isolated cycles. First/late-fill and
 sibling-stop continuity are not established here. W3-06/07/08 parents remain open;
 W3-08 freeze waits for accepted dependencies.
+
+
+### Unsent source-close report fault verification — 2026-10-29 UTC
+
+The preceding committed handoff increment was progress. Current worktree audit
+found no new worker source edits. Both delegated observer/finality investigations
+failed before returning an implementation or review. The new work below is a
+coordinator-run deterministic fault test of existing behavior, not a substitute
+research/review result or an accepted source-close execution path.
+
+The handoff has no send marker: generic source-emergency send guards still deny
+it. OrderReconciler includes the saved intent in its census but emits
+INTENT_NOT_SENT when that intent has not consumed a durable attempt. Therefore
+canonical intent and CLOSE-role registration alone cannot establish positive
+execution/fill ownership. A future dedicated boundary must retain the original
+anchored portions, account/entry identity, current source/session eligibility,
+once-only intent/fence, uncertain-result recovery and existing protection; no
+generic send exception or planted operational marker has been introduced.
+
+New test `tests/test_source_close_handoff.py::test_reported_fill_without_source_send_fence_cannot_release_risk`
+uses the existing source preparation and real risk CLOSE binding, then retains
+synthetic filled-order/activity and flat-position reports without a send marker.
+It directly persists a real DIFFERENCES REST batch and separate raw account
+capture; no proof body, send fence, transport or permission check is mocked.
+INTENT_NOT_SENT remains explicit; source risk qualification is false; the original
+held entry, completed ledger, loss reserve and additional cash hold are preserved;
+capacity is zero. Crossed-stop filled quantity remains zero and source-fill
+ownership stays unaccepted. This is unexpected-report fault evidence, not broker
+disposal or safe-cleanup success.
+
+`rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider tests/test_source_close_handoff.py -k reported_fill_without_source_send_fence -q -x`:
+1 passed, 17 deselected in 33.63s. The first attempt used a MATCHED-only fixture
+helper and failed on the intended DIFFERENCES report. The second correctly
+retained the negative raw capture but compared canonical string capacity with an
+integer. Both were test-construction issues; the final test uses a direct REST
+batch and exact rational comparison. Production behavior was not changed.
+Scoped Ruff check/format (`--no-cache`) and strict mypy using
+`/tmp/alpaca-unsent-close-audit-mypy` passed for this test file. No full-module or
+repository rerun is claimed; all local test/type handles are terminal.
+
+Environment limitation packet:
+
+- status: ENV_FAULT
+- category: MODEL_WORKER_QUOTA
+- evidence: both late_entry_binding_audit and native_entry_final_review returned usage-limit errors; list_agents confirmed both errored. The provider message reported November 2, 2026 07:58 as a retry time without a timezone. Neither supplied the requested new observer/finality conclusion.
+- affected_scope: delegated source-close implementation investigation and independent finality/review work; required research/review acceptance remains unresolved.
+- safe_to_continue: true only for isolated local deterministic inspection/tests that use no broker/account inputs and make no dependent research or release claims.
+- recommended_action: restore model capacity before resuming the affected workers and then verify their actual output. No worker retries, account upgrade/purchase, global configuration reset or silent model substitution was attempted.
+
+The coordinator checked this fault test; an independent review of this new case
+was unavailable and is not claimed. It changes no production gate or runtime
+contract. Real W3-02 admission, source-bound close attempt/fill ownership,
+protection-preserving cleanup, native residual finality, current-proof throughput
+and actual W3-07 cycles remain open. W3-06/07/08 stay incomplete, Ross remains a
+separate baseline and IEX remains NOT_SIP_EQUIVALENT. No credentials, broker
+connection/order/cancel, service or formal paper operation occurred.

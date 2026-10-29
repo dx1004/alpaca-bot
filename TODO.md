@@ -236,6 +236,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   - [ ] Operational source-emergency handoff: complete source-bound close execution/fill ownership, native residual finality and accepted protection-preserving disposal/recovery. Source ATTEMPT stays disabled until source, broker protection/reservation and release gates pass. Current-proof throughput remains unqualified: prior preparation added 54 current rebuilds across approximately 62.4s. Preserve the original slot and all existing stops.
 
+  Unsent-report fault verified 2026-10-29 UTC: raw filled/flat reports without the source-close send fence remain unqualified and retain the original reservation; one focused case and scoped static checks passed. [Evidence and model-capacity limitation](docs/week3-evidence.md#unsent-source-close-report-fault-verification--2026-10-29-utc). Positive source-close admission/fill ownership and independent observer/finality review remain unresolved; no parent gate or production logic changed.
+
 - [!] **W3-07 [P1] Run isolated Alpaca paper API engineering tests**
   Depends: W3-04..W3-06, credentials available. Minimal non-strategy orders in isolated state only.  
   Accept: complete order lifecycle/reconciliation evidence; test activity cannot enter the formal paper sample. If credentials are unavailable, mark blocked without fabricating acceptance.
