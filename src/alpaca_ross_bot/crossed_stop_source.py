@@ -33,6 +33,7 @@ def derive_source_crossing(
     *,
     horizon: int,
     at: datetime,
+    _causal_risk: bool = False,
 ) -> dict[str, Any]:
     """Caller holds a snapshot/write lock; every accepted reference predates it."""
     view = owner.read_verified_at(horizon, at)
@@ -41,7 +42,12 @@ def derive_source_crossing(
     bound = view.entry_binding
     model = view.model
     fee_policy = Path(bound["fee_policy"])
-    risk, risk_refs = AccountRiskOwner.read_evidence_at(
+    reader = (
+        AccountRiskOwner._read_native_causal_evidence_at
+        if _causal_risk
+        else AccountRiskOwner.read_evidence_at
+    )
+    risk, risk_refs = reader(
         owner.journal,
         model.account_ref,
         at,

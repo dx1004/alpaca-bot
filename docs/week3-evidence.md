@@ -4730,3 +4730,73 @@ and test evidence was retained; no failed/unexecuted delegated stage was claimed
 as complete. The source-producer files remain uncommitted because their known
 review and source-qualification failures are unresolved. This draft cannot grant
 dispatch, risk release, operational protection or formal paper authority.
+
+
+### Injected source-close once provenance — 2026-10-29 UTC
+
+The previously unaccepted standalone producer now passes its scoped acceptance.
+It establishes an explicitly injected local attempt and raw callback outcome,
+not broker transmission, a source FILL census, protection continuity or release.
+The ordinary generic send guard, simple send-marker table, canonical crossed-stop
+lot book and account-risk latch are unchanged. There is no HTTP/credential/default
+transport or runner/CLI wiring; callback evidence cannot become builtin origin.
+
+**Exact post-handoff bridge.** Initial preparation remains entry-only. The new
+path independently replays the immediately preceding risk prefix, rejects dirty
+pre-BIND conditions, then verifies the complete metadata-only BIND_EXIT delta:
+one exact unsent CLOSE intent/census addition and its anchored exit/binding.
+Original quantities, lots, reserves, funds, net and reservation ancestry remain
+unchanged; the deterministic capacity veto is retained. REFRESH_REQUIRED alone
+is never sufficient. The receipt retains the original qualified snapshot and its
+observation clock, with separate before/after/census hashes and BIND references;
+it does not manufacture a fresh risk observation. Current census, later unassessed
+account/order/native captures, source ownership and the original explicit age
+bounds still gate first invocation. Default preparation and old receipts retain
+their previous semantics.
+
+**Once fence and clocks.** A private BEGIN IMMEDIATE writer records actual
+qualification and recording clocks before invoking the required injected callback.
+Its proof scope ends before commit/rollback. Source-age limits come from the
+existing quote event/receipt policy and explicit account/calendar/metadata/asset/
+status inputs; the official RTH close remains exclusive. Expiration after commit
+records LOCAL_NOT_INVOKED and retains the consumed fence. Crash, timeout, invalid
+bounded responses and failed outcome writes cannot enable replay. Callback bytes
+are preserved exactly within the explicit cap. Reopening reconstructs raw events,
+semantic time bounds, projections and dedupe references. The engineering SCOPE
+must be the first journal event. Retained foreign entry scopes are checked with
+their own deterministic OCO readers, without new BIND writes.
+
+Review first requested actual-clock, prepopulation-scope and retained-owner fixes,
+then found a writer/replay time asymmetry. Final replay also checks PRECALL
+freshness at recorded_at and OUTCOME completion after the durable PRECALL.
+Independent focused re-review approved those corrections. The reviewer ran no
+tests and did not grant operational authority.
+
+Final verification and precise scope:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_crossed_stop_source_attempts.py`: final 23 passed in 626.29s. Includes two-connection once racing, retry/crash/unknown/outcome-failure retention, response bounds, actual-clock and proof/append/after-commit expiry, scope-first validation, dirty/repeated bindings, forged send rows, unrelated commitments, changed censuses and retained original histories. Fully rehashed event/envelope/cache/projection mutations reject expired PRECALL recording and completion before the durable PRECALL.
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_crossed_stop_preparation.py tests/test_source_close_handoff.py tests/test_crossed_stop_source.py`: final 67 passed in 600.21s, preserving the default preparation, original handoff and source-risk behavior.
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -x -p no:cacheprovider tests/test_native_crossed_stop_source_attempts.py`: 1 passed in 160.01s before only the two stricter replay guards. Native original OCO allocations, unallocated basket, risk state and old protection references remain unchanged; no simple send row or source fill is adopted. The final-byte reader subsequently reopened that exact retained synthetic journal and rebuilt both events with all hashes/caches intact and the database unchanged. Its redacted receipt is `/tmp/alpaca-source-attempt-final-native-reopen.json`; no scenario was rebuilt merely to repeat setup.
+- Final scoped Ruff check/format with `--no-cache`, strict mypy with `/tmp/alpaca-source-attempt-mypy`, and git whitespace checks pass for the three production and two test files. All test/type handles above are terminal. Reported durations include fixtures/full replay; they are not runtime freshness or throughput acceptance.
+
+The history test deliberately retains real INTENT_NOT_SENT reconciliation
+differences after the local unsent CLOSE and later raw captures; it never forges
+a send or passing risk refresh. The prior attempt remains immutable while new
+eligibility rejects unassessed source changes. Its other empty canonical OCO
+scope is not a second completed source-close cycle.
+
+**Required next integration.** A read-only, final-byte diagnostic confirmed that
+ordinary OCO entry-binding replay still invokes the current risk constructor
+transitively. The new direct bridge reads use bounded causal prefixes, but this
+does not establish end-to-end causal independence. Before embedding an ownership
+consumer inside risk reduction, add that nested causal-reader seam and test it.
+The retained synthetic diagnostic passed standalone replay without database
+changes; `/tmp/alpaca-source-attempt-reader-dependency.json` records the dependency.
+Matching-origin raw order/FILL capture, canonical source-fill consumption,
+combined native/emergency finality and protected recovery remain unimplemented or
+unaccepted. No frozen risk reserve is released by this component.
+
+There was no actual broker/account access, order/cancel, data purchase, service
+or formal paper operation. Ross remains separate; NOT_SIP_EQUIVALENT and all
+source/protection/runtime/dispatch/formal gates remain closed. W3-06/07/08
+parents stay incomplete; this checks only injected once-provenance engineering.

@@ -34,6 +34,10 @@ _ASSET_URL = (
 )
 
 
+def _source_ns(value: str) -> int:
+    return _timestamp_ns(value[:-6] + "Z" if value.endswith("+00:00") else value)
+
+
 def preparation_request(
     asset_sequence: int,
     status_sequence: int,
@@ -288,6 +292,193 @@ def derive_source_preparation(
     _require_current_census: bool = False,
 ) -> dict[str, Any]:
     """Called under the existing owner transaction at the immutable horizon."""
+    return _derive_preparation(
+        owner,
+        horizon=horizon,
+        at=at,
+        request=request,
+        require_current_census=_require_current_census,
+    )
+
+
+def _source_close_metadata_bridge(
+    owner: OcoJournal,
+    lineage: dict[str, Any],
+    risk: dict[str, Any],
+    risk_refs: tuple[int, ...],
+    *,
+    at: datetime,
+    horizon: int,
+    fee_policy: Path,
+    native_mode: bool,
+) -> dict[str, Any]:
+    """Prove one local unsent binding; never refresh the selected source snapshot."""
+    cid = validate_saved_request(lineage["intent"]["request_body"])["client_order_id"]
+    last = owner.journal.read_event(risk_refs[-1])
+    assert last is not None
+    event, raw = last
+    item = decode_broker_json(raw)
+    assert isinstance(item, dict)
+    if (
+        item["kind"] != "BIND_EXIT"
+        or item["exit_id"] != cid
+        or item["role"] != "CLOSE"
+        or item["selection"] is not None
+        or item["exit_request"]
+        != validate_saved_request(lineage["intent"]["request_body"])
+    ):
+        raise JournalError("source close requires its single unsent metadata bridge")
+    before, refs = AccountRiskOwner._read_native_causal_evidence_at(
+        owner.journal,
+        owner.initial.account_ref,
+        at,
+        fee_policy,
+        through_sequence=event.sequence - 1,
+    )
+    allowed = {"DAILY_STOP_LATCHED"}
+    if native_mode:
+        allowed |= {"NATIVE_FINALITY_PENDING", "FINAL_TARGET_TOPOLOGY_INVALID"}
+    if (
+        before is None
+        or not refs
+        or risk_refs != (*refs, event.sequence)
+        or before.get("veto") is not False
+        or before.get("source_snapshot_qualified") is not True
+        or not set(before.get("issues", [])) <= allowed
+        or not isinstance(before.get("last_snapshot"), dict)
+        or before["last_snapshot"].get("qualified") is not True
+        or not isinstance(before.get("held"), dict)
+        or before["held"].get("exits") != {}
+        or before["held"].get("source_close_bindings")
+    ):
+        raise JournalError("source close pre-binding risk state is unqualified")
+    previous = owner.journal.read_event(refs[-1])
+    assert previous is not None
+    previous_item = decode_broker_json(previous[1])
+    assert isinstance(previous_item, dict)
+    if (
+        previous_item.get("selection") is None
+        or previous_item.get("snapshot") != before["last_snapshot"]
+    ):
+        raise JournalError("source close requires the original qualified observation")
+    expected_binding = {
+        key: lineage[key]
+        for key in (
+            "handoff_ref",
+            "preparation_ref",
+            "entry_reservation_ref",
+            "portions",
+        )
+    } | {"source_fill_ownership_accepted": False, "runtime_authorized": False}
+    expected = decode_broker_json(_json(before))
+    assert isinstance(expected, dict)
+    expected["held"]["exits"] = {cid: "CLOSE"}
+    expected["held"]["source_close_bindings"] = {cid: expected_binding}
+    expected.update(
+        at=item["at"],
+        watermark=event.sequence,
+        capacity="0",
+        issues=sorted(
+            {"REFRESH_REQUIRED"}
+            | ({"DAILY_STOP_LATCHED"} if before["daily_stop_latched"] else set())
+        ),
+    )
+    if expected != risk:
+        raise JournalError("source close binding changed more than local metadata")
+    old_census = previous_item["census"]
+    added = {
+        "id": cid,
+        "hash": hashlib.sha256(_json(lineage["intent"])).hexdigest(),
+        "send_started_at": None,
+    }
+    if any(row["id"] == cid for row in old_census) or item["census"] != sorted(
+        [*old_census, added], key=lambda row: row["id"]
+    ):
+        raise JournalError("source close metadata bridge census differs")
+    # These sources can change account/order ownership without changing the local
+    # intent list. An old qualified selection cannot hide unassessed newer input.
+    sources = (
+        ACCOUNT_CAPTURE_SOURCE,
+        "ALPACA_ORDER_LIFECYCLE",
+        "ALPACA_PAPER",
+        "ALPACA_NATIVE_OCO",
+    )
+    rows = owner.journal._db.execute(
+        "SELECT sequence FROM events WHERE source_id IN (?,?,?,?) "
+        "AND sequence>? AND sequence<=?",
+        (*sources, previous_item["source_horizon"], horizon),
+    ).fetchall()
+    if rows:
+        raise JournalError("source close metadata bridge has newer unassessed input")
+    return {
+        "policy": "SOURCE_CLOSE_UNSENT_METADATA_BRIDGE_V1",
+        "observation_ref": [previous[0].sequence, previous[0].payload_ref],
+        "binding_ref": [event.sequence, event.payload_ref],
+        "before_sha256": hashlib.sha256(_json(before)).hexdigest(),
+        "after_sha256": hashlib.sha256(_json(risk)).hexdigest(),
+        "census_sha256": hashlib.sha256(_json(item["census"])).hexdigest(),
+        "snapshot_observed_at": before["last_snapshot"]["observed_at"],
+        "snapshot_refreshed": False,
+        "dispatch_authorized": False,
+    }
+
+
+def derive_source_close_precall(
+    owner: OcoJournal,
+    *,
+    client_order_id: str,
+    horizon: int,
+    at: datetime,
+    request: dict[str, Any],
+    _require_current_census: bool = False,
+) -> dict[str, Any]:
+    """Fresh post-handoff source qualification, never dispatch clearance."""
+    lineage = source_close_handoff_lineage(
+        owner.journal, client_order_id, through_sequence=horizon, at=at
+    )
+    if lineage is None:
+        raise JournalError("anchored source close handoff required")
+    stored = owner.journal.read_event(lineage["preparation_ref"][0])
+    assert stored is not None
+    original = decode_broker_json(stored[1])
+    assert isinstance(original, dict)
+    old = _derive_preparation(
+        owner,
+        horizon=original["horizon"],
+        at=datetime.fromisoformat(original["at"]),
+        request=original["data"]["request"],
+        causal_risk=True,
+    )
+    saved = dict(original["data"]["receipt"])
+    saved.pop("reservation", None)
+    if old != saved:
+        raise JournalError("source close original preparation replay differs")
+    result = _derive_preparation(
+        owner,
+        horizon=horizon,
+        at=at,
+        request=request,
+        require_current_census=_require_current_census,
+        causal_risk=True,
+        lineage=lineage,
+    )
+    result["classification"] = (
+        "POST_HANDOFF_SOURCE_CLOSE_PRECALL_NOT_DISPATCH_CLEARANCE"
+    )
+    result["handoff"] = lineage
+    return result
+
+
+def _derive_preparation(
+    owner: OcoJournal,
+    *,
+    horizon: int,
+    at: datetime,
+    request: dict[str, Any],
+    require_current_census: bool = False,
+    causal_risk: bool = False,
+    lineage: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     native_mode = "ownership_policy" in request
     fields = {
         "asset_sequence",
@@ -337,7 +528,9 @@ def derive_source_preparation(
         rebuilt["reservation_contract"] = HANDOFF_RESERVATION_CONTRACT
     if rebuilt != request:
         raise JournalError("noncanonical source preparation request")
-    crossing = derive_source_crossing(owner, horizon=horizon, at=at)
+    crossing = derive_source_crossing(
+        owner, horizon=horizon, at=at, _causal_risk=causal_risk
+    )
     if not crossing["component_qualified"] or not crossing.get(
         "emergency_risk_policy_opt_in_observed"
     ):
@@ -352,7 +545,12 @@ def derive_source_preparation(
     if not model.entry_terminal_reconciled:
         raise JournalError("source terminal entry census required")
     fee_policy = Path(view.entry_binding["fee_policy"])
-    risk, risk_refs = AccountRiskOwner.read_evidence_at(
+    reader = (
+        AccountRiskOwner._read_native_causal_evidence_at
+        if causal_risk
+        else AccountRiskOwner.read_evidence_at
+    )
+    risk, risk_refs = reader(
         owner.journal,
         model.account_ref,
         at,
@@ -365,22 +563,97 @@ def derive_source_preparation(
     risk_item = decode_broker_json(risk_record[1])
     assert isinstance(risk_item, dict)
     census = risk_item["census"]
-    if _require_current_census and _json(census) != _json(
+    if require_current_census and _json(census) != _json(
         AccountRiskOwner(owner.journal, model.account_ref, fee_policy)._census()
     ):
         raise JournalError("local intent/send census changed; refresh source risk")
     completed_ids = {
         identity for row in risk["completed"].values() for identity in row["order_ids"]
     }
-    if any(row["id"] not in completed_ids | {model.entry_scope} for row in census):
+    close_ids = (
+        set()
+        if lineage is None
+        else {
+            validate_saved_request(lineage["intent"]["request_body"])["client_order_id"]
+        }
+    )
+    if any(
+        row["id"] not in completed_ids | {model.entry_scope} | close_ids
+        for row in census
+    ):
         raise JournalError("unresolved local order commitment outside entry seam")
     snapshot, held = risk["last_snapshot"], risk["held"]
+    extra_issues: set[str] = set()
+    expected_exits = {}
+    if lineage is not None:
+        cid = next(iter(close_ids))
+        expected_exits = {cid: "CLOSE"}
+        expected_binding = {
+            key: lineage[key]
+            for key in (
+                "handoff_ref",
+                "preparation_ref",
+                "entry_reservation_ref",
+                "portions",
+            )
+        } | {"source_fill_ownership_accepted": False, "runtime_authorized": False}
+        if (
+            lineage["binding"]["account_ref"] != model.account_ref
+            or lineage["binding"]["entry_scope"] != model.entry_scope
+            or lineage["binding"]["symbol"] != model.symbol
+            or held.get("source_close_bindings") != {cid: expected_binding}
+            or held.get("emergency_execution_binding", {}).get("binding_ref")
+            != lineage["emergency_binding_ref"]
+            or view.entry_binding["reservation_ref"] != lineage["entry_reservation_ref"]
+            or any(
+                row["id"] == cid and row["send_started_at"] is not None
+                for row in census
+            )
+        ):
+            raise JournalError("source close exact current CLOSE binding required")
+        assigned: dict[str, Fraction] = {}
+        for group in model.groups:
+            for part in group.portions:
+                assigned[part.entry_execution_id] = (
+                    assigned.get(part.entry_execution_id, Fraction(0)) + part.quantity
+                )
+        available_lots = {
+            execution.execution_id: execution.quantity
+            - assigned.get(execution.execution_id, Fraction(0))
+            for execution in model.executions
+            if execution.role == "ENTRY"
+        }
+        portions = {key: Fraction(value) for key, value in lineage["portions"].items()}
+        if (
+            not portions
+            or any(
+                qty <= 0 or qty > available_lots.get(key, Fraction(0))
+                for key, qty in portions.items()
+            )
+            or sum(portions.values())
+            != Fraction(
+                str(validate_saved_request(lineage["intent"]["request_body"])["qty"])
+            )
+        ):
+            raise JournalError("source close anchored portions are no longer available")
+        bridge = _source_close_metadata_bridge(
+            owner,
+            lineage,
+            risk,
+            risk_refs,
+            at=at,
+            horizon=horizon,
+            fee_policy=fee_policy,
+            native_mode=native_mode,
+        )
+        extra_issues.add("REFRESH_REQUIRED")
     if (
         risk["veto"]
         or held.get("quantity_incident") is not None
-        or held.get("exits") != {}
+        or held.get("exits") != expected_exits
         or not set(risk["issues"])
-        <= (
+        <= extra_issues
+        | (
             {
                 "DAILY_STOP_LATCHED",
                 "NATIVE_FINALITY_PENDING",
@@ -449,6 +722,10 @@ def derive_source_preparation(
         raise JournalError("reported available quantity missing or invalid") from exc
     if quantity != model.owned_quantity or not 0 <= available <= quantity:
         raise JournalError("source position/lot or availability differs")
+    if lineage is not None and available < sum(
+        (Fraction(value) for value in lineage["portions"].values()), Fraction(0)
+    ):
+        raise JournalError("source close reported availability below anchored quantity")
     refs = {sequence: digest for sequence, digest in crossing["source_refs"]}
     if native_proof is not None:
         refs.update(native_proof["source_refs"])
@@ -588,6 +865,34 @@ def derive_source_preparation(
         "runtime_authorized": False,
         "formal_paper_authorized": False,
     }
+    if lineage is not None:
+        receipt["metadata_bridge"] = bridge
+        selection = IncidentRiskRequest.from_dict(snapshot["selection"])
+        age_ns = selection.max_age // timedelta(microseconds=1) * 1000
+        quote_event = quote_stored[0]
+        mark = next(row for row in selection.mark_refs if row[0] == model.symbol)
+        mark_metadata = owner.journal.read_event(mark[3])
+        calendar = owner.journal.read_event(selection.calendar_sequence)
+        assert mark_metadata is not None and calendar is not None
+        calendar_body = decode_broker_json(calendar[1])
+        assert isinstance(calendar_body, dict)
+        # Reuse the existing quote policy's one-second event/receipt bound and
+        # the caller's already validated account, metadata, asset/status bounds.
+        deadlines = (
+            _source_ns(quote["t"]) + 1_000_000_000,
+            _datetime_ns(quote_event.system_first_seen_at) + 1_000_000_000,
+            _source_ns(snapshot["observed_at"]) + age_ns,
+            _source_ns(risk["at"]) + age_ns,
+            _source_ns(calendar_body["request"]["started_at"]) + age_ns,
+            _datetime_ns(mark_metadata[0].system_first_seen_at)
+            + selection.max_metadata_age // timedelta(microseconds=1) * 1000,
+            _source_ns(metadata["requested_at"]) + request["max_asset_age_us"] * 1000,
+            _source_ns(status["t"]) + request["max_status_age_us"] * 1000,
+            _datetime_ns(status_event.system_first_seen_at)
+            + request["max_status_age_us"] * 1000,
+        )
+        receipt["freshness_not_after_ns"] = str(min(deadlines))
+        receipt["session_before_ns"] = str(_source_ns(crossing["close_at"]))
     if native_proof is not None:
         receipt["ownership_policy"] = NATIVE_POLICY
         receipt["native_ownership"] = native_proof
