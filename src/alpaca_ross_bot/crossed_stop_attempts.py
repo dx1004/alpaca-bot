@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from fractions import Fraction
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Never, cast
 
 from ._causal_risk_memo import causal_risk_verification_scope, record_path_resolution
 from .crossed_stop_contract import MANIFEST_SHA256 as EMERGENCY_MANIFEST_SHA256
@@ -606,3 +606,40 @@ class SourceCloseAttempts:
     def verify_rebuild(self) -> bool:
         self.view()
         return True
+
+
+class _CausalSourceCloseAttempts(SourceCloseAttempts):
+    """Confined bounded reader; current replay and callback writers are disabled."""
+
+    def view(self) -> Never:
+        raise JournalError("causal source attempt reader requires an explicit horizon")
+
+    def invoke_once(self, *args: Any, **kwargs: Any) -> Never:
+        raise JournalError("causal source attempt reader cannot invoke callbacks")
+
+    def _append(self, *args: Any, **kwargs: Any) -> Never:
+        raise JournalError("causal source attempt reader cannot write")
+
+
+def _source_attempt_reader(
+    journal: Journal, initial: OcoResearchState
+) -> SourceCloseAttempts:
+    """Local bounded-read setup; never expose this handle as a writer capability."""
+    reader = object.__new__(_CausalSourceCloseAttempts)
+    reader.owner = _causal_oco_reader(journal, initial)
+    reader.journal = journal
+    reader.state_key = "source_close_attempts:" + initial.entry_scope
+    return reader
+
+
+def read_source_close_attempts_at(
+    journal: Journal,
+    initial: OcoResearchState,
+    *,
+    through_sequence: int,
+    decision_at: datetime,
+) -> list[dict[str, Any]]:
+    """Return verified prefix rows without current OCO/risk constructors."""
+    return _source_attempt_reader(journal, initial).read_verified_at(
+        through_sequence, decision_at
+    )

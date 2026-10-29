@@ -17,10 +17,11 @@ from fractions import Fraction
 from typing import Any, cast
 from urllib.parse import urlencode
 
-from .crossed_stop_attempts import ORIGIN, SourceCloseAttempts
-from .journal import JournalError
+from .crossed_stop_attempts import ORIGIN, SourceCloseAttempts, _source_attempt_reader
+from .journal import Journal, JournalError
 from .market_input_checks import _datetime_ns, _timestamp_ns
 from .native_oco_requests import _clock, _copy, _digest, _json, _utc
+from .oco_research import OcoResearchState
 from .paper_order_contract import (
     decode_broker_json,
     paper_account_ref,
@@ -706,3 +707,17 @@ class SourceCloseCaptures:
             ) as exc:
                 raise JournalError("source GET capture provenance malformed") from exc
         return cast(list[dict[str, Any]], _copy(result))
+
+
+def read_source_close_captures_at(
+    journal: Journal,
+    initial: OcoResearchState,
+    *,
+    through_sequence: int,
+    decision_at: datetime,
+) -> list[dict[str, Any]]:
+    """Return verified packets using only a local constructor-free read handle."""
+    reader = object.__new__(SourceCloseCaptures)
+    reader.attempts = _source_attempt_reader(journal, initial)
+    reader.journal = journal
+    return reader.read_verified_at(through_sequence, decision_at)

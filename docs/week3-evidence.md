@@ -4869,3 +4869,74 @@ recovery. Builtin source association, actual protection/admission and real-time
 qualification remain unaccepted. There was no actual broker/account connection,
 order/cancel, purchase, service or formal paper operation. Ross stays separate,
 NOT_SIP_EQUIVALENT remains; W3-06/07/08 parents stay incomplete and executable gates stay closed.
+
+
+### Injected source-close FILL attribution component — 2026-10-29 UTC
+
+`crossed_stop_fills.py:derive_injected_source_close_fills` is a pure engineering
+proof reader for the INJECTED source-close namespace. Its inputs are the canonical
+private journal, empty pinned OCO initial state, CID, exact ordered capture
+sequence tuple, decision clock and bounded source horizon. It derives the original
+PRECALL/OUTCOME, POST-reported UUID, raw CID/detail GETs and complete capture-local
+FILL pages. Caller-supplied ownership booleans, parsed fills, native totals or lot
+allocations are not inputs. No broker adapter, default transport or risk reducer
+integration is added.
+
+The result retains preparation, handoff, positive entry reservation, emergency
+binding and prior risk references, along with each raw page/record reference and
+type-aware full-row content hash. Stable activity IDs count once across cumulative
+captures. Optional-field changes, disappearing fills, quantity/update regression,
+terminal-state contradiction and omitted newer or contradictory observations veto
+the component. Old unknown outcomes remain unknown; a later genuine OUTCOME
+requires a new confirmed capture rather than rewriting the old packet. Original
+POST creation/submission instants must match both raw GET identity observations,
+including nanoseconds. Concurrent capture completion need not follow journal
+append order; internal visibility and semantic histories remain checked.
+
+The entire original reservation basket is preserved under partial fills and
+partial cancellation. No FIFO, pro-rata allocation, per-lot debit, second-use
+release or finality is inferred. Account prefix guards compare raw order/activity
+identities across source attempts, all bounded OCO entry scopes, native claims and
+canonical simple lifecycle evidence. Same CID/different UUID and different
+CID/same UUID both veto, including relevant lifecycle identity-conflict issues.
+REST activity reuse is detected; equality with a stream execution ID is explicitly
+an unresolved namespace ambiguity, not a new provider equivalence claim.
+Unbacked declared model exits remain unresolved. Aggregate native/other-close
+reservations cannot exceed the original entry lots. The existing incident writer
+already blocks adding a native group after the latch; its negative test preserves
+that real rejection rather than fabricating a group event.
+
+Constructor-free bounded DTO APIs reuse canonical source replay. Their confined
+source-attempt handle rejects current view, callback invocation and append; actual
+valid writer arguments are tested. Normal public constructors stay unchanged.
+Ownership claims are bounded, while existing nonrecursive current private/account,
+native transport and lifecycle integrity guards remain active. This does not
+promise independence from corrupted current metadata/projections. Native raw
+candidate scanning is a conflict guard, not a complete new broker identity census;
+an account-only failed native capture does not refresh an accepted source/runtime
+observation or replace its canonical bound receipt.
+
+Validation and review:
+
+- Final root command `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_source_close_fill_risk_boundary.py`: 2 passed in 221.48s. Both ordinary and genuine mixed native-residual fixtures invoke this component while the actual current risk verifier reduces a later real risk event. No recursive current-risk construction, journal mutation, simple source send marker, completion, reserve release or ownership-latch clearing occurs. Unqualified account snapshots are not manufactured into passing evidence.
+- Worker final selection in `tests/test_crossed_stop_fills.py`, `-k 'fractional_cumulative or moving_clock or other_canonical or raw_rest or native_overlap or prior_buy_entry_uuid'`: 6 passed, 4 deselected in 296.42s. Covers every final correction, including exact timestamp drift, both lifecycle CID/UUID conflict directions, raw REST/stream ambiguity, real read-only writer arguments, entry UUID reuse, reopen and the existing native allocation veto.
+- Earlier worker core run passed five cases, then stopped at a negative fixture trying a native allocation that the real incident writer correctly rejects. That fixture was corrected to verify the real veto and included in the final selection; the earlier run is not called a complete passing suite. Its other unchanged cases cover optional-field mutation, cumulative disappearance/omitted captures, prefix/origin and deferred outcomes. No full final ten-case file run is claimed. An earlier root two-case run passed before the final guards; the final root run above supersedes it.
+- Final scoped Ruff check and format, strict mypy with `/tmp/alpaca-source-fill-risk-mypy`, and git whitespace checks pass for three production and two test modules. Independent source review required chronology and lifecycle-identity fixes, then approved the final scoped corrections. Static review is not a broker/ownership approval. Referenced test/type handles are terminal; fixture durations do not establish runtime throughput.
+
+Known exception boundary: malformed raw source JSON retained by diagnostics may
+propagate the existing decoder ValueError/PaperContractError rather than uniform
+JournalError. Every such exception denies this pure component; any future runtime
+adapter must normalize/catch it while preserving existing protection. There is
+currently no adapter or dispatch path.
+
+All source-admission, source/local ownership, protection, risk-release, runtime,
+dispatch and formal-paper authority flags remain false. Finality is UNKNOWN even
+for a terminal/fully reported order. `LATCH_UNRECONCILED_SOURCE_CLOSE_V1` and frozen
+risk/cash floors are unchanged; source quantities are not added as a third debit
+beside existing native/simple exits. Next work is a durable origin-scoped claim
+index and canonical combined source/native accounting, finality and protected
+recovery, with independent acceptance before any risk consumption. Actual broker
+continuous protection, deadlines and release gates remain unresolved. There was no
+actual account/credential access, order/cancel, purchase, service or formal paper.
+Ross remains separate, NOT_SIP_EQUIVALENT is retained, and W3-06/07/08 parents stay
+incomplete with executable gates closed.
