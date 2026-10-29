@@ -4419,3 +4419,63 @@ protection-preserving cleanup, native residual finality, current-proof throughpu
 and actual W3-07 cycles remain open. W3-06/07/08 stay incomplete, Ross remains a
 separate baseline and IEX remains NOT_SIP_EQUIVALENT. No credentials, broker
 connection/order/cancel, service or formal paper operation occurred.
+
+
+### W3-08 native engineering ledger adapter — 2026-10-29 UTC
+
+While the requested retrieval-route exception remains unanswered, this parallel
+W3-08 increment uses existing local ownership contracts and deterministic code.
+It does not establish new Alpaca API facts or replace the blocked W3-06 review.
+
+Two explicit entry points now rebuild native engineering attribution:
+`paper_ledger_sources.inspect_native_paper_ledger_sources` and
+`paper_execution_adapter.inspect_native_engineering_executions`. The original
+named readers continue to select only the simple-order policy. The native
+reader selects OBSERVED_NATIVE_ENGINEERING_LEDGER_V1, replays the canonical risk
+owner and native registry at the same private SQLite snapshot/visible prefix,
+and compares capture selection, source references, order identities and final
+scopes. No caller-built ownership result or qualification flag is accepted.
+
+Per-entry native order membership comes from that episode's immutable exit
+census references, not the account-wide list stored in a completion record.
+Exact activity signatures join ordinary and native fills; conflicting identity
+vetoes, repeated identical observations count once, and multiple executions per
+order remain distinct. Completed buy/sell totals must agree with each ordinary
+and native order's observed cumulative quantity and the canonical completed
+reservation. A native order cannot belong to two episodes. No native leg is
+inserted as a fictitious simple intent or projection.
+
+Raw activity bytes/hash, occurrence locations, original timestamp and exact
+submicrosecond remainder survive conversion. Native transport origin is retained
+on native legs; it is not copied to ordinary entry executions with unknown
+transport provenance. Partial/unresolved episodes, unadopted conflicting captures
+and missing native context retain raw observations without a roundtrip assignment.
+Valid legacy captures lacking origin qualification remain raw rather than gaining
+native ownership. Caller-owned transactions remain open; owned reads roll back
+without writing journal data. All actual provider responses in tests are injected.
+
+Final verification:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider tests/test_native_paper_ledger_sources.py tests/test_paper_ledger_sources.py tests/test_paper_execution_adapter.py tests/test_paper_ledger_sources_integration.py tests/test_paper_performance.py tests/test_paper_performance_precision_integration.py -q -x`: 103 passed in 103.34s against the final functional code.
+- Eleven new cases cover exact fractional/nanosecond native attribution, conversion/raw ancestry, default-reader separation, caller transactions, conflicting activity variants and fixed-prefix stability, partial/simple-only/legacy-origin refusal, duplicate assignment, identical-observation deduplication and conflicting execution identity. The two-episode mapping test is a join-level unit using synthetic supplied facts; it is not a second qualified account roundtrip or broker cycle. Its duplicate-mapping negative is also a helper test. Positive canonical native reporting uses one completed injected source-account episode.
+- Earlier development checkpoints passed 1 selected case in 14.18s, 30 combined cases in 75.51s, 33 combined cases in 91.43s and 69 related cases in 4.65s. They precede the final legacy-origin case and are superseded by the combined 103-case result; no full-repository claim is made.
+- Ruff check/format check with `--no-cache` and strict mypy using `/tmp/alpaca-native-ledger-mypy` passed for both production modules and the new test module. Scoped diff whitespace checks passed. All local test/type handles are terminal.
+
+Ollama Cloud inference was verified on route cloud/model gemma4:31b. Only a
+public generic SQLite/exact-arithmetic reporting question was sent; no local
+source, project document, credential or account data was exported. The returned
+invariants were checked by the coordinator and tests. Its simplified one-to-one
+identity wording was not adopted: one order can have several executions, and
+identical observations can repeat without creating a new execution. This was
+not a private-source code review, current API verification or trading authority.
+
+Independent review of this increment is still unavailable under the recorded
+model-capacity fault and is not claimed. The new review/acceptance child remains
+unchecked. Raw-source compatibility outside the injected tests, actual multiple
+account cycles, formal origin/enrollment, complete study/day/fee/posting censuses,
+execution-order evidence and final performance-input conversion remain open.
+Engineering rows are not natural study witnesses. No native source/strategy/risk,
+protection or release gate is waived; all formal/runtime/dispatch flags stay false.
+No broker/account connection, order/cancel, purchase, service or formal paper
+operation occurred. Ross stays separate; IEX remains NOT_SIP_EQUIVALENT. W3-06,
+W3-07 and the W3-08 final freeze remain incomplete.

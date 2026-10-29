@@ -274,6 +274,8 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   - [x] Observed engineering execution conversion, 2026-10-23: direct canonical Journal reads now produce exact source-linked engineering execution rows while retaining all unconverted observations, raw chronology and unresolved ties. Five new cases, independent review, the combined 231-case regression and scoped type/lint/format checks pass. [Evidence and limits](docs/week3-evidence.md#w3-08-observed-engineering-execution-conversion--2026-10-23). No formal scope is manufactured; formal ownership/censuses/performance inputs and W3-08 freeze remain open.
 
+  - [ ] Native engineering ledger adapter independent acceptance: implementation added 2026-10-29 UTC with explicit native readers, canonical per-episode provenance and exact source-linked conversion; 103 scoped cases and static checks passed. [Evidence and coverage limits](docs/week3-evidence.md#w3-08-native-engineering-ledger-adapter--2026-10-29-utc). Independent review, actual source compatibility, formal enrollment/censuses and final freeze remain open; this child and W3-08 stay unchecked. No source/release authority is granted.
+
 ## Week 4 — Integration, audit, and release freeze
 
 - [ ] **W4-01 [P0] End-to-end deterministic replay**  

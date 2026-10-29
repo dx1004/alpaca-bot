@@ -502,6 +502,21 @@ the explicit formal-origin guard remain unchanged. This removes a representation
 gap; it does not convert engineering rows into formal performance inputs or
 close the ownership, census, attribution and source-order gaps above.
 
+### Native engineering adapter candidate — 2026-10-29 UTC
+
+The explicitly named native ledger and execution readers now join existing
+canonical risk/native evidence at one fixed prefix, retaining raw timestamps,
+exact quantities, original episode ownership and native transport origin.
+The original reader names remain simple-order readers. Missing origin/context,
+partial state or conflicting facts do not gain completed-roundtrip attribution.
+
+This is an implemented descriptive engineering candidate, not an accepted or
+frozen formal protocol input. Its observations do not establish natural sample
+enrollment, day/fee/posting completeness, independence, strategy fidelity or
+broker protection. Independent code review and actual source compatibility remain
+open; all source-admission/formal/runtime/dispatch flags remain false. See the
+[implementation and exact verification scope](week3-evidence.md#w3-08-native-engineering-ledger-adapter--2026-10-29-utc).
+
 ## Method references
 
 Checked by the coordinator 2026-10-15; source publication/version dates are not

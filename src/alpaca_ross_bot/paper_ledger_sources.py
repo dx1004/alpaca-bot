@@ -1,4 +1,4 @@
-"""Bounded observed ledger rows and simple engineering roundtrip provenance.
+"""Bounded ledger rows and explicitly selected engineering provenance.
 
 This is not an input adapter for ``paper_performance``: source timestamp text
 and its exact remainder survive, without inventing a study origin, execution
@@ -18,11 +18,17 @@ from urllib.parse import urlsplit
 from .account_risk_owner import AccountRiskOwner
 from .incident_risk import IncidentRiskRequest
 from .journal import Journal, JournalError
+from .native_oco_evidence import NativeFillFact
+from .native_risk_registry import POLICY as NATIVE_RISK_POLICY
+from .native_risk_registry import NativeRiskRegistry, derive_native_registry
 from .order_lifecycle import OrderProjection
 from .order_reconciliation import OrderReconciler
 from .paper_order_contract import decode_broker_json, validate_saved_request
 from .posted_ledger import _exact, _timestamp, inspect_posted_ledger
-from .risk_account_inputs import ENDPOINT, inspect_account_inputs
+from .risk_account_inputs import ENDPOINT, SCHEMA_V2, inspect_account_inputs
+
+NATIVE_LEDGER_POLICY = "OBSERVED_NATIVE_ENGINEERING_LEDGER_V1"
+_SIMPLE_POLICY = "OBSERVED_SIMPLE_ENGINEERING_LEDGER_V1"
 
 
 @dataclass(frozen=True)
@@ -63,6 +69,9 @@ class ObservedRoundtrip:
     source_refs: tuple[LedgerSource, ...]
     origin: str = "ENGINEERING_TEST"
     classification: str = "OBSERVED_SIMPLE_ENGINEERING_ROUNDTRIP_NOT_STUDY_OWNERSHIP"
+    native_order_ids: tuple[str, ...] = ()
+    native_group_ids: tuple[str, ...] = ()
+    transport_origin: str | None = None
 
 
 @dataclass(frozen=True, repr=False)
@@ -85,6 +94,7 @@ class PaperLedgerSources:
     formal_sample_eligible: bool = False
     runtime_authorized: bool = False
     dispatch_authorized: bool = False
+    ownership_policy: str = _SIMPLE_POLICY
 
     def public_summary(self) -> dict[str, object]:
         return {
@@ -209,6 +219,57 @@ def inspect_paper_ledger_sources(
     max_age: timedelta,
     fee_policy: Path,
 ) -> PaperLedgerSources:
+    """Legacy simple-order reader; native activity remains unsupported here."""
+    return _inspect_paper_ledger_sources(
+        journal,
+        capture_sequence,
+        journal_scope=journal_scope,
+        account_ref=account_ref,
+        decision_at=decision_at,
+        through_sequence=through_sequence,
+        max_age=max_age,
+        fee_policy=fee_policy,
+        ownership_policy=_SIMPLE_POLICY,
+    )
+
+
+def inspect_native_paper_ledger_sources(
+    journal: Journal,
+    capture_sequence: int,
+    *,
+    journal_scope: str,
+    account_ref: str,
+    decision_at: datetime,
+    through_sequence: int,
+    max_age: timedelta,
+    fee_policy: Path,
+) -> PaperLedgerSources:
+    """Rebuild ordinary/native ownership together; never formal enrollment."""
+    return _inspect_paper_ledger_sources(
+        journal,
+        capture_sequence,
+        journal_scope=journal_scope,
+        account_ref=account_ref,
+        decision_at=decision_at,
+        through_sequence=through_sequence,
+        max_age=max_age,
+        fee_policy=fee_policy,
+        ownership_policy=NATIVE_LEDGER_POLICY,
+    )
+
+
+def _inspect_paper_ledger_sources(
+    journal: Journal,
+    capture_sequence: int,
+    *,
+    journal_scope: str,
+    account_ref: str,
+    decision_at: datetime,
+    through_sequence: int,
+    max_age: timedelta,
+    fee_policy: Path,
+    ownership_policy: str,
+) -> PaperLedgerSources:
     """Read one snapshot; every outward reference carries the declared scope.
 
     Integrity/account/visibility errors raise. Valid raw rows remain observable
@@ -224,6 +285,8 @@ def inspect_paper_ledger_sources(
         or max_age <= timedelta(0)
     ):
         raise JournalError("exact scope, UTC decision and positive age required")
+    if ownership_policy not in {_SIMPLE_POLICY, NATIVE_LEDGER_POLICY}:
+        raise JournalError("unsupported ledger ownership policy")
     owned_transaction = not journal._db.in_transaction
     if owned_transaction:
         journal._db.execute("BEGIN")
@@ -317,6 +380,44 @@ def inspect_paper_ledger_sources(
         snapshot = None if risk is None else risk.get("last_snapshot")
         if isinstance(snapshot, dict):
             refs.update(row[0] for row in snapshot.get("source_refs", []))
+        native = None
+        if ownership_policy == NATIVE_LEDGER_POLICY:
+            if (
+                risk is None
+                or risk.get("_native_policy") != NATIVE_RISK_POLICY
+                or not isinstance(snapshot, dict)
+                or not isinstance(snapshot.get("native"), dict)
+                or snapshot["native"].get("policy") != NATIVE_RISK_POLICY
+            ):
+                issues.add("NATIVE_OWNER_CONTEXT_UNAVAILABLE")
+            elif envelope.get("schema") != SCHEMA_V2 or envelope.get(
+                "transport_origin"
+            ) not in {"BUILTIN_PAPER_HTTPS", "INJECTED_EXCHANGE"}:
+                issues.add("NATIVE_CAPTURE_ORIGIN_UNQUALIFIED")
+            else:
+                native = derive_native_registry(
+                    journal,
+                    snapshot["native"]["context"],
+                    capture_sequence=capture_sequence,
+                    decision_at=decision_at,
+                    max_age=max_age,
+                    through_sequence=through_sequence,
+                )
+                refs.update(native.source_refs)
+                if native.issues or native.risk_issues:
+                    issues.add("NATIVE_GROUP_OWNERSHIP_UNQUALIFIED")
+                    issues.update(native.issues)
+                    issues.update(native.risk_issues)
+                expected_refs = [
+                    [seq, source(seq).payload_ref] for seq in native.source_refs
+                ]
+                if (
+                    snapshot["native"]["source_refs"] != expected_refs
+                    or snapshot["native"]["order_ids"]
+                    != [o.order_id for o in native.orders]
+                    or snapshot["native"]["final_scopes"] != list(native.final_scopes)
+                ):
+                    issues.add("NATIVE_OWNER_PREFIX_DISAGREEMENT")
         sources = tuple(source(seq) for seq in sorted(refs))
         linked: tuple[ObservedRoundtrip, ...] = ()
         if not issues:
@@ -334,6 +435,7 @@ def inspect_paper_ledger_sources(
                 activities,
                 sources,
                 issues,
+                native,
             )
         if not linked:
             issues.add("NO_QUALIFIED_OBSERVED_ROUNDTRIP")
@@ -344,9 +446,10 @@ def inspect_paper_ledger_sources(
                 "POSTED_ACTIVITY_FINALITY_UNVERIFIED",
                 "ACCOUNT_DAY_CENSUS_UNVERIFIED",
                 "FORMAL_ORIGIN_UNVERIFIED",
-                "NATIVE_GROUP_OWNERSHIP_UNSUPPORTED",
             }
         )
+        if ownership_policy == _SIMPLE_POLICY:
+            issues.add("NATIVE_GROUP_OWNERSHIP_UNSUPPORTED")
         return PaperLedgerSources(
             journal_scope,
             account_ref,
@@ -357,6 +460,12 @@ def inspect_paper_ledger_sources(
             activities,
             linked,
             tuple(sorted(issues)),
+            classification=(
+                "OBSERVED_NATIVE_LEDGER_NOT_FORMAL_PERFORMANCE_INPUTS"
+                if ownership_policy == NATIVE_LEDGER_POLICY
+                else "OBSERVED_LEDGER_NOT_FORMAL_PERFORMANCE_INPUTS"
+            ),
+            ownership_policy=ownership_policy,
         )
     finally:
         if owned_transaction:
@@ -377,6 +486,7 @@ def _roundtrips(
     activities: tuple[ObservedActivity, ...],
     sources: tuple[LedgerSource, ...],
     issues: set[str],
+    native: NativeRiskRegistry | None = None,
 ) -> tuple[ObservedRoundtrip, ...]:
     snapshot = None if risk is None else risk.get("last_snapshot")
     if (
@@ -432,6 +542,17 @@ def _roundtrips(
             if identity in target and target[identity] != signature:
                 issues.add("LIFECYCLE_EXECUTION_ID_CONFLICT")
             target[identity] = signature
+    native_orders = {} if native is None else {o.order_id: o for o in native.orders}
+    simple_brokers = {o.broker_order_id for o in orders.values()}
+    native_clients = [o.client_order_id for o in native_orders.values()]
+    if (
+        simple_brokers & native_orders.keys()
+        or len(set(native_clients)) != len(native_clients)
+        or set(native_clients) & orders.keys()
+    ):
+        issues.add("NATIVE_SIMPLE_ORDER_IDENTITY_CONFLICT")
+    if native is not None:
+        _merge_native_execution_targets(target, native.fills, issues)
     actual = {
         row.activity_id: _signature(json.loads(row.canonical_row))
         for row in activities
@@ -442,10 +563,13 @@ def _roundtrips(
     by_broker = {order.broker_order_id: order for order in orders.values()}
     for row in activities:
         order = by_broker.get(row.broker_order_id or "")
+        if order is None:
+            order = native_orders.get(row.broker_order_id or "")
         if order is None or (row.symbol, row.side) != (order.symbol, order.side):
             issues.add("UNOWNED_EXECUTION")
     if issues:
         return ()
+    native_scopes = _native_scope_orders(journal, native) if native is not None else {}
     result = []
     for cid, completed in risk["completed"].items():
         if completed["filled"] <= 0:
@@ -455,11 +579,19 @@ def _roundtrips(
             issues.add("POSITIVE_RESERVATION_ORIGIN_UNAVAILABLE")
             continue
         ids = set(completed["order_ids"])
+        own_native, own_groups = native_scopes.get(cid, ((), ()))
+        if "native_context" in completed and (native is None or not own_native):
+            issues.add("COMPLETED_NATIVE_SCOPE_UNAVAILABLE")
+            continue
+        native_ids = set(own_native)
         selected = [
             row
             for row in activities
             if row.broker_order_id
-            in {orders[key].broker_order_id for key in ids if key in orders}
+            in (
+                {orders[key].broker_order_id for key in ids if key in orders}
+                | native_ids
+            )
         ]
         if (
             ids != {cid, *origin["exits"]}
@@ -487,6 +619,17 @@ def _roundtrips(
                 != Fraction(order.filled_quantity)
             ):
                 valid = False
+        for broker in native_ids:
+            order = native_orders[broker]
+            fills = [row for row in selected if row.broker_order_id == broker]
+            if (
+                order.symbol != origin["symbol"]
+                or order.side != "sell"
+                or order.status not in {"filled", "canceled", "expired", "rejected"}
+                or sum((row.quantity or Fraction() for row in fills), Fraction())
+                != order.filled_quantity
+            ):
+                valid = False
         bought = sum(
             (row.quantity or Fraction(0) for row in selected if row.side == "buy"),
             Fraction(0),
@@ -503,14 +646,100 @@ def _roundtrips(
                 cid,
                 origin["symbol"],
                 bought,
-                tuple((key, orders[key].broker_order_id) for key in sorted(ids)),
+                tuple(
+                    sorted(
+                        [(key, orders[key].broker_order_id) for key in ids]
+                        + [
+                            (native_orders[key].client_order_id, key)
+                            for key in native_ids
+                        ]
+                    )
+                ),
                 tuple(
                     row.activity_id for row in selected if row.activity_id is not None
                 ),
                 sources,
+                classification=(
+                    "OBSERVED_NATIVE_ENGINEERING_ROUNDTRIP_NOT_STUDY_OWNERSHIP"
+                    if native_ids
+                    else "OBSERVED_SIMPLE_ENGINEERING_ROUNDTRIP_NOT_STUDY_OWNERSHIP"
+                ),
+                native_order_ids=tuple(sorted(native_ids)),
+                native_group_ids=own_groups,
+                transport_origin=None
+                if not native_ids or native is None
+                else native.origin,
             )
         )
     return tuple(result)
+
+
+def _merge_native_execution_targets(
+    target: dict[str, tuple[object, ...]],
+    fills: tuple[NativeFillFact, ...],
+    issues: set[str],
+) -> None:
+    """Deduplicate identical observations; conflicting execution identity vetoes."""
+    for fill in fills:
+        signature = (
+            fill.order_id,
+            fill.symbol,
+            fill.side,
+            fill.quantity,
+            fill.price,
+            _timestamp(fill.transaction_time),
+        )
+        if fill.activity_id in target and target[fill.activity_id] != signature:
+            issues.add("EXECUTION_ID_SCOPE_CONFLICT")
+            continue
+        target[fill.activity_id] = signature
+
+
+def _native_scope_orders(
+    journal: Journal,
+    registry: NativeRiskRegistry,
+) -> dict[str, tuple[tuple[str, ...], tuple[str, ...]]]:
+    """Use per-episode census receipts, never the account-wide completion list."""
+    known = {order.order_id for order in registry.orders}
+    assigned: set[str] = set()
+    scopes = {}
+    for scope, refs in registry.census_refs:
+        brokers: set[str] = set()
+        groups: set[str] = set()
+        for sequence, digest in refs:
+            stored = journal.read_event(sequence)
+            if stored is None or stored[0].payload_ref != digest:
+                raise JournalError("native report census reference changed")
+            item = decode_broker_json(stored[1])
+            if (
+                not isinstance(item, dict)
+                or item.get("kind") != "BOUND_NATIVE_EXIT"
+                or item["binding"]["entry_scope"] != scope
+            ):
+                raise JournalError("native report episode census differs")
+            receipt = item["operation"]["receipt"]
+            group = receipt["group_id"]
+            pair = {
+                receipt["identity"]["root_order_id"],
+                receipt["identity"]["stop_order_id"],
+            }
+            if (
+                len(pair) != 2
+                or None in pair
+                or not pair <= known
+                or pair & brokers
+                or group in groups
+            ):
+                raise JournalError("native report group/order identity is ambiguous")
+            brokers.update(pair)
+            groups.add(group)
+        if assigned & brokers:
+            raise JournalError("native report order assigned to multiple episodes")
+        assigned.update(brokers)
+        scopes[scope] = (tuple(sorted(brokers)), tuple(sorted(groups)))
+    if assigned != known:
+        raise JournalError("native report census does not cover native orders")
+    return scopes
 
 
 def _original_held(

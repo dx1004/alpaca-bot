@@ -13,6 +13,7 @@ from .journal import Journal
 from .paper_ledger_sources import (
     LedgerSource,
     ObservedActivity,
+    inspect_native_paper_ledger_sources,
     inspect_paper_ledger_sources,
 )
 
@@ -34,6 +35,7 @@ class EngineeringExecution:
     activity_source: LedgerSource
     ownership_sources: tuple[LedgerSource, ...]
     origin: str = "ENGINEERING_TEST"
+    transport_origin: str | None = None
 
 
 @dataclass(frozen=True, repr=False)
@@ -69,13 +71,67 @@ def inspect_engineering_executions(
     max_age: timedelta,
     fee_policy: Path,
 ) -> EngineeringExecutionConversion:
+    """Legacy simple engineering conversion; no native ownership inference."""
+    return _inspect_engineering_executions(
+        journal,
+        capture_sequence,
+        journal_scope=journal_scope,
+        account_ref=account_ref,
+        decision_at=decision_at,
+        through_sequence=through_sequence,
+        max_age=max_age,
+        fee_policy=fee_policy,
+        native=False,
+    )
+
+
+def inspect_native_engineering_executions(
+    journal: Journal,
+    capture_sequence: int,
+    *,
+    journal_scope: str,
+    account_ref: str,
+    decision_at: datetime,
+    through_sequence: int,
+    max_age: timedelta,
+    fee_policy: Path,
+) -> EngineeringExecutionConversion:
+    """Explicit native engineering conversion; enrollment remains unverified."""
+    return _inspect_engineering_executions(
+        journal,
+        capture_sequence,
+        journal_scope=journal_scope,
+        account_ref=account_ref,
+        decision_at=decision_at,
+        through_sequence=through_sequence,
+        max_age=max_age,
+        fee_policy=fee_policy,
+        native=True,
+    )
+
+
+def _inspect_engineering_executions(
+    journal: Journal,
+    capture_sequence: int,
+    *,
+    journal_scope: str,
+    account_ref: str,
+    decision_at: datetime,
+    through_sequence: int,
+    max_age: timedelta,
+    fee_policy: Path,
+    native: bool,
+) -> EngineeringExecutionConversion:
     """Convert only the canonical reader's explicit engineering assignments.
 
     Read source evidence afresh at the fixed prefix; accept no caller-built
     ownership result. Duplicate assignments and ambiguous variants stay raw.
     The reader preserves any existing caller transaction without writing.
     """
-    observed = inspect_paper_ledger_sources(
+    reader = (
+        inspect_native_paper_ledger_sources if native else inspect_paper_ledger_sources
+    )
+    observed = reader(
         journal,
         capture_sequence,
         journal_scope=journal_scope,
@@ -86,11 +142,20 @@ def inspect_engineering_executions(
         fee_policy=fee_policy,
     )
     issues = set(observed.issues)
-    assignments: dict[str, list[tuple[str, str, tuple[LedgerSource, ...]]]] = {}
+    assignments: dict[
+        str,
+        list[tuple[str, str, tuple[LedgerSource, ...], str | None, tuple[str, ...]]],
+    ] = {}
     for trip in observed.observed_roundtrips:
         for identity in trip.execution_ids:
             assignments.setdefault(identity, []).append(
-                (trip.entry_client_order_id, trip.symbol, trip.source_refs)
+                (
+                    trip.entry_client_order_id,
+                    trip.symbol,
+                    trip.source_refs,
+                    trip.transport_origin,
+                    trip.native_order_ids,
+                )
             )
     counts: dict[str, int] = {}
     for row in observed.activities:
@@ -136,6 +201,9 @@ def inspect_engineering_executions(
                 row.occurrences,
                 row.source,
                 matches[0][2],
+                transport_origin=(
+                    matches[0][3] if row.broker_order_id in matches[0][4] else None
+                ),
             )
         )
     keys = [(row.at, row.submicrosecond_remainder) for row in converted]
@@ -171,4 +239,9 @@ def inspect_engineering_executions(
         observed.source_refs,
         chronological,
         tuple(sorted(issues)),
+        classification=(
+            "OBSERVED_NATIVE_ENGINEERING_EXECUTIONS_NOT_FORMAL_PERFORMANCE"
+            if native
+            else "OBSERVED_ENGINEERING_EXECUTIONS_NOT_FORMAL_PERFORMANCE"
+        ),
     )
