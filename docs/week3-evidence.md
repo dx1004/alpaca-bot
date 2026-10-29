@@ -4665,3 +4665,68 @@ protection continuity remain open. No broker/account access, order/cancel,
 purchase, service, data-source change or formal paper start occurred. Ross stays
 separate and IEX remains NOT_SIP_EQUIVALENT; runtime/dispatch/formal gates stay
 false. W3-06/07/08 parents remain incomplete.
+
+
+### W3-08 canonical native/simple cycle integration — 2026-10-29 UTC
+
+The earlier second-scope join helper did not create a second canonical account
+cycle. A new integration now completes two sequential risk episodes in the same
+private Journal/account: the existing source-bound native episode followed by a
+distinct simple entry and bound market CLOSE. It uses production reservation,
+intent/send, order reconciliation, source captures and risk observations with
+memory-backed synthetic sources. No projected completed-map grafting, altered
+verification result or corrupt send row creates the second episode.
+
+The canonical risk owner completes both episodes and retains the first episode's
+exact history. The native reader reports both roundtrips and five unique source
+executions once each, with per-episode immutable ownership references. Native
+group/order IDs and injected transport origin remain on the native facts;
+the simple cycle retains its own IDs and no native transport origin. Exact
+fractional quantities/prices and original nanosecond timestamps survive. The
+default simple reader still rejects native group ownership. Re-reading the first
+capture at its original cutoff/horizon after the second cycle produces exactly
+the original ledger/conversion, and report reads leave the database unchanged.
+
+Final-byte verification:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_native_paper_ledger_cycles.py`: 1 passed in 99.09s.
+- Scoped Ruff check and format with `--no-cache`, and strict mypy with `/tmp/w308-cycles-mypy`, passed. Final formatting changed no Python AST; the passing behavior is unchanged.
+- The coordinator inspected the complete test and its final market-CLOSE/identity-census corrections. An earlier worker run passed before the last identity assertions; the final coordinator run above supersedes that evidence. No production-source fix was required for this mixed-cycle coverage.
+
+This closes canonical mixed/multiple-episode code integration with injected
+sources. Builtin HTTPS/broker-origin compatibility and cycles, formal enrollment,
+source/day/fee/posting censuses and final protocol freeze remain unaccepted.
+Every formal/runtime/dispatch/source-admission/finality flag stays false. No
+broker/account access, order, purchase or formal paper operation occurred.
+W3-06/07/08 parents remain incomplete.
+
+### Post-handoff source-close producer review — unaccepted draft, 2026-10-29 UTC
+
+The next W3-06 prerequisite is a real canonical source-close attempt provenance
+chain before a FILL consumer can adopt quantities. The initial preparation is
+deliberately entry-only: after CLOSE binding its census/exits conditions no longer
+apply. Current uncommitted work adds a distinct post-handoff qualifier and a fixed
+injected-only PRECALL/OUTCOME namespace. It leaves generic sending, ordinary send
+markers, old protection and the source-risk latch unchanged. No acceptance child
+is checked for this draft.
+
+Independent static review returned changes_required: qualify against the actual
+current invocation clock, require the engineering SCOPE before all journal
+population, and preserve independent retained entry scopes when rebuilding
+attempts. Two-connection racing and those failure cases are not yet verified.
+In addition, the coordinator's focused positive test stopped during fixture setup
+in 18.79s: reusing the previous selection after binding the unsent CLOSE failed
+the owned-inventory audit. The test's diagnostic wrapper exposed the original
+`mark reference is outside source-owned inventory` exception; it must not become
+a qualification bypass. A valid fresh post-handoff source path remains to be
+established without forged send rows, global risk relaxation or invented TTLs.
+There is no completed positive producer test or source FILL consumer.
+
+Two selected Sol workers terminated with service-capacity errors. This does not
+establish all-model/account unavailability. A process check found no matching live
+worker pytest/mypy processes; only then did the coordinator run the focused
+final-byte W3-08 check and the source-producer diagnostic. Existing passed review
+and test evidence was retained; no failed/unexecuted delegated stage was claimed
+as complete. The source-producer files remain uncommitted because their known
+review and source-qualification failures are unresolved. This draft cannot grant
+dispatch, risk release, operational protection or formal paper authority.

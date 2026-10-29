@@ -282,7 +282,9 @@ Automation status values: `[ ]` pending, `[-]` in progress, `[x]` verified compl
 
   - [x] Native engineering ledger adapter static review, 2026-10-29 UTC: independent Sol review of immutable 1456861 approved the scoped source/test implementation; the prior 103-case coordinator verification remains applicable. [Review and exact limits](docs/week3-evidence.md#sol-retrieval-recovery-and-native-adapter-review--2026-10-29-utc). This closes static review only.
 
-  - [ ] Native engineering ledger adapter actual acceptance: verify builtin source compatibility, multiple canonical/mixed cycles, formal enrollment/censuses and final freeze; join-level synthetic mapping is not an actual second cycle. All source-admission/formal/runtime/dispatch gates remain false.
+  - [x] Canonical native/simple mixed-cycle integration, 2026-10-29 UTC: two complete sequential episodes in one private account journal use production source/risk/lifecycle paths; exact per-episode execution attribution and original-prefix equality pass the final focused integration, static checks and coordinator review. [Evidence and actual-source limits](docs/week3-evidence.md#w3-08-canonical-nativesimple-cycle-integration--2026-10-29-utc). Injected sources only; this supersedes the earlier join-only coverage limitation.
+
+  - [ ] Native engineering ledger adapter actual acceptance: verify builtin HTTPS/broker-origin compatibility and cycles, formal enrollment/censuses and final freeze. Canonical mixed-cycle code integration is verified separately with injected sources; all source-admission/formal/runtime/dispatch gates remain false.
 
 ## Week 4 — Integration, audit, and release freeze
 
