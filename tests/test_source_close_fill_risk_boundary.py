@@ -2,6 +2,7 @@
 
 import copy
 import json
+from collections.abc import Callable
 from datetime import timedelta
 from fractions import Fraction
 from typing import Any
@@ -14,10 +15,15 @@ from alpaca_ross_bot.crossed_stop_attempts import (
     SourceCloseAttempts,
     SourceCloseCallbackResponse,
 )
+from alpaca_ross_bot.crossed_stop_attribution import (
+    SourceCloseAttributions,
+    read_source_close_attributions_at,
+)
 from alpaca_ross_bot.crossed_stop_capture import SourceCloseCaptures
 from alpaca_ross_bot.crossed_stop_fills import derive_injected_source_close_fills
 from alpaca_ross_bot.crossed_stop_preparation import native_preparation_request
 from alpaca_ross_bot.native_oco_requests import _json
+from alpaca_ross_bot.oco_journal import OcoJournal
 from alpaca_ross_bot.risk_evidence_request import IncidentRiskRequest
 from test_crossed_stop_capture import MemoryGets, capture, fill, order
 from test_crossed_stop_capture import captured as captured
@@ -94,6 +100,8 @@ def _verify_inside_current_risk(
     expected_component: dict[str, Any],
     arguments: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
+    *,
+    read_evidence: Callable[[Any], dict[str, Any]] | None = None,
 ) -> None:
     expected_risk = copy.deepcopy(risk.view())
     target = source.journal.read_account_risk_events()[-1][0].sequence
@@ -119,12 +127,14 @@ def _verify_inside_current_risk(
     ) -> dict[str, Any]:
         if sequence == target:
             assert self.journal._db.in_transaction
-            assert (
+            actual = (
                 derive_injected_source_close_fills(
                     self.journal, owner.initial, **arguments
                 )
-                == expected_component
+                if read_evidence is None
+                else read_evidence(self.journal)
             )
+            assert actual == expected_component
             consumed[0] += 1
         return original_reduce(self, old, item, conflict, sequence)
 
@@ -226,3 +236,99 @@ def test_native_source_attribution_has_no_recursive_risk_or_implicit_debit(
     assert after["capacity"] == "0"
     assert not source.journal.has_order_send_attempt(cid)
     _verify_inside_current_risk(source, risk, owner, component, arguments, monkeypatch)
+
+
+def test_durable_source_claims_replay_inside_risk_without_releasing_the_slot(
+    captured: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, _, get, at, fixture = captured
+    source, risk, owner, emergency, _, _, _ = fixture[4]
+    previous_risk = copy.deepcopy(risk.view())
+    previous_close = copy.deepcopy(emergency.view())
+    previous_model = owner.view()
+    get.order.update(
+        status="partially_filled", filled_qty="0.25", filled_at=at.isoformat()
+    )
+    get.pages = [_json([fill(captured)]), b"[]"]
+    packet = capture(captured)
+    observed_at = at + timedelta(microseconds=1)
+    cid = get.order["client_order_id"]
+    captures = (packet["capture_ref"]["sequence"],)
+    book = SourceCloseAttributions(source.journal, owner.initial)
+    original = book.observe(
+        "durable-risk-boundary",
+        observed_at,
+        client_order_id=cid,
+        capture_sequences=captures,
+    )
+    horizon = source.journal.read_evidence_sequence()
+    expected = book.view()
+    assert set(expected["activity_claims"]) == {"fill-page-1"}
+    assert not expected["conflicts"]
+    assert all(value is False for value in expected["authority"].values())
+    assert risk.view() == previous_risk
+    assert owner.view() == previous_model
+    assert emergency.view() == previous_close
+    assert not source.journal.has_order_send_attempt(cid)
+
+    def read(journal: Any) -> dict[str, Any]:
+        return read_source_close_attributions_at(
+            journal,
+            owner.initial,
+            through_sequence=horizon,
+            decision_at=observed_at,
+        )
+
+    def deny_current_constructor(*args: Any, **kwargs: Any) -> None:
+        raise AssertionError("durable source reader entered a current constructor")
+
+    before = tuple(source.journal._db.iterdump())
+    with monkeypatch.context() as context:
+        context.setattr(AccountRiskOwner, "__init__", deny_current_constructor)
+        context.setattr(OcoJournal, "__init__", deny_current_constructor)
+        context.setattr(SourceCloseAttributions, "__init__", deny_current_constructor)
+        assert read(source.journal) == expected
+    assert tuple(source.journal._db.iterdump()) == before
+
+    selection = IncidentRiskRequest.from_dict(
+        previous_risk["last_snapshot"]["selection"]
+    )
+    risk.observe(
+        "durable-source-current-risk",
+        selection,
+        observed_at + timedelta(microseconds=1),
+    )
+    current_risk = risk.view()
+    assert current_risk["last_snapshot"]["qualified"] is False
+    assert "SOURCE_CLOSE_OWNERSHIP_PENDING" in current_risk["issues"]
+    assert (
+        current_risk["held"]["client_order_id"]
+        == previous_risk["held"]["client_order_id"]
+    )
+    assert current_risk["completed"] == previous_risk["completed"]
+    assert current_risk["capacity"] == "0"
+    for key in ("pending_open_loss_reserve", "additional_local_cash_hold"):
+        assert Fraction(current_risk[key]) >= Fraction(previous_risk[key])
+    _verify_inside_current_risk(
+        source,
+        risk,
+        owner,
+        expected,
+        {},
+        monkeypatch,
+        read_evidence=read,
+    )
+    # Later current risk evidence cannot silently restamp a historical retry.
+    before = tuple(source.journal._db.iterdump())
+    assert (
+        book.observe(
+            "durable-risk-boundary",
+            observed_at + timedelta(microseconds=2),
+            client_order_id=cid,
+            capture_sequences=captures,
+        )
+        == original
+    )
+    assert tuple(source.journal._db.iterdump()) == before
+    assert book.view() == expected
+    assert emergency.view() == previous_close

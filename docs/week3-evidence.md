@@ -4940,3 +4940,63 @@ continuous protection, deadlines and release gates remain unresolved. There was 
 actual account/credential access, order/cancel, purchase, service or formal paper.
 Ross remains separate, NOT_SIP_EQUIVALENT is retained, and W3-06/07/08 parents stay
 incomplete with executable gates closed.
+
+
+### Durable injected source-close attribution index — 2026-10-29 UTC
+
+`crossed_stop_attribution.py` now owns a separate account-wide research index in
+the existing private Journal. No schema migration or existing risk/order state
+format changes. Observe derives the canonical source-close proof under the same
+IMMEDIATE lock used to append its event, first-reference dedupe record and claim
+projection. Inputs contain operation/CID/capture identities and an empty canonical
+OCO binding; no caller-built proof, ownership flag, fill list or native total is
+accepted. Only a passing INJECTED component with UNKNOWN finality and literal-false
+authority can enter the index.
+
+CID, broker UUID and raw activity claims retain their first owner/reference and
+full-row content identity across incremental captures. Cumulative quantities are
+unions, not sums of repeated snapshots. The complete original reservation basket
+is retained through partial/terminal reports. The first observation's horizon,
+decision clock, binding and derived proof remain immutable. A later/equal-clock
+exact retry returns its original row without new evidence; retrodated retries are
+rejected. Changing the request under an existing operation appends one conflict,
+preserves the original claims and latches new account-index observations. Identical
+conflict retries return the first conflict reference. No recovery/clear operation
+or risk-policy change is introduced.
+
+Replay checks exact schemas, canonical bytes/hashes, original source derivation,
+clocks, refs, full projection and first-reference maps. The bounded DTO reader
+excludes later events before deriving them and rejects current-view/writer use.
+New decoder failures are normalized to JournalError at this boundary. Failed
+derivation/append leaves prior claims intact. Process-level interrupts roll back
+the transaction this writer owns; caller-owned transactions are refused intact.
+The index records historical facts only: an exact retry or clean historical index
+does not certify current source freshness/health, economic ownership or release.
+
+Independent review required two corrections before the initial worker suite:
+replay must reject a new conflict after its latch just as the writer does; and
+KeyboardInterrupt/SystemExit must release the writer-owned transaction. Both were
+fixed and approved in the second scoped review. Tests use a fully rehashed second
+conflict with consistent cached projection, plus interruption in derivation and
+reduction with a real second connection checking lock availability.
+
+Validation:
+
+- Initial `tests/test_crossed_stop_attribution.py` run passed its canonical incremental/reopen/retry case, then stopped at a conflict-reason assertion (1 passed, 1 failed in 187.15s). JournalError is a ValueError subclass, so normalization had masked the intentional latch reason while still rejecting the operation. The narrow final correction preserves existing JournalError and normalizes other decoder/shape errors; transaction cleanup remains intact. Final selection `-k 'not incremental_union' -x`: 5 passed, 1 deselected in 372.57s. These five grouped cases cover conflict idempotence/latch, atomic append failure, malformed-source normalization, raw/ref/origin/projection/dedupe/visibility tampering, two-connection races and process-level interruption rollback. The unchanged successful incremental case was not repeated; it covers first references, two-connection reopen, original-bound retries after later valid model/source state, seeded-initial rejection and unchanged risk/emergency state. No full final six-case or repository regression is claimed.
+- Root `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_source_close_fill_risk_boundary.py -k durable_source`: 1 passed, 2 deselected in 68.46s after the initial review fixes and before the final exceptional-message-only correction. Denies current risk/OCO/attribution constructors during bounded reading, then consumes the DTO during actual current-risk reduction of a later real observation. Journal/risk/emergency states, source ownership latch and reservation floors remain intact; the later retry does not restamp old evidence. The normal path is unchanged by the final correction, exercised by the remaining negative tests. The earlier pre-review run passed in 82.12s. Existing two pure-component cases were not rerun in this selection.
+- Final scoped Ruff check/format, strict mypy with `/tmp/alpaca-durable-source-risk-mypy`, and git whitespace checks pass for the new production/test modules and extended risk-boundary test. Independent re-review approved the transaction/latch corrections and inspected the test scope; the final focused review approved preserving intentional JournalError messages. All referenced test/type handles are terminal. Memory-backed fixtures and durations are not broker or runtime-throughput acceptance.
+
+Next integration belongs to the existing account-ownership pipeline: derive the
+same bounded inventory before `_snapshot` calls equity/risk qualification; partition
+simple/native/source intents and raw FILL signatures consistently; use one exit
+union rather than a third source subtraction. Fixed callback provenance cannot be
+retagged into V2 builtin HTTPS/injected exchange qualification merely by matching
+account IDs or rows. Compatible source provenance, complete account/FILL agreement,
+finality, protected disposal/recovery and real-time admission still need acceptance.
+
+No source/local ownership, protection, risk-release, runtime, dispatch or formal
+authority is enabled; finality stays UNKNOWN and existing risk/cash floors and
+LATCH_UNRECONCILED_SOURCE_CLOSE_V1 are unchanged. There was no actual account or
+credential access, broker order/cancel, purchase, service or formal paper start.
+Ross remains separate and NOT_SIP_EQUIVALENT remains. W3-06/07/08 parents stay
+incomplete; this acceptance closes the durable injected index component only.
