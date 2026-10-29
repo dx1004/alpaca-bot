@@ -1,6 +1,7 @@
 """Native residual preparation is local, disjoint and never stop clearance."""
 
 import json
+import time
 from dataclasses import replace
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -9,6 +10,7 @@ from typing import Any
 
 import pytest
 
+from alpaca_ross_bot import account_risk_owner as risk_module
 from alpaca_ross_bot.account_risk_owner import AccountRiskOwner
 from alpaca_ross_bot.crossed_stop import CrossedStopJournal
 from alpaca_ross_bot.crossed_stop_contract import load_crossed_stop_contract
@@ -558,3 +560,67 @@ def test_fault_injected_native_residual_close_cannot_release_source_ownership(
         assert recovered.verify_rebuild()
     finally:
         reopened.close()
+
+
+def test_current_risk_reuse_preserves_native_replay(
+    native_ready: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Compare identical immutable input with and without current-proof reuse."""
+    book, emergency, _, _, _ = native_ready
+    source, risk, _, _, _ = book
+    horizon = source.journal.read_evidence_sequence()
+    before_risk = risk.view()
+    before_intents = source.journal.read_order_intent_ids()
+    calls = {"full_rebuilds": 0, "risk_reductions": 0}
+    rebuild = AccountRiskOwner._verify_rebuild_uncached
+    reduce = AccountRiskOwner._reduce
+
+    def counted_rebuild(self: AccountRiskOwner) -> bool:
+        calls["full_rebuilds"] += 1
+        return rebuild(self)
+
+    def counted_reduce(
+        self: AccountRiskOwner,
+        old: object,
+        item: dict[str, Any],
+        conflict: bool,
+        sequence: int,
+    ) -> dict[str, Any]:
+        calls["risk_reductions"] += 1
+        return reduce(self, old, item, conflict, sequence)
+
+    monkeypatch.setattr(AccountRiskOwner, "_verify_rebuild_uncached", counted_rebuild)
+    monkeypatch.setattr(AccountRiskOwner, "_reduce", counted_reduce)
+    measured: dict[str, dict[str, int | float]] = {}
+    expected = None
+    for mode in ("uncached_current", "scoped_current"):
+        for key in calls:
+            calls[key] = 0
+        with monkeypatch.context() as context:
+            if mode == "uncached_current":
+                context.setattr(
+                    risk_module,
+                    "memoized_current_risk_verification",
+                    lambda *args, **kwargs: kwargs["rebuild"](),
+                )
+            started = time.monotonic()
+            result = emergency.view()
+            measured[mode] = dict(calls) | {
+                "seconds": round(time.monotonic() - started, 3)
+            }
+        if expected is None:
+            expected = result
+        else:
+            assert result == expected
+    assert (
+        measured["scoped_current"]["full_rebuilds"]
+        < measured["uncached_current"]["full_rebuilds"]
+    )
+    assert (
+        measured["scoped_current"]["risk_reductions"]
+        < measured["uncached_current"]["risk_reductions"]
+    )
+    assert source.journal.read_evidence_sequence() == horizon
+    assert source.journal.read_order_intent_ids() == before_intents
+    assert risk.view() == before_risk
+    print("same_input_native_replay", json.dumps(measured, sort_keys=True))

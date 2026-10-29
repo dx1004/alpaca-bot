@@ -14,7 +14,10 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from ._causal_risk_memo import memoized_causal_risk_prefix
+from ._causal_risk_memo import (
+    memoized_causal_risk_prefix,
+    memoized_current_risk_verification,
+)
 from .crossed_stop_contract import CrossedStopContract, load_crossed_stop_contract
 from .entry_strategy import EntryDecision
 from .equity_fees import planned_charge_bounds
@@ -1634,6 +1637,21 @@ class AccountRiskOwner:
         )
 
     def verify_rebuild(self) -> bool:
+        return memoized_current_risk_verification(
+            self.journal,
+            account_ref=self.account_ref,
+            version=VERSION,
+            state_key=self.state_key,
+            fee_policy=self.fee_policy,
+            verifier=(
+                type(self),
+                type(self)._verify_rebuild_uncached,
+                type(self)._reduce,
+            ),
+            rebuild=self._verify_rebuild_uncached,
+        )
+
+    def _verify_rebuild_uncached(self) -> bool:
         projected: object = None
         expected: dict[str, object] = {}
         seen: dict[str, str] = {}

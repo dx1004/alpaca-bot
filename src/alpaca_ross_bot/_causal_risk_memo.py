@@ -1,8 +1,9 @@
-"""Ephemeral memo of fully verified causal risk prefixes in one SQLite scope.
+"""Ephemeral risk proofs in one synchronous SQLite transaction scope.
 
-No persistent state or ordinary current-projection verification is cached. The
-only caller supplies the unchanged causal replay, and every hit retains current
-storage, input-file and mutation checks under the root's existing transaction.
+Historical prefixes and successful current consistency checks have separate keys.
+Every hit retains storage, account, input-file and mutation checks. Scope owners
+must not commit, roll back, or re-enter a transaction before leaving the scope.
+No risk eligibility or dispatch authority is cached.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ _CONTRACT_INPUTS = (
     _ROOT / "evidence/crossed-stop-residual-exit-research-v1.json",
 )
 _Result = tuple[dict[str, Any] | None, tuple[int, ...]]
+_MemoResult = tuple[dict[str, Any] | bool | None, tuple[int, ...]]
 _Epoch = tuple[int, int, int, int, int]
 _Key = tuple[object, ...]
 _DiskInput = tuple[str, str, str]
@@ -160,7 +162,50 @@ def memoized_causal_risk_prefix(
     through_sequence: int,
     rebuild: Callable[[], _Result],
 ) -> _Result:
-    """Memoize successes only; the real reader keeps basic checks before this call."""
+    """Memoize qualified prefixes; keep the reader's basic checks before lookup."""
+    state, refs = _memoized_risk_proof(
+        journal,
+        key=("causal", account_ref, version, decision_at.isoformat(), through_sequence),
+        fee_policy=fee_policy,
+        rebuild=rebuild,
+    )
+    if state is not None and not isinstance(state, dict):
+        raise JournalError("invalid memoized causal risk result")
+    return state, refs
+
+
+def memoized_current_risk_verification(
+    journal: Journal,
+    *,
+    account_ref: str,
+    version: str,
+    state_key: str,
+    fee_policy: Path,
+    verifier: tuple[object, ...],
+    rebuild: Callable[[], bool],
+) -> bool:
+    """Reuse only consistency True, never a risk state or qualification decision."""
+    scope = _ACTIVE.get()
+    if scope is None or scope.closed or scope.journal is not journal:
+        return rebuild()
+    if journal.read_paper_account_ref() != account_ref:
+        raise JournalError("source risk account is not bound")
+    verified, _ = _memoized_risk_proof(
+        journal,
+        key=("current", account_ref, version, state_key, verifier),
+        fee_policy=fee_policy,
+        rebuild=lambda: (rebuild(), ()),
+    )
+    return verified is True
+
+
+def _memoized_risk_proof(
+    journal: Journal,
+    *,
+    key: _Key,
+    fee_policy: Path,
+    rebuild: Callable[[], _MemoResult],
+) -> _MemoResult:
     scope = _ACTIVE.get()
     if scope is None or scope.closed or scope.journal is not journal:
         return rebuild()
@@ -173,14 +218,7 @@ def memoized_causal_risk_prefix(
             raise JournalError("causal risk source changed during verification")
         scope.values.clear()
         scope.epoch = epoch
-    key: _Key = (
-        account_ref,
-        version,
-        decision_at.isoformat(),
-        through_sequence,
-        dependencies,
-        epoch,
-    )
+    key = (*key, dependencies, epoch)
     _remember_files(scope, dependencies)
     cached = scope.values.get(key)
     if cached is not None:
@@ -193,8 +231,8 @@ def memoized_causal_risk_prefix(
             _remember_files(scope, current)
             _remember_paths(scope, paths)
             state = json.loads(cached.payload)
-            if state is not None and not isinstance(state, dict):
-                raise JournalError("invalid memoized causal risk result")
+            if state is not None and not isinstance(state, (dict, bool)):
+                raise JournalError("invalid memoized risk proof")
             return state, cached.refs
         del scope.values[key]
     if key in scope.inflight:
@@ -215,15 +253,20 @@ def memoized_causal_risk_prefix(
         # canonical arrays by iterating these dictionaries.
         payload = json.dumps(state, separators=(",", ":"), allow_nan=False).encode()
         copied = json.loads(payload)
-        if copied is not None and not isinstance(copied, dict):
-            raise JournalError("invalid causal risk result")
+        if copied is not None and not isinstance(copied, (dict, bool)):
+            raise JournalError("invalid risk proof result")
         _remember_files(scope, closure)
         _remember_paths(scope, paths)
-        verified = state is None or (
-            state.get("source_snapshot_qualified") is True
-            and isinstance(state.get("last_snapshot"), dict)
-            and state["last_snapshot"].get("qualified") is True
-            and state.get("veto") is False
+        verified = (
+            state is True
+            or state is None
+            or (
+                isinstance(state, dict)
+                and state.get("source_snapshot_qualified") is True
+                and isinstance(state.get("last_snapshot"), dict)
+                and state["last_snapshot"].get("qualified") is True
+                and state.get("veto") is False
+            )
         )
         if verified:
             scope.values[key] = _Cached(payload, tuple(refs), closure, paths)

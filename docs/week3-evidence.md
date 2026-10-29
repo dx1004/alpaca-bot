@@ -4603,3 +4603,65 @@ Original Ross and NOT_SIP_EQUIVALENT remain. Operational source-close ownership,
 combined risk finality/recovery, real source qualification, target/protection
 continuity, timing/throughput and W3-07 actual cycles remain open. W3-06/07/08
 parents and the formal release gates stay incomplete.
+
+### Scoped current-risk consistency reuse — 2026-10-29 UTC
+
+The current-risk verifier was repeatedly reconstructing the same full immutable
+account history inside one synchronous crossed-stop/native proof transaction.
+Historical-prefix reuse alone did not remove these current-proof bodies. The
+old body is preserved as AccountRiskOwner._verify_rebuild_uncached (AST equality
+against f145612 verified). Within an existing matching lexical scope,
+verify_rebuild coalesces only completed True results. Outside that scope the
+unchanged body runs every time.
+
+Current consistency and historical qualification have separate operation keys.
+A current True proves projection/deduplication consistency even when the risk
+state is vetoed or source-unqualified; it never authorizes admission. The cache
+holds that boolean, not a mutable financial state. Callers still read their
+current projection and apply all existing risk/protection/source gates.
+Account/version/state-key/verifier/reducer identity, fee identity and the existing
+SQL epoch distinguish checks. Private storage and account binding are rechecked;
+DML, evidence horizon, schema and external-data versions invalidate reuse.
+Historical/current nesting propagates the complete fee/contract/path dependency
+closure on both real executions and cache hits. False, exceptions, in-flight
+cycles and mid-verification changes cannot become successful proofs.
+
+The lifetime remains the inspected synchronous lexical transaction roots; they
+leave scopes before committing or rolling back. The epoch tuple is not a
+standalone transaction-generation identifier. Committing/restarting a transaction
+inside a scope is outside this internal contract. Closed roots, including copied
+contexts, cannot reactivate their cache. No persistent memo, new transaction,
+weakened source requirement, serialized-record change or operational authority
+was added.
+
+**Equal-input measurement.** On the same existing synthetic native residual book,
+CrossedStopJournal.view was run once with only current-proof reuse bypassed and
+once with it enabled. Historical-prefix behavior was identical in both modes.
+The returned object was exactly equal, and journal horizon, intents and current
+risk state were unchanged. Full current rebuilds fell from 10 to 1; risk reductions
+from 111 to 39. Observed durations were 12.293s and 3.703s; the complete test,
+including its fixture, passed in 45.82s. Other regression work was running on the
+host, so these durations are descriptive, not a controlled benchmark or SLA.
+The deterministic count/result comparison is the acceptance evidence. The older
+54-rebuild/approximately 62.4s preparation measurement remains historical; this
+new result measures a read on identical input, not that preparation or a live
+feed deadline. A redacted metric summary was retained separately at
+/tmp/alpaca-w3-current-proof-20261029.json.
+
+Verification:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_causal_risk_memo.py`: 17 passed in 9.26s.
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -s -p no:cacheprovider tests/test_native_crossed_stop_preparation.py::test_current_risk_reuse_preserves_native_replay`: 1 passed in 45.82s, including the exact-input comparison above.
+- The focused writer run of `tests/test_current_risk_memo.py`: 17 passed in 3.12s. Tests cover full-rebuild reuse, unchanged database dump, outside/new scopes, consistent unqualified state, False/exception/cycle cleanup, projection/dedup/raw/schema corruption and rollback, account/state-key/fee/type/storage changes, both current/historical nesting directions with transitive fee/path changes, closed copied contexts, connection replacement and mutation during rebuild.
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_account_risk_owner.py tests/test_native_account_risk_owner.py tests/test_native_owned_entry.py tests/test_source_close_handoff.py tests/test_native_terminal_stop_policy.py tests/test_native_risk_registry.py`: 83 passed in 609.87s.
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_current_risk_memo.py tests/test_native_crossed_stop_preparation.py tests/test_native_paper_ledger_sources.py tests/test_paper_ledger_sources_integration.py tests/test_crossed_stop_risk_binding.py`: 65 passed in 966.34s.
+- Final scoped Ruff check/format with `--no-cache`, strict mypy with `/tmp/alpaca-current-risk-mypy`, and git diff whitespace checks passed for the two production and two test files. An auxiliary formatter initially attempted its default cache on the restricted filesystem; the same check with `--no-cache` passed without permission changes or global repair.
+- Independent read-only review approved the source and tests with no actionable regression. It checked the unchanged proof body, dependencies, lifetime and false authority flags, and did not claim execution of the coordinator's tests.
+
+This closes only the repeated-current-consistency verification increment.
+Long-history/current preparation throughput, actual input freshness deadlines,
+source close sending/fill-ownership consumption, combined finality/recovery and
+protection continuity remain open. No broker/account access, order/cancel,
+purchase, service, data-source change or formal paper start occurred. Ross stays
+separate and IEX remains NOT_SIP_EQUIVALENT; runtime/dispatch/formal gates stay
+false. W3-06/07/08 parents remain incomplete.
