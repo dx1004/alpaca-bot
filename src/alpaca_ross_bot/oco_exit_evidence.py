@@ -20,6 +20,8 @@ from .native_oco_http import native_http_inventory
 from .oco_research import OcoResearchState
 from .paper_order_contract import decode_broker_json
 
+NATIVE_TERMINAL_STOP_POLICY = "NATIVE_TERMINAL_STOP_PRIOR_RESIZE_V1"
+
 
 def derive_native_exit_census(
     journal: Journal,
@@ -30,12 +32,18 @@ def derive_native_exit_census(
     decision_at: datetime,
     max_age: timedelta,
     through_sequence: int,
+    observation_policy: str | None = None,
 ) -> dict[str, Any]:
     """Bind a complete observed native census or retain an explicit quarantine.
 
     Incomplete captures keep their positive raw facts but never replace a prior
     accepted census with zero. Complete oversells are imported as model incidents.
     """
+    if observation_policy is not None and (
+        type(observation_policy) is not str
+        or observation_policy != NATIVE_TERMINAL_STOP_POLICY
+    ):
+        raise JournalError("pinned native exit observation policy required")
     facts = inspect_native_oco_capture(
         journal,
         capture_sequence,
@@ -193,12 +201,115 @@ def derive_native_exit_census(
         and len(facts.orders) == 2
         and all(order.order_id in facts.exhausted_order_ids for order in facts.orders)
     )
+    terminal_stop_proof = None
+    if observation_policy == NATIVE_TERMINAL_STOP_POLICY and len(facts.orders) == 2:
+        target, stop = facts.orders
+        if stop.status in {"filled", "canceled", "expired", "rejected"}:
+            # Select immutable history, then qualify original raw source bytes.
+            anchors = []
+            for event, payload in journal.read_oco_research_events():
+                if event.sequence > through_sequence:
+                    continue
+                item = json.loads(payload)
+                operation = item["operation"]
+                if (
+                    item["binding"]["entry_scope"] == initial.entry_scope
+                    and item["binding"]["account_ref"] == initial.account_ref
+                    and item["kind"] == "BOUND_NATIVE_EXIT"
+                    and operation["outcome"] == "BOUND_NATIVE_EXIT_CENSUS"
+                    and operation["request"]["group_id"] == group_id
+                    and operation["request"]["capture_sequence"] < capture_sequence
+                    and event.sequence < capture_sequence
+                    and event.visible_at(decision_at)
+                ):
+                    anchors.append((event, operation))
+            for anchor_event, anchor in reversed(anchors):
+                prior = derive_native_exit_census(
+                    journal,
+                    initial,
+                    group_id=group_id,
+                    capture_sequence=anchor["request"]["capture_sequence"],
+                    decision_at=datetime.fromisoformat(
+                        anchor["request"]["decision_at"]
+                    ),
+                    max_age=timedelta(
+                        microseconds=anchor["request"]["max_age_microseconds"]
+                    ),
+                    through_sequence=anchor["source_horizon"],
+                )
+                raw_anchor = journal.read_event(prior["capture_ref"]["sequence"])
+                assert raw_anchor is not None
+                anchor_completed_at = json.loads(raw_anchor[1])["completed_at"]
+                before = prior["source_observation"]["orders"]
+                now = [order.to_dict() for order in facts.orders]
+                changing = {
+                    "status",
+                    "quantity",
+                    "filled_quantity",
+                    "updated_at",
+                    "reported_remaining_quantity",
+                }
+                prior_fills = {
+                    fill["activity_id"]: fill
+                    for fill in prior["source_observation"]["fills"]
+                }
+                current_fills = {
+                    fill.activity_id: fill.to_dict() for fill in facts.fills
+                }
+                if (
+                    prior["status"] == "BOUND_NATIVE_EXIT_CENSUS"
+                    and not prior["issues"]
+                    and prior["identity"] == identity
+                    and len(before) == 2
+                    and before[0]["status"] == "partially_filled"
+                    and before[1]["status"]
+                    in {"new", "accepted", "held", "partially_filled"}
+                    and 0 < Fraction(before[0]["filled_quantity"]) < target.quantity
+                    and Fraction(before[0]["quantity"]) == target.quantity
+                    and Fraction(before[1]["quantity"])
+                    == stop.quantity
+                    == target.quantity - Fraction(before[0]["filled_quantity"])
+                    and stop.quantity > 0
+                    and 0
+                    <= Fraction(before[1]["filled_quantity"])
+                    <= stop.filled_quantity
+                    <= stop.quantity
+                    and Fraction(before[0]["filled_quantity"])
+                    <= target.filled_quantity
+                    <= target.quantity
+                    and all(
+                        {k: v for k, v in old.items() if k not in changing}
+                        == {k: v for k, v in new.items() if k not in changing}
+                        and _instant(old["updated_at"]) <= _instant(new["updated_at"])
+                        for old, new in zip(before, now, strict=True)
+                    )
+                    and all(
+                        current_fills.get(key) == value
+                        for key, value in prior_fills.items()
+                    )
+                ):
+                    terminal_stop_proof = {
+                        "owner_event_ref": {
+                            "sequence": anchor_event.sequence,
+                            "hash": anchor_event.payload_ref,
+                        },
+                        "capture_ref": prior["capture_ref"],
+                        "capture_completed_at": anchor_completed_at,
+                        "identity": prior["identity"],
+                        "orders": before,
+                        "fills": prior["source_observation"]["fills"],
+                    }
+                    break
     if len(facts.orders) == 2:
         target, stop = facts.orders
-        if stop.quantity not in {
-            target.quantity,
-            target.quantity - target.filled_quantity,
-        }:
+        if (
+            stop.quantity
+            not in {
+                target.quantity,
+                target.quantity - target.filled_quantity,
+            }
+            and terminal_stop_proof is None
+        ):
             issues.append("NATIVE_EXIT_STOP_QUANTITY_RELATION_UNQUALIFIED")
     executions = []
     for fill in facts.fills:
@@ -335,7 +446,7 @@ def derive_native_exit_census(
     if last_declared_entry > last_source_entry:
         issues.append("DECLARED_ENTRY_AFTER_BOUND_SOURCE")
     accepted = allowed and not (set(issues) - complete_incidents)
-    return {
+    receipt = {
         "schema": 1,
         "status": "BOUND_NATIVE_EXIT_CENSUS"
         if accepted
@@ -372,3 +483,9 @@ def derive_native_exit_census(
         "risk_release_authorized": False,
         "risk_qualified": False,
     }
+
+    if observation_policy is not None:
+        receipt["schema"] = 2
+        receipt["observation_policy"] = observation_policy
+        receipt["terminal_stop_proof"] = terminal_stop_proof
+    return receipt

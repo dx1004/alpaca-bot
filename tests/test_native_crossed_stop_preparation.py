@@ -455,3 +455,106 @@ def test_native_anchored_intent_handoff_preserves_existing_group_and_risk(
     with pytest.raises(JournalError, match="source emergency"):
         source.journal.mark_order_send_attempt(cid, at + timedelta(seconds=2))
     assert not source.journal.has_order_send_attempt(cid)
+
+
+def test_fault_injected_native_residual_close_cannot_release_source_ownership(
+    native_ready: Any,
+) -> None:
+    from alpaca_ross_bot.oco_exit_evidence import NATIVE_TERMINAL_STOP_POLICY
+    from test_source_close_handoff import fault_inject_source_send_marker
+
+    book, emergency, at, assets, statuses = native_ready
+    source, risk, owner, fixture, reported = book
+    emergency.prepare_native_source(
+        "fault-native-close",
+        at,
+        asset_sequence=assets,
+        status_sequence=statuses,
+        status_record_index=0,
+        max_asset_age=timedelta(seconds=1),
+        max_status_age=timedelta(seconds=1),
+        for_handoff=True,
+    )
+    state = emergency.bind_source_intent("fault-native-close", at)
+    close = state["closes"]["fault-native-close"]
+    cid = close["request"]["client_order_id"]
+    later = at + timedelta(seconds=1)
+    risk.bind_exit("fault-native-close-role", later, cid, "CLOSE")
+    before = risk.view()
+    fault_inject_source_send_marker(source, cid, later)
+    source.order(cid, later, "filled", 1)
+    source.fill(cid, later, 1, "9.49")
+    reported.order.update(status="filled", filled_qty="2", updated_at=later.isoformat())
+    reported.order["legs"][0].update(status="canceled", updated_at=later.isoformat())
+    root = reported.order["id"]
+    reported.fills[root].append(
+        reported.fills[root][0]
+        | {"id": "native-target-final", "transaction_time": later.isoformat()}
+    )
+    owner.bind_native_exit_census(
+        "fault-native-terminal",
+        "group-a",
+        capture(fixture, reported, later),
+        later,
+        timedelta(seconds=30),
+        later,
+        observation_policy=NATIVE_TERMINAL_STOP_POLICY,
+    )
+    selection = full_book(source, reported, later, cash="502.15", position=0)
+    risk.observe("fault-native-close-flat", selection, later)
+    after = risk.view()
+    assert after["last_snapshot"]["qualified"], after["issues"]
+    assert after["last_snapshot"]["flat"]
+    assert CID in after["last_snapshot"]["native"]["final_scopes"]
+    assert after["held"] is not None
+    assert after["held"]["client_order_id"] == CID
+    assert after["completed"] == before["completed"]
+    assert after["pending_open_loss_reserve"] == before["pending_open_loss_reserve"]
+    assert after["additional_local_cash_hold"] == before["additional_local_cash_hold"]
+    assert after["capacity"] == "0"
+    assert "SOURCE_CLOSE_OWNERSHIP_PENDING" in after["issues"]
+    assert owner.view().model.unallocated_quantity == 1
+    assert emergency.view()["closes"]["fault-native-close"]["filled"] == "0"
+    assert not close["source_intent_binding"]["source_fill_ownership_accepted"]
+    # Legacy-equivalent counterexample with the NEW native reader: remove only
+    # the new guard marker from a transient reducer input. No source proof or
+    # projection is mocked, and no marker-free event is persisted.
+    event, raw = source.journal.read_account_risk_events()[-1]
+    legacy = json.loads(raw)
+    assert (
+        legacy.pop("source_close_ownership_policy")
+        == "LATCH_UNRECONCILED_SOURCE_CLOSE_V1"
+    )
+    legacy_result = risk._reduce(before, legacy, False, event.sequence)
+    assert legacy_result["last_snapshot"]["qualified"]
+    assert legacy_result["last_snapshot"]["flat"]
+    assert legacy_result["held"] is None
+    assert CID in legacy_result["completed"]
+    assert emergency.view()["closes"]["fault-native-close"]["filled"] == "0"
+    assert risk.view() == after
+    next_at = later + timedelta(seconds=1)
+    risk.observe(
+        "fault-native-close-flat-again",
+        full_book(source, reported, next_at, cash="502.15", position=0),
+        next_at,
+    )
+    repeated = risk.view()
+    assert repeated["held"] is not None
+    assert repeated["pending_open_loss_reserve"] == before["pending_open_loss_reserve"]
+    assert (
+        repeated["additional_local_cash_hold"] == before["additional_local_cash_hold"]
+    )
+    assert (
+        AccountRiskOwner(source.journal, risk.account_ref, risk.fee_policy).view()
+        == repeated
+    )
+    assert risk.verify_rebuild()
+    path, runtime_root = source.journal._path, source.journal._runtime_root
+    source.journal.close()
+    reopened = Journal.open_private(path, runtime_root)
+    try:
+        recovered = AccountRiskOwner(reopened, risk.account_ref, risk.fee_policy)
+        assert recovered.view() == repeated
+        assert recovered.verify_rebuild()
+    finally:
+        reopened.close()

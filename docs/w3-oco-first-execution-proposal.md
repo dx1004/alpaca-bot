@@ -526,3 +526,52 @@ they do not establish current security state, status delivery, initial-state
 completeness or continuous coverage. `current_no_halt_proven` and all operational
 admission/protection gates remain false. No source-prepared reservation was sent.
 See the [actual integration record](week3-evidence.md#actual-finite-status-enabled-collector-observation--2026-10-23).
+
+
+### Current public residual-close semantics — 2026-10-29 UTC
+
+The designated Sol retrieval route and coordinator source checks reconfirmed
+ordinary order/position/activity semantics without establishing transactional
+reservation, independent-sell sibling continuity or an equity reduce-only promise.
+The optional position-intent schema is not proof of those guarantees. Market
+eligibility and timeout/unknown-result rules remain applicable; no protected
+order may be canceled to manufacture availability. See the
+[current primary-source and review record](week3-evidence.md#sol-retrieval-recovery-and-native-adapter-review--2026-10-29-utc).
+
+The next implementation step separates observed execution/accounting evidence
+from operational send authority. Existing source-mode send guards remain closed.
+A temporary-test storage corruption may reproduce premature risk finality but
+cannot serve as a research sender or qualified operational attempt producer.
+No new executable strategy or paper authorization is frozen by this update.
+
+
+### Guarded source finality and terminal-stop observation — 2026-10-29 UTC
+
+An explicitly versioned new risk observation retains source-close ownership and
+preceding reservation floors until a qualified ownership consumer exists. Flat
+account/order facts alone cannot finish that marked risk slot. Original risk
+history remains readable without silently changing its reduction.
+
+The optional NATIVE_TERMINAL_STOP_PRIOR_RESIZE_V1 reader now recognizes an unchanged
+terminal stop quantity anchored to an earlier raw partial-resize observation.
+Default receipts/quarantines stay unchanged. Late-reported fills remain current
+observations rather than being inserted into earlier prefixes. This corrects
+source representation; it grants no broker continuity, cleanup or dispatch right.
+See the [exact fixes, regression and independent-review limits](week3-evidence.md#source-close-finality-guard-and-terminal-stop-observation--2026-10-29-utc).
+
+### Public status-source completeness limits — 2026-10-29 UTC
+
+The designated public-source worker and coordinator inspected the official
+[Alpaca status stream](https://docs.alpaca.markets/us/docs/real-time-stock-pricing-data)
+and Nasdaq references. The inspected Alpaca documentation supplies status events
+and entitlement conditions, but does not establish an initial per-symbol snapshot
+or complete gap/replay contract. This does not prove those capabilities cannot
+exist; the current source admission claim remains unverified.
+
+[Nasdaq's RSS guide](https://www.nasdaqtrader.com/Trader.aspx?id=TradeHaltRSS) describes
+free Nasdaq/other-exchange information and a once-per-minute update/query cadence.
+Its [official examples](https://classic.nasdaqtrader.com/snippets/tradehaltaccordion.html)
+limit default queries to the current halt day and distinguish multiday history.
+Absence from that query cannot establish absence of an active earlier halt. No
+provider is adopted, no safe TTL is inferred, and no SIP-equivalence or assertion
+that buying SIP would supply the missing guarantee follows.

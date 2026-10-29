@@ -513,8 +513,9 @@ partial state or conflicting facts do not gain completed-roundtrip attribution.
 This is an implemented descriptive engineering candidate, not an accepted or
 frozen formal protocol input. Its observations do not establish natural sample
 enrollment, day/fee/posting completeness, independence, strategy fidelity or
-broker protection. Independent code review and actual source compatibility remain
-open; all source-admission/formal/runtime/dispatch flags remain false. See the
+broker protection. Static code review of immutable commit 1456861 approved. Actual source
+compatibility and formal acceptance remain open; all source-admission/formal/
+runtime/dispatch flags remain false. See the
 [implementation and exact verification scope](week3-evidence.md#w3-08-native-engineering-ledger-adapter--2026-10-29-utc).
 
 ## Method references

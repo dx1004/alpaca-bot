@@ -40,6 +40,7 @@ from .risk_ledger_audit import _activities
 from .strategy_risk import VERSION
 
 SOURCE = "ALPACA_ACCOUNT_RISK"
+_SOURCE_CLOSE_OWNERSHIP_POLICY = "LATCH_UNRECONCILED_SOURCE_CLOSE_V1"
 TERMINAL = {"FILLED", "CANCELED", "EXPIRED", "REJECTED"}
 
 
@@ -255,6 +256,7 @@ class AccountRiskOwner:
                 required.add("snapshot")
             optional = {
                 "quantity_incident_policy",
+                "source_close_ownership_policy",
                 "research_signal",
                 "_native_policy",
                 "_native_context",
@@ -823,6 +825,7 @@ class AccountRiskOwner:
                         "exit_request",
                         "source_horizon",
                         "quantity_incident_policy",
+                        "source_close_ownership_policy",
                         "_native_context",
                         "_native_policy",
                     }
@@ -838,6 +841,13 @@ class AccountRiskOwner:
             item["source_horizon"] = self.journal.read_evidence_sequence()
             item["quantity_incident_policy"] = "LATCH_UNSUPPORTED_FRACTION_V1"
             previous = self.view()
+            if (
+                selection is not None
+                and isinstance(previous, dict)
+                and isinstance(previous.get("held"), dict)
+                and previous["held"].get("source_close_bindings")
+            ):
+                item["source_close_ownership_policy"] = _SOURCE_CLOSE_OWNERSHIP_POLICY
             if kind == "OBSERVE_NATIVE" or (
                 isinstance(previous, dict)
                 and previous.get("_native_policy") == NATIVE_POLICY
@@ -958,6 +968,28 @@ class AccountRiskOwner:
             )
             return state
         held = state["held"]
+        if "source_close_ownership_policy" in item:
+            if (
+                item["source_close_ownership_policy"] != _SOURCE_CLOSE_OWNERSHIP_POLICY
+                or item.get("selection") is None
+                or item["kind"]
+                not in {"OBSERVE", "OBSERVE_NATIVE", "RESERVE", "ABANDON_UNSENT"}
+                or held is None
+                or not held.get("source_close_bindings")
+            ):
+                raise JournalError("source close ownership policy scope differs")
+            # Only new marked observations adopt this rule. Historical bytes and
+            # BIND_EXIT receipts retain their original reduction semantics.
+            # No source-close fill-ownership consumer exists in this version;
+            # a caller-written acceptance flag is not reconciliation evidence.
+            reasons.add("SOURCE_CLOSE_OWNERSHIP_PENDING")
+            for floor, total in (
+                ("source_close_frozen_risk_reserve", "pending_open_loss_reserve"),
+                ("source_close_frozen_cash_hold", "additional_local_cash_hold"),
+            ):
+                held[floor] = str(
+                    max(Fraction(held.get(floor, "0")), Fraction(state[total]))
+                )
         if held is not None and "quantity_incident" in held:
             reasons.add("UNSUPPORTED_FRACTIONAL_RISK_QUANTITY")
         kind = item["kind"]
@@ -1585,6 +1617,9 @@ class AccountRiskOwner:
             if "native_frozen_risk_reserve" in held:
                 risk = max(risk, Fraction(held["native_frozen_risk_reserve"]))
                 cash = max(cash, Fraction(held["native_frozen_cash_hold"]))
+            if "source_close_frozen_risk_reserve" in held:
+                risk = max(risk, Fraction(held["source_close_frozen_risk_reserve"]))
+                cash = max(cash, Fraction(held["source_close_frozen_cash_hold"]))
         snapshot = state["last_snapshot"]
         healthy = snapshot is not None and snapshot["qualified"] and not vetoed
         cap = Fraction(0)

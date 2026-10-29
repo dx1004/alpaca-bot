@@ -4479,3 +4479,127 @@ protection or release gate is waived; all formal/runtime/dispatch flags stay fal
 No broker/account connection, order/cancel, purchase, service or formal paper
 operation occurred. Ross stays separate; IEX remains NOT_SIP_EQUIVALENT. W3-06,
 W3-07 and the W3-08 final freeze remain incomplete.
+
+
+### Sol retrieval recovery and native adapter review — 2026-10-29 UTC
+
+The earlier two inherited-model worker quota failures did not establish that the
+specifically required retrieval model was unavailable. Fresh fork-none allocation
+with explicit gpt-6.1-sol/low completed primary Alpaca collection and a targeted
+follow-up. A separately configured gpt-6.1-sol/high reviewer completed read-only
+inspection of immutable commit 1456861 under the budget-router's harder-review
+route. This verifies these model paths for these tasks, not a global quota reset,
+all-model recovery or a diagnosed cause of earlier failures. No global settings
+changed. The requested direct-coordinator retrieval exception is unnecessary;
+it was not treated as granted. The coordinator opened the returned primary URLs
+to verify the evidence; no alternative search route was silently substituted.
+
+Native reporting review: approve, no actionable regression in eight permitted
+source/test files at 1456861. The reviewer checked canonical risk/native proof,
+per-episode membership, exact quantities/timestamps, read-only ownership,
+legacy-reader selection and false formal/runtime/dispatch flags. It ran no tests;
+the coordinator's prior 103-case result remains the test evidence for that commit.
+The synthetic second-scope helper is not a second canonical account cycle.
+Actual source compatibility, builtin HTTPS reporting, mixed/simple-native and
+multiple canonical cycles, formal enrollment/censuses and freeze remain open.
+
+Fresh public-source findings (retrieved by the designated Sol low worker; checked
+by the coordinator; UTC date above, worker's local access date October 28):
+
+- [Position model](https://alpaca.markets/sdks/python/api_reference/trading/models.html#alpaca.trading.models.Position): available shares account for open orders; the optional field is an observation, not a client-side reservation transaction.
+- [Placing Orders](https://docs.alpaca.markets/us/docs/orders-at-alpaca): market orders are not extended-hours eligible and ineligible after-close orders queue. OCO exits use bracket-leg behavior: partial take-profit fills adjust stop quantity, and fast markets may fill both legs before cancellation. These rules do not prove atomic preservation of a separate protective group during an independent residual sell.
+- [Working with orders](https://docs.alpaca.markets/us/docs/working-with-orders) and [client-ID lookup](https://docs.alpaca.markets/us/reference/getorderbyclientorderid): submission timeout remains unknown; do not resend or assume cancellation. A lookup mechanism is documented, but replay-safe POST/exactly-once execution is not established by the references inspected.
+- [Account Activities](https://docs.alpaca.markets/us/docs/account-activities): FILL includes partial/full executions; activity identity, order identity, individual quantity and cumulative quantity are distinct fields. Equality with stream execution IDs is not established.
+- [Create Order](https://docs.alpaca.markets/us/reference/postorder) exposes position_intent including sell_to_close; [SDK requests](https://alpaca.markets/sdks/python/api_reference/trading/requests.html) accepts the enum. Field presence does not establish an independently submitted equity market order's reduce-only enforcement under concurrent exits. No public reserve/release or compare-and-submit position-version operation was found in the targeted official references; that is a bounded not-found result, not proof that Alpaca has no internal control.
+
+No new stop-to-OCO atomicity, protected close, immediate fill, equity reduce-only
+or broker idempotency guarantee was established. Broker-only correction feeds
+were not imported as a capability of this Trading API account. Existing
+non-dispatching source gates remain closed. A public-only gemma4:31b critique
+was checked; its claim that exact local residual attribution was inherently
+flawed and its proposed fast-market gate were not adopted. Current reads and a
+local fence cannot establish the missing broker guarantees, but canonical local
+allocation can still be exact. Model text granted no operational authority.
+
+The next concrete local correction identified by source inspection is risk
+finality: a qualified flat simple CLOSE may complete a slot while its crossed-stop
+book still has no accepted fill ownership. Sanctioned source sending remains
+blocked; the reproducer deliberately corrupts only a temporary test send row.
+A separately versioned observation guard is under implementation so immutable
+legacy replay is retained. Its acceptance must use its own tests/review record;
+this research/review entry does not certify that correction. No broker/account
+access, order/cancel, service, purchase or formal paper operation occurred.
+
+
+### Source-close finality guard and terminal-stop observation — 2026-10-29 UTC
+
+Two distinct defects were reproduced and repaired together. A source-bound CLOSE
+could end its risk slot from qualified flat account/lifecycle quantities while
+crossed-stop fill ownership was still absent. The sanctioned sender remains
+blocked; the ordinary reproducer explicitly first proves that denial, then
+corrupts only its temporary test send row to exercise the otherwise unreachable
+qualified-input branch. It genuinely failed before the guard with held=None.
+No production attempt/fill projection was fabricated by the implementation.
+
+The first native reproducer did not qualify: its real injected capture showed
+root quantity two fully filled and its previously resized stop canceled at one,
+with zero stop fills. The old reader quarantined only the stop quantity relation
+because it allowed original two or current remainder zero. Raw capture issues
+were empty. This was a separate representation gap, not native-finality evidence;
+no quantity was rewritten to force the test through.
+
+**New observations and immutable history.** New selection-bearing risk records
+with prior source-close bindings carry LATCH_UNRECONCILED_SOURCE_CLOSE_V1. The
+reducer derives monotonic reserve/cash floors from the preceding canonical totals,
+retains SOURCE_CLOSE_OWNERSHIP_PENDING before qualified or unqualified sync, and
+keeps the slot/capacity veto even when raw positions are flat. Native floors
+combine by max. A caller-written acceptance flag cannot clear the guard; no
+ownership-consumption producer exists in this version. Marker-free historical
+records and exact retry bytes retain their previous semantics; this is not a
+retroactive repair or clearance of hypothetical historical completed slots.
+
+**Explicit terminal-stop observation.** New callers may select
+NATIVE_TERMINAL_STOP_PRIOR_RESIZE_V1 on bind_native_exit_census. Only that request
+gets schema-2 receipt/proof fields; omission retains exact schema-1 behavior,
+including old quarantines. Its anchor is an original raw, qualified partial
+resize re-derived at the stored decision/age/horizon. Current capture freshness,
+identities/terms, cumulative/order timestamp monotonicity, exact old-fill inclusion,
+positive quantity bounds and all existing conflict guards still apply. Terminal
+filled/canceled/expired/rejected observations may retain the previously reported
+reduced stop quantity. Working-stop overhang is not waived. Complete oversells
+remain incidents, not protection, safety or risk clearance. Replay callers carry
+the selected policy and its immutable anchor references.
+
+Review corrected an initially added assumption that newly observed executions
+must occur after the previous capture completed. That confused availability with
+execution time and implied unsupported posting finality. The condition was removed;
+a late-reported fill after POST but before the old capture can be observed now,
+while the old raw prefix/receipt remains unchanged. The original order/POST
+lower bounds still quarantine pre-order executions. Independent review approved
+the focused correction after initially requesting this change.
+
+Final verification scope:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_source_close_handoff.py -o cache_dir=/tmp/alpaca-source-close-pytest-cache`: 20 passed in 459.95s. Covers the actual ordinary qualified-flat fault path, unqualified captures, marker scope/value rejection, caller metadata, repeated floors, rebind/clock/conflicts, causal replay, exact retries, legacy marker absence and physical SQLite reopen.
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_native_crossed_stop_preparation.py::test_fault_injected_native_residual_close_cannot_release_source_ownership -o cache_dir=/tmp/alpaca-source-close-pytest-cache`: final corrected-kernel run 1 passed in 367.13s. Source qualification, raw flatness and native final scope are true, but crossed-stop filled remains zero/ownership unaccepted; held slot, preceding reserve/cash floors and zero capacity persist across repeat/reopen. Transient reduction of the same qualified event without only the new marker demonstrates legacy-equivalent premature completion; it is not persisted or used as an attempt producer.
+- `rtk proxy .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_native_terminal_stop_policy.py`: final 18 passed in 119.59s. Includes unchanged legacy quarantine, explicit schema/version, old-anchor freshness at its own original decision, late-report/historical replay, terminal repeats, sticky conflict, event-ID policy changes, working-stop/identity/terms/quantity/fill defects, pre-POST rejection, oversell incidents and SQLite reopen.
+- `rtk proxy .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_oco_exit_evidence.py tests/test_native_risk_registry.py`: 35 passed in 170.43s on the unchanged default path. This precedes only the opt-in late-report correction, whose full policy and native integration runs above use the final source.
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -p no:cacheprovider tests/test_account_risk_owner.py tests/test_native_account_risk_owner.py tests/test_native_owned_entry.py tests/test_crossed_stop_risk_binding.py tests/test_causal_risk_memo.py tests/test_native_paper_ledger_sources.py tests/test_paper_ledger_sources.py tests/test_paper_execution_adapter.py tests/test_paper_ledger_sources_integration.py tests/test_paper_performance.py tests/test_paper_performance_precision_integration.py -q`: 172 passed in 266.77s. These default risk/report paths are unchanged by the final opt-in-only late-report correction. No full-repository or single combined total is claimed.
+- Final scoped Ruff check/format (`--no-cache`) and strict mypy with `/tmp/alpaca-w3-finality-terminal-mypy` passed for the four production modules and three test modules. Both fixes received independent static approval; reviewers did not claim execution of these tests. All local test/type handles are terminal.
+
+The ordinary/native test duration includes setup, repeated full source verification,
+replay and reopen under synthetic clocks. It is not event latency, live freshness
+or runtime throughput acceptance. The earlier diagnosed repeated-current-proof
+bottleneck remains. Two patch wrappers initially selected a missing unqualified
+python alias; the failed commands changed no files, and scoped installed runtimes
+resolved those wrappers without global installation/configuration changes. A draft
+new-policy test used unsupported Journal context-manager syntax; explicit lifecycle
+handling corrected that test before final verification.
+
+No source sender/fence authority, accepted fill-consumption producer, cleanup
+permission, broker continuity/atomicity guarantee, data-feed change, account
+connection, order/cancel, purchase, service or formal paper start was added.
+Original Ross and NOT_SIP_EQUIVALENT remain. Operational source-close ownership,
+combined risk finality/recovery, real source qualification, target/protection
+continuity, timing/throughput and W3-07 actual cycles remain open. W3-06/07/08
+parents and the formal release gates stay incomplete.

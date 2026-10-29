@@ -250,7 +250,21 @@ class OcoJournal:
                 and "ownership_policy" in row["request"]
             ):
                 request_fields.add("ownership_policy")
+            if (
+                kind == "BOUND_NATIVE_EXIT"
+                and isinstance(row["request"], dict)
+                and "observation_policy" in row["request"]
+            ):
+                request_fields.add("observation_policy")
             request = _object(row["request"], request_fields)
+            if "observation_policy" in request:
+                from .oco_exit_evidence import NATIVE_TERMINAL_STOP_POLICY
+
+                if (
+                    type(request["observation_policy"]) is not str
+                    or request["observation_policy"] != NATIVE_TERMINAL_STOP_POLICY
+                ):
+                    raise JournalError("pinned native exit observation policy required")
             if "ownership_policy" in request and (
                 type(request["ownership_policy"]) is not str
                 or request["ownership_policy"] != NATIVE_POLICY
@@ -431,6 +445,7 @@ class OcoJournal:
             decision_at=datetime.fromisoformat(request["decision_at"]),
             max_age=timedelta(microseconds=request["max_age_microseconds"]),
             through_sequence=horizon,
+            observation_policy=request.get("observation_policy"),
         )
 
     def _bound_exit_model(
@@ -942,6 +957,8 @@ class OcoJournal:
         decision_at: datetime,
         max_age: timedelta,
         received_at: datetime,
+        *,
+        observation_policy: str | None = None,
     ) -> OcoJournalView:
         if type(decision_at) is not datetime or decision_at.utcoffset() != timedelta(0):
             raise JournalError("UTC native exit-census decision required")
@@ -964,6 +981,11 @@ class OcoJournal:
                     "capture_sequence": capture_sequence,
                     "decision_at": decision_at.isoformat(),
                     "max_age_microseconds": max_age // timedelta(microseconds=1),
+                    **(
+                        {"observation_policy": observation_policy}
+                        if observation_policy is not None
+                        else {}
+                    ),
                 },
                 "source_horizon": None,
                 "receipt": None,

@@ -359,6 +359,7 @@ def _derive_native_registry(
                     decision_at=datetime.fromisoformat(request["decision_at"]),
                     max_age=timedelta(microseconds=request["max_age_microseconds"]),
                     through_sequence=operation["source_horizon"],
+                    observation_policy=request.get("observation_policy"),
                 )
                 if _json(derived) != _json(operation["receipt"]):
                     raise JournalError(
@@ -433,6 +434,10 @@ def _derive_native_registry(
                 terminal = False
                 continue
             capture_ref = receipt["capture_ref"]
+            if receipt.get("terminal_stop_proof") is not None:
+                proof = receipt["terminal_stop_proof"]
+                refs.add(proof["owner_event_ref"]["sequence"])
+                refs.add(proof["capture_ref"]["sequence"])
             # Closed episodes use their pinned terminal source proof and fresh
             # account-wide activity/book equality, not an invented fresh GET.
             inspect_at = (

@@ -467,6 +467,7 @@ def test_reported_fill_without_source_send_fence_cannot_release_risk(
     after = risk.view()
     assert after is not None
     assert not after["last_snapshot"]["qualified"]
+    assert "SOURCE_CLOSE_OWNERSHIP_PENDING" in after["issues"]
     assert after["held"] is not None
     assert after["held"]["client_order_id"] == CID
     assert after["completed"] == before["completed"]
@@ -486,3 +487,173 @@ def test_reported_fill_without_source_send_fence_cannot_release_risk(
         row["code"] == "INTENT_NOT_SENT" and row["subject"] == cid
         for row in differences
     )
+
+
+def fault_inject_source_send_marker(source: Any, cid: str, at: Any) -> None:
+    """TEST STORAGE CORRUPTION, never legitimate attempt provenance/producer."""
+    with pytest.raises(JournalError, match="source emergency"):
+        source.journal.mark_order_send_attempt(cid, at)
+    assert not source.journal.has_order_send_attempt(cid)
+    source.journal._db.execute(
+        "INSERT INTO order_send_attempts(client_order_id, started_at) VALUES (?, ?)",
+        (cid, at.isoformat()),
+    )
+    source.journal._db.commit()
+
+
+def test_fault_injected_sent_close_cannot_finalize_unreconciled_source_book(
+    ready: Any,
+) -> None:
+    source, risk, _, emergency, at, _, _ = ready
+    state, cid = handoff(ready)
+    later = at + timedelta(seconds=1)
+    risk.bind_exit("fault-close-role", later, cid, "CLOSE")
+    before = risk.view()
+    fault_inject_source_send_marker(source, cid, later)
+    source.order(cid, later, "filled", 2)
+    source.fill(cid, later, 2, "9.49")
+    selection = source.selection(later, cash="498.98", position=0)
+    risk.observe("fault-close-flat", selection, later)
+    after = risk.view()
+    assert after["last_snapshot"]["qualified"], after["issues"]
+    assert after["last_snapshot"]["flat"]
+    assert after["held"] is not None
+    assert after["held"]["client_order_id"] == CID
+    assert after["completed"] == before["completed"]
+    assert after["pending_open_loss_reserve"] == before["pending_open_loss_reserve"]
+    assert after["additional_local_cash_hold"] == before["additional_local_cash_hold"]
+    assert after["capacity"] == "0"
+    assert "SOURCE_CLOSE_OWNERSHIP_PENDING" in after["issues"]
+    assert emergency.view()["closes"]["residual"]["filled"] == "0"
+    assert not state["closes"]["residual"]["source_intent_binding"][
+        "source_fill_ownership_accepted"
+    ]
+    event, raw = source.journal.read_account_risk_events()[-1]
+    item = json.loads(raw)
+    assert item["source_close_ownership_policy"] == "LATCH_UNRECONCILED_SOURCE_CLOSE_V1"
+    # A declared metadata flag is not the missing reconciliation producer.
+    declared = copy.deepcopy(before)
+    declared["held"]["source_close_bindings"][cid]["source_fill_ownership_accepted"] = (
+        True
+    )
+    still_held = risk._reduce(declared, item, False, event.sequence)
+    assert still_held["held"] is not None
+    assert "SOURCE_CLOSE_OWNERSHIP_PENDING" in still_held["issues"]
+    for changed in (
+        item | {"source_close_ownership_policy": "UNKNOWN_POLICY"},
+        item | {"selection": None},
+        item | {"kind": "BIND_EXIT"},
+    ):
+        with pytest.raises(JournalError, match="policy scope"):
+            risk._reduce(before, changed, False, event.sequence)
+    unbound = copy.deepcopy(before)
+    unbound["held"].pop("source_close_bindings")
+    with pytest.raises(JournalError, match="policy scope"):
+        risk._reduce(unbound, item, False, event.sequence)
+    rows = source.journal.read_account_risk_events()
+    risk.observe("fault-close-flat", selection, later)
+    assert source.journal.read_account_risk_events() == rows
+    assert risk.view() == after
+    next_at = later + timedelta(seconds=1)
+    risk.observe(
+        "fault-close-flat-again",
+        source.selection(next_at, cash="498.98", position=0),
+        next_at,
+    )
+    repeated = risk.view()
+    assert repeated["held"] is not None
+    assert repeated["pending_open_loss_reserve"] == before["pending_open_loss_reserve"]
+    assert (
+        repeated["additional_local_cash_hold"] == before["additional_local_cash_hold"]
+    )
+    causal, refs = AccountRiskOwner._read_native_causal_evidence_at(
+        source.journal,
+        risk.account_ref,
+        next_at,
+        risk.fee_policy,
+        through_sequence=source.journal.read_evidence_sequence(),
+    )
+    assert refs and causal == repeated
+    # Rebinding and clock/identity faults cannot reopen capacity or drop floors.
+    risk.bind_exit("fault-close-role-again", next_at, cid, "CLOSE")
+    rebound = risk.view()
+    assert rebound["held"] is not None and rebound["capacity"] == "0"
+    assert rebound["pending_open_loss_reserve"] == before["pending_open_loss_reserve"]
+    assert rebound["additional_local_cash_hold"] == before["additional_local_cash_hold"]
+    event, raw = source.journal.read_account_risk_events()[-1]
+    for changed, conflict in (
+        (json.loads(raw), True),
+        (json.loads(raw) | {"at": at.isoformat()}, False),
+    ):
+        fault = risk._reduce(rebound, changed, conflict, event.sequence)
+        assert fault["held"] == rebound["held"] and fault["capacity"] == "0"
+        assert (
+            fault["pending_open_loss_reserve"] == rebound["pending_open_loss_reserve"]
+        )
+        assert (
+            fault["additional_local_cash_hold"] == rebound["additional_local_cash_hold"]
+        )
+    path, root = source.journal._path, source.journal._runtime_root
+    source.journal.close()
+    reopened = Journal.open_private(path, root)
+    try:
+        recovered = AccountRiskOwner(reopened, risk.account_ref, risk.fee_policy)
+        assert recovered.view() == rebound
+        assert recovered.verify_rebuild()
+    finally:
+        reopened.close()
+
+
+def test_legacy_source_close_observation_retry_keeps_marker_absence(
+    ready: Any,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source, risk, _, _, at, _, _ = ready
+    _, cid = handoff(ready)
+    later = at + timedelta(seconds=1)
+    risk.bind_exit("legacy-source-close-role", later, cid, "CLOSE")
+    fault_inject_source_send_marker(source, cid, later)
+    source.order(cid, later, "new", 0)
+    selection = source.selection(later, cash="480", position=2, bid="9.49")
+    apply = source.journal.apply_account_risk_event
+
+    def legacy_apply(**kwargs: Any) -> Any:
+        # Historical-schema fixture only: retain actual canonical source facts
+        # while producing the previously supported marker-free event bytes.
+        prepare_payload = kwargs["prepare_payload"]
+        legacy: dict[str, Any] = {}
+
+        def prepare_legacy(raw: bytes) -> bytes:
+            legacy.update(json.loads(prepare_payload(raw)))
+            legacy.pop("source_close_ownership_policy", None)
+            return json.dumps(legacy, sort_keys=True, separators=(",", ":")).encode()
+
+        kwargs["prepare_payload"] = prepare_legacy
+        kwargs["reduce"] = lambda old, conflict, seq: risk._reduce(
+            old, legacy, conflict, seq
+        )
+        return apply(**kwargs)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(source.journal, "apply_account_risk_event", legacy_apply)
+        risk.observe("legacy-source-close-observe", selection, later)
+    before = risk.view()
+    rows = source.journal.read_account_risk_events()
+    assert "source_close_ownership_policy" not in json.loads(rows[-1][1])
+    assert "SOURCE_CLOSE_OWNERSHIP_PENDING" not in before["issues"]
+    assert risk.verify_rebuild()
+    risk.observe("legacy-source-close-observe", selection, later)
+    assert source.journal.read_account_risk_events() == rows
+    assert risk.view() == before
+    next_at = later + timedelta(seconds=1)
+    source.order(cid, next_at, "filled", 2)
+    source.fill(cid, next_at, 2, "9.49")
+    risk.observe(
+        "new-source-close-observe",
+        source.selection(next_at, cash="498.98", position=0),
+        next_at,
+    )
+    after = risk.view()
+    assert after["held"] is not None
+    assert "SOURCE_CLOSE_OWNERSHIP_PENDING" in after["issues"]
+    assert risk.verify_rebuild()
