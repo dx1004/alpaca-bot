@@ -12,12 +12,17 @@ import json
 from datetime import datetime, timedelta
 from fractions import Fraction
 from pathlib import Path
-from typing import Any
+from typing import Any, Never
 
+from ._causal_risk_memo import causal_risk_verification_scope
 from .journal import JournalError
 from .native_risk_registry import POLICY as NATIVE_POLICY
-from .oco_entry_evidence import derive_entry_census, derive_native_owned_entry_census
-from .oco_journal import OcoJournal
+from .oco_entry_evidence import (
+    _derive_native_entry_census,
+    derive_entry_census,
+    derive_native_owned_entry_census,
+)
+from .oco_journal import OcoJournal, _causal_oco_reader, _CausalOcoJournal
 from .paper_order_contract import decode_broker_json
 
 _KIND = "PREPARE_NATIVE_OCO"
@@ -108,6 +113,10 @@ class NativeOcoRequests:
     def __init__(self, owner: OcoJournal) -> None:
         if type(owner) is not OcoJournal:
             raise JournalError("canonical OCO owner required")
+        self._initialize(owner)
+        self.view()
+
+    def _initialize(self, owner: OcoJournal) -> None:
         self.owner = owner
         self.journal = owner.journal
         self.binding: dict[str, Any] = _copy(owner.binding)
@@ -115,7 +124,6 @@ class NativeOcoRequests:
             "native_oco_request:"
             + _json([owner.initial.account_ref, owner.initial.entry_scope]).decode()
         )
-        self.view()
 
     def _bound(self) -> None:
         self.journal.require_private_order_state()
@@ -181,7 +189,11 @@ class NativeOcoRequests:
         derive_entry = (
             derive_native_owned_entry_census
             if ownership_policy == NATIVE_POLICY
-            else derive_entry_census
+            else (
+                _derive_native_entry_census
+                if isinstance(self, _CausalNativeOcoRequests)
+                else derive_entry_census
+            )
         )
         fresh = derive_entry(
             self.journal,
@@ -246,7 +258,12 @@ class NativeOcoRequests:
         }
         body_bytes = _json(body)
         allocation_ref = entry_ref = bind_ref = None
-        for event, payload in self.journal.read_oco_research_events():
+        events = (
+            self.journal._read_private_events("ALPACA_OCO_RESEARCH", horizon)
+            if isinstance(self, _CausalNativeOcoRequests)
+            else self.journal.read_oco_research_events()
+        )
+        for event, payload in events:
             if event.sequence > horizon:
                 continue
             item = json.loads(payload)
@@ -463,6 +480,21 @@ class NativeOcoRequests:
         dict[str, set[str]],
         dict[str, set[str]],
     ]:
+        return self._replay_evidence()
+
+    def _replay_evidence(
+        self,
+        through_sequence: int | None = None,
+        decision_at: datetime | None = None,
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, dict[str, Any]],
+        dict[str, set[str]],
+        dict[str, set[str]],
+    ]:
+        """Verify complete bounded requests, including global client conflicts."""
+        if isinstance(self, _CausalNativeOcoRequests) and through_sequence is None:
+            raise JournalError("causal native reader requires an explicit horizon")
         self._bound()
         originals: dict[str, dict[str, Any]] = {}
         conflicts: set[str] = set()
@@ -472,7 +504,18 @@ class NativeOcoRequests:
         clients: dict[str, str] = {}
         claimed_clients: dict[str, set[str]] = {}
         watermark = 0
-        for event, payload in self.journal.read_native_oco_request_events():
+        events = (
+            self.journal.read_native_oco_request_events()
+            if through_sequence is None
+            else self.journal._read_private_events(
+                "ALPACA_NATIVE_OCO_REQUEST", through_sequence
+            )
+        )
+        for event, payload in events:
+            if decision_at is not None and (
+                not event.visible_at(decision_at) or event.external_clock_conflict
+            ):
+                raise JournalError("native request prefix is not decision-visible")
             item = self._validate_item(event, payload)
             key, command = item["dedupe_key"], item["command"]
             for client_id in (
@@ -542,10 +585,27 @@ class NativeOcoRequests:
             ):
                 raise JournalError("native OCO deduplication identity differs")
             if identity[0] == self.binding["entry_scope"]:
+                if through_sequence is not None:
+                    if (
+                        type(value) is dict
+                        and type(value.get("sequence")) is int
+                        and value["sequence"] > through_sequence
+                    ):
+                        continue
+                    reference = _object(value, {"hash", "sequence"})
+                    _text(reference["hash"])
+                    sequence = reference["sequence"]
+                    if type(sequence) is not int or sequence < 1:
+                        raise JournalError("native OCO deduplication sequence differs")
                 scoped[key] = value
         projected = self._projection(originals, conflicts, watermark)
-        cached = self.journal.read_state(self.state_key)
-        if _json(cached) != _json(projected) or _json(scoped) != _json(expected):
+        if through_sequence is None:
+            cached = self.journal.read_state(self.state_key)
+            if _json(cached) != _json(projected):
+                raise JournalError(
+                    "native OCO request projection/deduplication differs"
+                )
+        if _json(scoped) != _json(expected):
             raise JournalError("native OCO request projection/deduplication differs")
         return projected, originals, seen, claimed_clients
 
@@ -733,3 +793,58 @@ class NativeOcoRequests:
         if result is None:
             raise JournalError("native OCO preparation did not commit")
         return result
+
+
+class _CausalNativeOcoRequests(NativeOcoRequests):
+    """Private bounded request reader; never a writer-adapter input."""
+
+    def view(self) -> Never:
+        raise JournalError("causal native reader requires an explicit horizon")
+
+    def verify_rebuild(self) -> Never:
+        raise JournalError("causal native reader cannot verify current state")
+
+    def _verified_replay(self) -> Never:
+        raise JournalError("causal native reader cannot verify current state")
+
+    def prepare(
+        self,
+        group_id: str,
+        client_order_id: str,
+        decision_at: datetime,
+        received_at: datetime,
+    ) -> Never:
+        raise JournalError("causal native reader cannot write")
+
+    def read_verified_at(
+        self, through_sequence: int, decision_at: datetime
+    ) -> dict[str, Any] | None:
+        _utc(decision_at)
+        if type(through_sequence) is not int or through_sequence < 0:
+            raise JournalError("invalid historical native request horizon")
+        owns_read = not self.journal._db.in_transaction
+        if owns_read:
+            self.journal._db.execute("BEGIN")
+        try:
+            if through_sequence > self.journal.read_evidence_sequence():
+                raise JournalError("invalid historical native request horizon")
+            with causal_risk_verification_scope(self.journal):
+                projected, _, _, _ = self._replay_evidence(
+                    through_sequence, decision_at
+                )
+            value = _copy(projected)
+            assert value is None or isinstance(value, dict)
+            return value
+        finally:
+            if owns_read:
+                self.journal._db.rollback()
+
+
+def _causal_native_requests(owner: OcoJournal) -> NativeOcoRequests:
+    """Build a causal child from validated initial values without current replay."""
+    if type(owner) not in {OcoJournal, _CausalOcoJournal}:
+        raise JournalError("canonical OCO owner required")
+    reader = object.__new__(_CausalNativeOcoRequests)
+    reader._initialize(_causal_oco_reader(owner.journal, owner.initial))
+    reader._bound()
+    return reader

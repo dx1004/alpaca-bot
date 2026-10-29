@@ -4800,3 +4800,72 @@ There was no actual broker/account access, order/cancel, data purchase, service
 or formal paper operation. Ross remains separate; NOT_SIP_EQUIVALENT and all
 source/protection/runtime/dispatch/formal gates remain closed. W3-06/07/08
 parents stay incomplete; this checks only injected once-provenance engineering.
+
+
+### Causal source readers and injected order/FILL capture — 2026-10-29 UTC
+
+The previously identified nested current-risk dependency is removed from the
+historical model-reading path. Private OCO/native-request reader factories reuse
+canonical initialization without BIND writes. Their shared complete replay loops
+bound raw model events before deriving receipts and verify prefix identities,
+conflicts, dedupe references, visibility and clocks. Ordinary entry receipts use
+the existing bounded causal risk reader. Read-only handles reject current-state
+view/verification and writes; existing exact-type writer adapters reject them.
+Normal current constructors, current model projection checks and writer paths
+remain separate and retain their original behavior. Receipt schemas are unchanged.
+
+SourceCloseAttempts historical owners always use these readers. Its explicit
+read_verified_at also bounds the attempt MODEL itself, so an OUTCOME beyond the
+requested horizon stays unavailable. Normal construction still verifies current
+inventory: recursive consumers must use a legitimately initialized handle or a
+bounded, constructor-free setup rather than construct that current owner inside
+risk replay. The acceptance test embeds a bounded attempt read while the actual
+current risk verifier is active; it creates no FILL consumer or passing snapshot.
+Reported-price child bytes now join the memo input closure. A copied test policy
+changed after a cached success is rejected; original evidence files are untouched.
+
+This is causal MODEL/receipt replay with preserved current integrity guards.
+Private storage/account, nonrecursive raw native HTTP maps and engineering
+scope/path checks remain active. Inspection found no risk/model derivation in
+those transport guards; rewriting them would remove an existing integrity check.
+Corrupt current native transport maps still veto the bounded source read. Later
+valid model events/projections do not enter the selected historical model prefix.
+
+**Raw order/FILL capture.** A separate SourceCloseCaptures namespace records
+bounded GET observations through a required injected callback, without credentials,
+default transport or builtin HTTPS. It keeps the exact injected origin rather
+than retagging it as native exchange or broker proof. Account bytes precede the
+anchored client-ID lookup; validated simple-market request/UUID association gates
+following order detail and FILL paths. Existing pinned GET query shapes are reused;
+actual provider pagination/filter completeness is not established for builtin use.
+Raw successes/failures, explicit truncation, clocks, pages and cursors remain in
+the immutable packet, with bounded causal attempt references and replay.
+
+Unknown or missing outcomes remain GET candidates; a later legitimate OUTCOME
+cannot upgrade the earlier capture. LOCAL_NOT_INVOKED does not establish a
+callback-created order. Arithmetic FILL consistency is capture-local only.
+Review corrected a false consistency case where a FILL occurred after the earlier
+order-detail observation but before its later activity page arrived; raw evidence
+is retained and consistency fails. No unsupported prior-capture lower cutoff was
+introduced. Validated derived FILL fields avoid serializing unknown Decimal
+extensions while exact page bytes and full-row conflict checks remain. Quantity
+expansion is bounded by the existing explicit body budget before rational
+conversion; small scientific values and zero remain exact, and adversarial
+exponents become diagnostics. No precision, strategy or risk budget was invented.
+
+Verification scope:
+
+- `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_source_close_causal_reader.py tests/test_causal_risk_memo.py tests/test_current_risk_memo.py`: final 38 passed in 229.12s. Covers zero nested current-risk construction, an active current-risk verifier, read-only mutation rejection, default-current checks, unchanged historical receipts after later model state, prefix corruption/clock/dedupe, retained native transport integrity, and cached reported-price child-file mutation. An earlier native test correctly rejected transport corruption but expected an unwrapped message; its final assertion checks the preserved cause chain.
+- Worker focused existing OCO/native reader checks: 21 passed, 47 deselected in 12.94s. These are selected reader/preparation/retry/cache-integrity cases, not a full suite result.
+- The initial `tests/test_crossed_stop_capture.py` run passed 14 in 587.41s before final review corrections. Final current-code selection `-k 'matching_post_get or missing or after_detail or tampered or snapshot_scientific'` passed 5, 11 deselected, in 143.01s. It exercises every final delta: Decimal extension/raw preservation, genuine private-journal reopen, executed origin retag rejection and bounded older packet, deferred legitimate outcome preserving prior unknown, moving clocks, request-pin tampering and bounded scientific quantities. These are separate results, not a claimed full final 16-case run.
+- Independent causal-reader review approved the five production diffs. Independent capture re-review approved both prior corrections and the final raw/candidate boundary. Static reviewers did not claim execution of coordinator tests or authorize ownership/trading.
+- Final scoped Ruff check/format with `--no-cache`, strict mypy with `/tmp/alpaca-source-causal-mypy`, and git whitespace checks pass for six production modules and two test modules. All referenced test/type handles are terminal. Fixtures use memory-backed injected exchanges; their elapsed times are not runtime throughput acceptance.
+
+These increments do not consume source fills into crossed-stop/risk state, clear
+the existing source ownership latch, release reserves, or establish permanent
+posting finality. Next: origin-scoped canonical FILL consumption with constructor-
+free bounded reads, combined native/emergency accounting/finality and protected
+recovery. Builtin source association, actual protection/admission and real-time
+qualification remain unaccepted. There was no actual broker/account connection,
+order/cancel, purchase, service or formal paper operation. Ross stays separate,
+NOT_SIP_EQUIVALENT remains; W3-06/07/08 parents stay incomplete and executable gates stay closed.

@@ -16,10 +16,10 @@ from .account_risk_owner import AccountRiskOwner
 from .crossed_stop_source import derive_source_crossing
 from .journal import Journal, JournalError
 from .market_input_checks import _datetime_ns, _timestamp_ns
-from .native_oco_requests import NativeOcoRequests
+from .native_oco_requests import NativeOcoRequests, _causal_native_requests
 from .native_risk_registry import POLICY as NATIVE_POLICY
 from .native_risk_registry import TERMINAL, derive_native_registry
-from .oco_journal import OcoJournal, OcoJournalView, _json
+from .oco_journal import OcoJournal, OcoJournalView, _CausalOcoJournal, _json
 from .paper_order_contract import decode_broker_json, validate_saved_request
 from .posted_ledger import _exact
 from .risk_account_inputs import KIND as ACCOUNT_CAPTURE_KIND
@@ -222,13 +222,22 @@ def _native_ownership(
         ):
             raise JournalError("working native order exceeds its group residual")
         working.append(order.order_id)
-    requests = NativeOcoRequests(owner)
+    requests = (
+        _causal_native_requests(owner)
+        if isinstance(owner, _CausalOcoJournal)
+        else NativeOcoRequests(owner)
+    )
     prepared = requests.read_verified_at(horizon, at)
     if prepared is None or prepared["conflict_groups"]:
         raise JournalError("clean native preparation inventory required")
     source_refs = {tuple(ref) for ref in refs}
     request_refs = []
-    for event, raw in owner.journal.read_native_oco_request_events():
+    request_events = (
+        owner.journal._read_private_events("ALPACA_NATIVE_OCO_REQUEST", horizon)
+        if isinstance(owner, _CausalOcoJournal)
+        else owner.journal.read_native_oco_request_events()
+    )
+    for event, raw in request_events:
         if event.sequence > horizon:
             continue
         if not event.visible_at(at):

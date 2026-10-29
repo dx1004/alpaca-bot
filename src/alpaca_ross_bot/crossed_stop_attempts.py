@@ -17,12 +17,14 @@ from pathlib import Path
 from typing import Any, cast
 
 from ._causal_risk_memo import causal_risk_verification_scope, record_path_resolution
+from .crossed_stop_contract import MANIFEST_SHA256 as EMERGENCY_MANIFEST_SHA256
+from .crossed_stop_contract import VERSION as EMERGENCY_VERSION
 from .crossed_stop_preparation import derive_source_close_precall
 from .events import EventEnvelope
 from .journal import Journal, JournalError
 from .market_input_checks import _datetime_ns
 from .native_oco_requests import _clock, _copy, _digest, _json, _text, _utc
-from .oco_journal import OcoJournal
+from .oco_journal import OcoJournal, _causal_oco_reader
 from .oco_research import OcoResearchState, load_oco_research_contract
 from .paper_engineering import EngineeringHarness, EngineeringScope
 
@@ -110,34 +112,67 @@ class SourceCloseAttempts:
             if owns:
                 self.journal._db.rollback()
 
+    def read_verified_at(
+        self, through_sequence: int, decision_at: datetime
+    ) -> list[dict[str, Any]]:
+        """Replay only the decision-visible attempt prefix, never upgrade it."""
+        self.journal.require_private_order_state()
+        _utc(decision_at)
+        if type(through_sequence) is not int or through_sequence < 0:
+            raise JournalError("invalid historical source attempt horizon")
+        owns_read = not self.journal._db.in_transaction
+        if owns_read:
+            self.journal._db.execute("BEGIN")
+        try:
+            if self.journal.read_paper_account_ref() != self.owner.initial.account_ref:
+                raise JournalError("historical source attempt account differs")
+            if through_sequence > self.journal.read_evidence_sequence():
+                raise JournalError("invalid historical source attempt horizon")
+            with causal_risk_verification_scope(self.journal):
+                return self._view(through_sequence, decision_at)
+        finally:
+            if owns_read:
+                self.journal._db.rollback()
+
     def _historical_owner(self, item: dict[str, Any]) -> OcoJournal:
         """Construct a deterministic prefix reader, never a new BIND write."""
         binding = item["qualification"]["handoff"]["binding"]
         if binding["entry_scope"] != item["entry_scope"]:
             raise JournalError("source injected historical owner differs")
-        if item["entry_scope"] == self.owner.initial.entry_scope:
-            return self.owner
-        initial = OcoResearchState(
-            load_oco_research_contract(),
-            binding["account_ref"],
-            binding["symbol"],
-            binding["entry_scope"],
-            Fraction(binding["limit"]),
-            Fraction(binding["stop"]),
+        initial = (
+            self.owner.initial
+            if item["entry_scope"] == self.owner.initial.entry_scope
+            else OcoResearchState(
+                load_oco_research_contract(),
+                binding["account_ref"],
+                binding["symbol"],
+                binding["entry_scope"],
+                Fraction(binding["limit"]),
+                Fraction(binding["stop"]),
+            )
         )
-        reader = object.__new__(OcoJournal)
-        reader.journal, reader.initial = self.journal, initial
-        reader.binding = {key: binding[key] for key in self.owner.binding}
-        reader.state_key = (
-            "oco_research:" + _json([initial.account_ref, initial.entry_scope]).decode()
-        )
+        reader = _causal_oco_reader(self.journal, initial)
+        expected_binding = reader.binding | {
+            "emergency_version": EMERGENCY_VERSION,
+            "emergency_manifest_sha256": EMERGENCY_MANIFEST_SHA256,
+        }
+        if expected_binding != binding:
+            raise JournalError("source injected historical binding differs")
         return reader
 
-    def _view(self) -> list[dict[str, Any]]:
+    def _view(
+        self,
+        through_sequence: int | None = None,
+        decision_at: datetime | None = None,
+    ) -> list[dict[str, Any]]:
         rows: dict[str, dict[str, Any]] = {}
         expected_dedupe = {}
         projections: dict[str, list[dict[str, Any]]] = {}
-        for event, raw in self.journal._read_private_events(SOURCE, None):
+        for event, raw in self.journal._read_private_events(SOURCE, through_sequence):
+            if decision_at is not None and (
+                not event.visible_at(decision_at) or event.external_clock_conflict
+            ):
+                raise JournalError("source attempt prefix is not decision-visible")
             try:
                 item = json.loads(raw)
                 common = {
@@ -276,6 +311,8 @@ class SourceCloseAttempts:
             ("source_close_attempts:", projections),
             ("source_close_attempt_evidence:", expected_dedupe),
         ):
+            if through_sequence is not None and prefix == "source_close_attempts:":
+                continue
             actual = {
                 key: json.loads(value)
                 for key, value in self.journal._db.execute(
@@ -283,6 +320,25 @@ class SourceCloseAttempts:
                     (len(prefix), prefix),
                 )
             }
+            if through_sequence is not None:
+                bounded = {}
+                for key, reference in actual.items():
+                    if (
+                        type(reference) is dict
+                        and type(reference.get("sequence")) is int
+                        and reference["sequence"] > through_sequence
+                    ):
+                        continue
+                    if (
+                        type(reference) is not dict
+                        or set(reference) != {"sequence", "hash"}
+                        or type(reference["sequence"]) is not int
+                        or reference["sequence"] < 1
+                        or type(reference["hash"]) is not str
+                    ):
+                        raise JournalError("source attempt deduplication ref differs")
+                    bounded[key] = reference
+                actual = bounded
             if _json(actual) != _json(expected):
                 raise JournalError(
                     "source injected attempt projection/deduplication differs"

@@ -6,12 +6,16 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from fractions import Fraction
 from pathlib import Path
-from typing import Any
+from typing import Any, Never
 
 from ._causal_risk_memo import causal_risk_verification_scope
 from .journal import Journal, JournalError
 from .native_risk_registry import POLICY as NATIVE_POLICY
-from .oco_entry_evidence import derive_entry_census, derive_native_owned_entry_census
+from .oco_entry_evidence import (
+    _derive_native_entry_census,
+    derive_entry_census,
+    derive_native_owned_entry_census,
+)
 from .oco_research import (
     CANDIDATE,
     MANIFEST_SHA256,
@@ -176,6 +180,10 @@ class OcoJournal:
     """
 
     def __init__(self, journal: Journal, initial: OcoResearchState) -> None:
+        self._initialize(journal, initial)
+        self._record("BIND", {}, datetime.now(UTC))
+
+    def _initialize(self, journal: Journal, initial: OcoResearchState) -> None:
         if type(initial) is not OcoResearchState:
             raise JournalError("empty OCO initial state required")
         initial.__post_init__()
@@ -198,7 +206,6 @@ class OcoJournal:
         self.state_key = (
             "oco_research:" + _json([initial.account_ref, initial.entry_scope]).decode()
         )
-        self._record("BIND", {}, datetime.now(UTC))
 
     def _operation_key(
         self, kind: str, operation: object, *, pending: bool = False
@@ -426,7 +433,11 @@ class OcoJournal:
             derive = (
                 derive_native_owned_entry_census
                 if request.get("ownership_policy") == NATIVE_POLICY
-                else derive_entry_census
+                else (
+                    _derive_native_entry_census
+                    if isinstance(self, _CausalOcoJournal)
+                    else derive_entry_census
+                )
             )
             return derive(
                 self.journal,
@@ -616,13 +627,33 @@ class OcoJournal:
     def _verified_replay_uncached(
         self,
     ) -> tuple[object | None, dict[str, set[str]], dict[str, dict[str, Any]]]:
-        cached = self.journal.read_state(self.state_key)
+        return self._replay_evidence()
+
+    def _replay_evidence(
+        self,
+        through_sequence: int | None = None,
+        decision_at: datetime | None = None,
+    ) -> tuple[object | None, dict[str, set[str]], dict[str, dict[str, Any]]]:
+        """Verify full operations/receipts at the selected model-evidence prefix."""
+        if isinstance(self, _CausalOcoJournal) and through_sequence is None:
+            raise JournalError("causal OCO reader requires an explicit horizon")
         projected: object | None = None
         first: dict[str, str] = {}
         recorded: dict[str, set[str]] = {}
         expected_cache: dict[str, object] = {}
         original_operations: dict[str, dict[str, Any]] = {}
-        for event, payload in self.journal.read_oco_research_events():
+        events = (
+            self.journal.read_oco_research_events()
+            if through_sequence is None
+            else self.journal._read_private_events(
+                "ALPACA_OCO_RESEARCH", through_sequence
+            )
+        )
+        for event, payload in events:
+            if decision_at is not None and (
+                not event.visible_at(decision_at) or event.external_clock_conflict
+            ):
+                raise JournalError("historical OCO prefix is not decision-visible")
             item = self._decode_operation(event, payload)
             binding = _object(item["binding"], set(self.binding))
             if binding["account_ref"] != self.initial.account_ref:
@@ -705,10 +736,28 @@ class OcoJournal:
             ):
                 raise JournalError("invalid OCO deduplication identity")
             if identity[0] == self.initial.entry_scope:
+                if through_sequence is not None:
+                    if (
+                        type(value) is dict
+                        and type(value.get("sequence")) is int
+                        and value["sequence"] > through_sequence
+                    ):
+                        continue
+                    reference = _object(value, {"hash", "sequence"})
+                    _text(reference["hash"])
+                    sequence = _integer(reference["sequence"])
+                    if not sequence:
+                        raise JournalError("invalid OCO deduplication sequence")
                 scoped[key] = value
-        if cached is not None:
-            self._view(cached)
-        if _json(cached) != _json(projected) or _json(scoped) != _json(expected_cache):
+        if through_sequence is None:
+            cached = self.journal.read_state(self.state_key)
+            if cached is not None:
+                self._view(cached)
+            if _json(cached) != _json(projected):
+                raise JournalError(
+                    "OCO projection or deduplication differs from immutable evidence"
+                )
+        if _json(scoped) != _json(expected_cache):
             raise JournalError(
                 "OCO projection or deduplication differs from immutable evidence"
             )
@@ -1042,3 +1091,55 @@ class OcoJournal:
             {"census_id": census_id, "entry_execution_ids": list(entry_execution_ids)},
             received_at,
         )
+
+
+class _CausalOcoJournal(OcoJournal):
+    """Private read handle: bounded model replay, never current state or writes."""
+
+    def _record(self, kind: str, operation: dict[str, object], at: datetime) -> Never:
+        raise JournalError("causal OCO reader cannot write")
+
+    def view(self) -> Never:
+        raise JournalError("causal OCO reader requires an explicit horizon")
+
+    def verify_rebuild(self) -> Never:
+        raise JournalError("causal OCO reader cannot verify current state")
+
+    def _verified_replay(self) -> Never:
+        raise JournalError("causal OCO reader cannot verify current state")
+
+    def _verified_replay_uncached(self) -> Never:
+        raise JournalError("causal OCO reader cannot verify current state")
+
+    def read_verified_at(
+        self, through_sequence: int, decision_at: datetime
+    ) -> OcoJournalView | None:
+        self.journal.require_private_order_state()
+        if type(through_sequence) is not int or through_sequence < 0:
+            raise JournalError("invalid historical OCO source horizon")
+        if type(decision_at) is not datetime or decision_at.utcoffset() != timedelta(0):
+            raise JournalError("UTC historical OCO decision required")
+        owns_read = not self.journal._db.in_transaction
+        if owns_read:
+            self.journal._db.execute("BEGIN")
+        try:
+            if self.journal.read_paper_account_ref() != self.initial.account_ref:
+                raise JournalError("historical OCO account is not bound to journal")
+            if through_sequence > self.journal.read_evidence_sequence():
+                raise JournalError("invalid historical OCO source horizon")
+            with causal_risk_verification_scope(self.journal):
+                projected, _, _ = self._replay_evidence(through_sequence, decision_at)
+            return None if projected is None else self._view(projected)
+        finally:
+            if owns_read:
+                self.journal._db.rollback()
+
+
+def _causal_oco_reader(journal: Journal, initial: OcoResearchState) -> OcoJournal:
+    """Reconstruct the canonical empty binding without recording BIND."""
+    journal.require_private_order_state()
+    reader = object.__new__(_CausalOcoJournal)
+    reader._initialize(journal, initial)
+    if journal.read_paper_account_ref() != initial.account_ref:
+        raise JournalError("historical OCO account is not bound to journal")
+    return reader

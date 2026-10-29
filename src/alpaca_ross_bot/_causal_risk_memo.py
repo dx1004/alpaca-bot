@@ -26,6 +26,7 @@ _CONTRACT_INPUTS = (
     _ROOT / "evidence/oco-first-execution-research-v1.json",
     _ROOT / "evidence/iex-snapshot-observation-age-research-v1.json",
     _ROOT / "evidence/crossed-stop-residual-exit-research-v1.json",
+    _ROOT / "evidence/alpaca-reported-intraday-price-policy-v1.json",
 )
 _Result = tuple[dict[str, Any] | None, tuple[int, ...]]
 _MemoResult = tuple[dict[str, Any] | bool | None, tuple[int, ...]]
