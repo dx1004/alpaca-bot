@@ -5329,3 +5329,36 @@ initial/late-fill protection, target-amendment stop continuity, protected timed
 close/disposal, safe recovery and runtime deadline evidence. No broker order or
 cancel was sent. Ross stays separate, IEX stays `NOT_SIP_EQUIVALENT`, and
 `runtime_authorized=false`.
+
+## Unsent final-target PATCH proposal — 2026-11-05
+
+The OCO-first candidate can now derive a target-only `PATCH /v2/orders/{id}`
+proposal from one durable `PREPARE_FINAL_TARGET` receipt. The source is
+requalified at the requested causal prefix: original entry and native exit
+identities, exact residual, original reservation, current qualified account
+risk and working target/companion-stop observations must still agree. The
+historical receipt's source-horizon field is excluded from the stable evidence
+comparison; its underlying entry references and facts remain required. A
+new account observation requires a new risk assessment and semantic receipt.
+Pending cancellation, replacement, late entry, stale native capture, duplicate
+current semantic receipts or unchanged target veto the proposal.
+
+The canonical body contains only `limit_price`; it cannot alter the stop or
+quantity. The output includes the target order path, body hash and semantic
+receipt hash, all with authority flags false. This is a local proposal, not a
+durable send fence, broker PATCH, acknowledgement, target replacement, or
+proof that Alpaca keeps the sibling stop executable during replacement.
+[Alpaca's replace reference](https://docs.alpaca.markets/us/reference/patchorderbyorderid-1)
+allows a target price change but warns that a successful HTTP response need
+not mean replacement succeeds after an original-order fill. The independent
+crossed-stop emergency candidate may reuse this preparation only after its
+own source/incident policy qualifies; no marketable emergency target price or
+protected timed-close behavior is inferred here.
+
+Canonical-checkout checks: `tests/test_native_oco_amendment.py` passed 3 tests,
+including exact bytes, new account evidence, pending-cancel refusal and a
+physical reopened-journal prefix; scoped Ruff lint/format, strict mypy and
+`git diff --check` passed. No credentials, broker request/cancel, account
+reset, live trading or formal paper evaluation was used. W3-02 source/data
+admission and W3-06 broker protection/close/recovery/runtime gates stay open;
+Ross stays separate and IEX stays `NOT_SIP_EQUIVALENT`.

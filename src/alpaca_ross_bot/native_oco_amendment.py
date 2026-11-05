@@ -1,10 +1,11 @@
-"""Source-derived final-target semantics; no PATCH bytes or dispatch authority."""
+"""Source-derived final-target proposals; no broker dispatch authority."""
 
 from __future__ import annotations
 
 import hashlib
 import json
 from datetime import datetime, timedelta
+from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +45,91 @@ def derive_final_target_preparation(
     finally:
         if owns:
             journal._db.rollback()
+
+
+def derive_final_target_patch_proposal(
+    journal: Journal,
+    initial: OcoResearchState,
+    *,
+    group_id: str,
+    decision_at: datetime,
+    max_age: timedelta,
+    through_sequence: int,
+) -> dict[str, Any]:
+    """Build unsent PATCH bytes only from a still-current semantic receipt."""
+    from .native_oco_requests import _cent, _json
+    from .oco_journal import _causal_oco_reader
+
+    current = derive_final_target_preparation(
+        journal,
+        initial,
+        group_id=group_id,
+        decision_at=decision_at,
+        max_age=max_age,
+        through_sequence=through_sequence,
+    )
+    owner = _causal_oco_reader(journal, initial)
+    view = owner.read_verified_at(through_sequence, decision_at)
+    if view is None or view.issues:
+        raise JournalError("clean final-target semantic owner required")
+    fields = (
+        "binding",
+        "group_id",
+        "target_order_id",
+        "companion_stop_order_id",
+        "broker_group_id",
+        "original_portions",
+        "original_group_quantity",
+        "residual_quantity",
+        "provisional_target",
+        "final_target",
+        "frozen_stop",
+        "average_entry",
+        "account_risk_ref",
+        "native_census_ref",
+        "prepared_ref",
+        "attempt_ref",
+        "outcome_ref",
+        "allocation_ref",
+        "original_entry_binding_ref",
+        "target_observation",
+        "stop_observation",
+        "decision_at",
+    )
+
+    def same_source(receipt: dict[str, Any]) -> bool:
+        original_entry = dict(receipt["entry_census"])
+        current_entry = dict(current["entry_census"])
+        original_entry.pop("source_horizon")
+        current_entry.pop("source_horizon")
+        return _json(original_entry) == _json(current_entry) and all(
+            _json(receipt[field]) == _json(current[field]) for field in fields
+        )
+
+    matching = [
+        receipt
+        for row in view.final_target_preparations
+        if (receipt := row["receipt"])["group_id"] == group_id and same_source(receipt)
+    ]
+    if len(matching) != 1:
+        raise JournalError("one current durable final-target proposal required")
+    original = matching[0]
+    if current["final_target"] == current["provisional_target"]:
+        raise JournalError("unchanged target needs no broker replacement")
+    body = _json({"limit_price": _cent(Fraction(current["final_target"]))})
+    return {
+        "classification": "UNSENT_FINAL_TARGET_PATCH_PROPOSAL",
+        "method": "PATCH",
+        "path": "/v2/orders/" + current["target_order_id"],
+        "body": body.decode(),
+        "body_sha256": "sha256:" + hashlib.sha256(body).hexdigest(),
+        "semantic_receipt_sha256": "sha256:"
+        + hashlib.sha256(_json(original)).hexdigest(),
+        "current_account_assessment_hash": current["account_assessment_hash"],
+        "source_horizon": through_sequence,
+        "decision_at": decision_at.isoformat(),
+        "authority": dict(AUTHORITY),
+    }
 
 
 def _derive(

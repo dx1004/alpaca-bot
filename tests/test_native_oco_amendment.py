@@ -1,6 +1,8 @@
 """Final-target semantic preparation never sends or changes group protection."""
 
 import copy
+import hashlib
+import json
 from datetime import timedelta
 from fractions import Fraction
 from typing import Any
@@ -9,7 +11,10 @@ import pytest
 
 from alpaca_ross_bot.account_risk_owner import AccountRiskOwner
 from alpaca_ross_bot.journal import Journal, JournalError
-from alpaca_ross_bot.native_oco_amendment import derive_final_target_preparation
+from alpaca_ross_bot.native_oco_amendment import (
+    derive_final_target_patch_proposal,
+    derive_final_target_preparation,
+)
 from alpaca_ross_bot.native_oco_requests import NativeOcoRequests
 from alpaca_ross_bot.oco_journal import OcoJournal, _causal_oco_reader
 from test_native_account_risk_owner import full_book
@@ -36,6 +41,54 @@ def qualify(book: Any) -> Any:
     risk.observe_native("amendment-native-account", selection, at)
     assert risk.view()["last_snapshot"]["qualified"]
     return at
+
+
+def test_unsent_patch_requires_current_durable_semantics(
+    native_risk_book: Any,
+) -> None:
+    source, risk, owner, _, reported = native_risk_book
+    at = qualify(native_risk_book)
+
+    def propose() -> dict[str, Any]:
+        return derive_final_target_patch_proposal(
+            source.journal,
+            owner.initial,
+            group_id="group-a",
+            decision_at=at,
+            max_age=AGE,
+            through_sequence=source.journal.read_evidence_sequence(),
+        )
+
+    with pytest.raises(JournalError, match="durable final-target"):
+        propose()
+    owner.prepare_final_target("target-first", "group-a", at, AGE, at)
+    before = source.journal.read_evidence_sequence()
+    intents = source.journal.read_order_intent_ids()
+    risk_before = copy.deepcopy(risk.view())
+    proposal = propose()
+    body = b'{"limit_price":"11.00"}'
+    assert proposal["classification"] == "UNSENT_FINAL_TARGET_PATCH_PROPOSAL"
+    assert proposal["method"] == "PATCH"
+    assert proposal["path"] == "/v2/orders/" + reported.order["id"]
+    assert json.loads(proposal["body"]) == {"limit_price": "11.00"}
+    assert proposal["body"].encode() == body
+    assert proposal["body_sha256"] == "sha256:" + hashlib.sha256(body).hexdigest()
+    assert not any(proposal["authority"].values())
+    assert propose() == proposal
+    assert source.journal.read_evidence_sequence() == before
+    assert source.journal.read_order_intent_ids() == intents
+    assert risk.view() == risk_before
+
+    selection = full_book(source, reported, at, cash="480", position=2)
+    with pytest.raises(JournalError, match="newest account"):
+        propose()
+    risk.observe("patch-account-refresh", selection, at)
+    with pytest.raises(JournalError, match="current durable"):
+        propose()
+    owner.prepare_final_target("target-refreshed", "group-a", at, AGE, at)
+    refreshed = propose()
+    assert refreshed["body"] == proposal["body"]
+    assert refreshed["semantic_receipt_sha256"] != proposal["semantic_receipt_sha256"]
 
 
 def test_source_final_target_semantics_retry_reopen_rollback_and_conflict(
@@ -133,6 +186,16 @@ def test_source_final_target_semantics_retry_reopen_rollback_and_conflict(
                 _causal_oco_reader(reopened, owner.initial).read_verified_at(tail, at)
                 == result
             )
+            patch = derive_final_target_patch_proposal(
+                reopened,
+                owner.initial,
+                group_id="group-a",
+                decision_at=at,
+                max_age=AGE,
+                through_sequence=event.sequence,
+            )
+            assert patch["body"] == '{"limit_price":"11.00"}'
+            assert not any(patch["authority"].values())
     finally:
         reopened.close()
     conflicted = owner.prepare_final_target("final-a", "another-group", at, AGE, at)
@@ -153,6 +216,7 @@ def test_latest_account_native_cancel_and_late_entry_evidence_veto(
     book = native_risk_book
     source, risk, owner, fixture, reported = book
     at = qualify(book)
+    owner.prepare_final_target("patch-before-cancel", "group-a", at, AGE, at)
 
     def derive(clock: Any = at) -> dict[str, Any]:
         return derive_final_target_preparation(
@@ -222,6 +286,15 @@ def test_latest_account_native_cancel_and_late_entry_evidence_veto(
     assert risk.view()["last_snapshot"]["qualified"]
     with pytest.raises(JournalError, match="working original"):
         derive(later)
+    with pytest.raises(JournalError, match="working original"):
+        derive_final_target_patch_proposal(
+            source.journal,
+            owner.initial,
+            group_id="group-a",
+            decision_at=later,
+            max_age=AGE,
+            through_sequence=source.journal.read_evidence_sequence(),
+        )
     # A terminal entry can report another execution; old T cannot hide that census.
     raced = later + timedelta(seconds=1)
     source.order(CID, raced, "canceled", 3)
