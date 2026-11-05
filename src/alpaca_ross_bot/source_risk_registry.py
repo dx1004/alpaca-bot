@@ -150,6 +150,19 @@ def _account_activities(capture: dict[str, Any]) -> dict[str, dict[str, object]]
     return rows_by_id
 
 
+def _observed_positions(rows: list[Any]) -> dict[str, Fraction]:
+    """Normalize only provider position shape/number failures at this seam."""
+    try:
+        result = {}
+        for row in rows:
+            if type(row) is not dict or type(row["symbol"]) is not str:
+                raise TypeError
+            result[row["symbol"]] = Fraction(row["qty"])
+        return result
+    except (KeyError, TypeError, ValueError, ZeroDivisionError) as exc:
+        raise JournalError("source account raw position shape is malformed") from exc
+
+
 def _require_fresh_capture(
     packet: dict[str, Any], decision_at: datetime, max_age: timedelta
 ) -> None:
@@ -263,6 +276,37 @@ def _derive_source_registry(
     all_attempts: list[dict[str, Any]] | None = None
     all_claims: set[str] = set()
     for episode in episodes:
+        closed = None
+        if episode.get("closed"):
+            from .source_close_completion import verify_closed_source_episode
+
+            closed = verify_closed_source_episode(
+                journal,
+                episode,
+                through_sequence=through_sequence,
+                decision_at=decision_at,
+            )
+            from .source_close_completion import verify_closed_ordinary_basis
+
+            verify_closed_ordinary_basis(
+                journal,
+                closed["ordinary_basis"],
+                capture_sequence=capture_sequence,
+                through_sequence=through_sequence,
+                decision_at=decision_at,
+            )
+            refs.add(episode["completion_ref"][0])
+            latest = [
+                event.sequence
+                for event, _ in journal._read_private_events(
+                    ACCOUNT_SOURCE, through_sequence
+                )
+                if event.event_kind == ACCOUNT_KIND and event.visible_at(decision_at)
+            ]
+            if not latest or max(latest) != capture_sequence:
+                raise JournalError(
+                    "newest account capture required after source completion"
+                )
         initial = _initial(journal, episode["binding"])
         if all_attempts is None:
             all_attempts = read_source_close_http_at(
@@ -339,7 +383,16 @@ def _derive_source_registry(
                 for packet in packets
                 if packet["capture_ref"] == proof["capture_refs"][-1]
             )
-            _require_fresh_capture(packet, decision_at, max_age)
+            if closed is None:
+                _require_fresh_capture(packet, decision_at, max_age)
+            else:
+                from .source_close_completion import verify_closed_source_claim
+
+                frozen = closed["claims"].get(cid)
+                if frozen is None:
+                    raise JournalError("completed source claim missing")
+                verify_closed_source_claim(proof, frozen)
+                refs.add(frozen["consumption_ref"][0])
             detail = next(
                 row
                 for row in packet["requests"]
@@ -350,6 +403,11 @@ def _derive_source_registry(
             )
             if not isinstance(raw, dict):
                 raise JournalError("source raw order missing")
+            if closed is not None and (
+                raw["status"] != "filled"
+                or Fraction(raw["filled_qty"]) != Fraction(raw["qty"])
+            ):
+                raise JournalError("completed source order reopened or changed")
             order = SourceOrderFact(
                 proof["broker_order_id"],
                 cid,
@@ -454,12 +512,18 @@ def _derive_source_registry(
         len(raw_open) != 1
         or len(raw_positions) != 1
         or not isinstance(raw_positions[0], list)
-        or not registry.covers_batch(
-            {"positions": raw_positions[0], "open_orders": raw_open[0]},
-            {row["symbol"]: Fraction(row["qty"]) for row in raw_positions[0]},
-        )
+        or not isinstance(raw_open[0], list)
     ):
         issues.add("SOURCE_ACCOUNT_OPEN_BOOK_DISAGREEMENT")
+    else:
+        if any(type(row) is not dict for row in raw_open[0]):
+            raise JournalError("source account raw open-order shape is malformed")
+        observed = _observed_positions(raw_positions[0])
+        if not registry.covers_batch(
+            {"positions": raw_positions[0], "open_orders": raw_open[0]},
+            observed,
+        ):
+            issues.add("SOURCE_ACCOUNT_OPEN_BOOK_DISAGREEMENT")
     return SourceRiskRegistry(
         context,
         registry.source_orders,

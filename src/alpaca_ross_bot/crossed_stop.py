@@ -12,7 +12,7 @@ import json
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from fractions import Fraction
-from typing import Any
+from typing import Any, cast
 
 from ._causal_risk_memo import causal_risk_verification_scope
 from .crossed_stop_contract import MANIFEST_SHA256 as MANIFEST_SHA256
@@ -152,7 +152,13 @@ class DeclaredExitEvidence:
         return parsed
 
 
-def _validate_crossed_stop_item(binding: dict[str, Any], item: dict[str, Any]) -> None:
+def _validate_crossed_stop_item(
+    binding: dict[str, Any],
+    item: dict[str, Any],
+    *,
+    sequence: int | None = None,
+    conflict: bool = False,
+) -> None:
     if set(item) != {"binding", "kind", "key", "at", "data", "horizon"}:
         raise JournalError("exact crossed-stop event schema required")
     kind, data = item["kind"], item["data"]
@@ -160,6 +166,7 @@ def _validate_crossed_stop_item(binding: dict[str, Any], item: dict[str, Any]) -
         "SOURCE_OBSERVE": {"receipt"},
         "SOURCE_PREPARE": {"close_id", "request", "receipt"},
         "SOURCE_BIND_INTENT": {"close_id", "receipt"},
+        "SOURCE_CONSUME": {"identity", "close_id", "receipt"},
         "OBSERVE": {"evidence"},
         "PREPARE": {"close_id", "evidence"},
         "ATTEMPT": {"close_id", "attempt_id", "evidence"},
@@ -176,9 +183,26 @@ def _validate_crossed_stop_item(binding: dict[str, Any], item: dict[str, Any]) -
     ):
         raise JournalError("crossed-stop operation key differs")
     _text(identity[2])
+    if kind == "SOURCE_CONSUME":
+        if not conflict and (
+            type(sequence) is not int or item["horizon"] != sequence - 1
+        ):
+            raise JournalError(
+                "source consumption must bind immediately preceding prefix"
+            )
+        _text(data["close_id"])
+        if not isinstance(data["receipt"], dict):
+            raise JournalError("source consumption receipt required")
     if (
         kind not in {"OBSERVE", "SOURCE_OBSERVE"}
-        and identity[2] != data["execution_id" if kind == "EXECUTION" else "close_id"]
+        and identity[2]
+        != data[
+            "identity"
+            if kind == "SOURCE_CONSUME"
+            else "execution_id"
+            if kind == "EXECUTION"
+            else "close_id"
+        ]
     ):
         raise JournalError("crossed-stop command identity differs")
 
@@ -189,6 +213,9 @@ class CrossedStopJournal:
     def __init__(self, owner: OcoJournal) -> None:
         if type(owner) is not OcoJournal:
             raise JournalError("canonical OCO lot owner required")
+        self._initialize(owner)
+
+    def _initialize(self, owner: OcoJournal) -> None:
         manifest = json.loads(load_crossed_stop_contract().raw)
         self.owner, self.journal = owner, owner.journal
         self._binding_bytes = _json(
@@ -223,15 +250,43 @@ class CrossedStopJournal:
             "authority": self.authority,
         }
 
-    def _validate_item(self, item: dict[str, Any]) -> None:
-        _validate_crossed_stop_item(self.binding, item)
+    def _validate_item(
+        self,
+        item: dict[str, Any],
+        *,
+        sequence: int | None = None,
+        conflict: bool = False,
+    ) -> None:
+        _validate_crossed_stop_item(
+            self.binding, item, sequence=sequence, conflict=conflict
+        )
 
     def _reduce(
-        self, state: dict[str, Any], item: dict[str, Any], conflict: bool
+        self,
+        state: dict[str, Any],
+        item: dict[str, Any],
+        conflict: bool,
+        *,
+        sequence: int | None = None,
     ) -> dict[str, Any]:
         state = json.loads(_json(state))
-        self._validate_item(item)
+        self._validate_item(item, sequence=sequence, conflict=conflict)
         if conflict:
+            if item["kind"] == "SOURCE_CONSUME":
+                originals = [
+                    close["source_consumptions"][item["data"]["identity"]]
+                    for close in state["closes"].values()
+                    if item["data"]["identity"] in close.get("source_consumptions", {})
+                ]
+                if (
+                    len(originals) != 1
+                    or item["data"]["receipt"] != originals[0]
+                    or item["data"]["close_id"] == originals[0]["close_id"]
+                    or item["horizon"] != originals[0]["source_horizon"]
+                ):
+                    raise JournalError(
+                        "source consumption conflict reinterprets original receipt"
+                    )
             state["conflicts"] = sorted(set(state["conflicts"]) | {item["key"]})
             return state
         at = datetime.fromisoformat(item["at"])
@@ -251,7 +306,9 @@ class CrossedStopJournal:
 
             if state["origin"] == _ORIGIN and state["last_at"] is not None:
                 raise JournalError("declared and source crossing modes cannot mix")
-            receipt = derive_source_crossing(self.owner, horizon=item["horizon"], at=at)
+            receipt = derive_source_crossing(
+                self.owner, horizon=item["horizon"], at=at, _causal_risk=True
+            )
             if _json(receipt) != _json(data["receipt"]):
                 raise JournalError("source crossing differs from original raw prefix")
             state["origin"] = _SOURCE_ORIGIN
@@ -291,6 +348,90 @@ class CrossedStopJournal:
             if self.journal.read_order_intent(cid) != intent:
                 raise JournalError("source intent handoff is missing or changed")
             closes[data["close_id"]]["source_intent_binding"] = receipt
+        elif kind == "SOURCE_CONSUME":
+            from .crossed_stop_consumption import derive_source_close_consumption
+
+            close = closes.get(_text(data["close_id"]))
+            if (
+                state["origin"] != _SOURCE_ORIGIN
+                or not state["latched"]
+                or state["conflicts"]
+                or close is None
+                or "source_intent_binding" not in close
+            ):
+                raise JournalError("clean handed-off source reservation required")
+            receipt = derive_source_close_consumption(
+                self.journal,
+                self.owner.initial,
+                close_id=data["close_id"],
+                through_sequence=item["horizon"],
+                decision_at=at,
+            )
+            if (
+                receipt != data["receipt"]
+                or receipt["original_portions"] != close["portions"]
+                or _fraction(receipt["requested_quantity"])
+                != _fraction(close["quantity"])
+                or receipt["client_order_id"] != close["request"]["client_order_id"]
+            ):
+                raise JournalError(
+                    "source consumption differs from original basket or prefix"
+                )
+            if close["attempt"] not in {None, receipt["attempt_id"]}:
+                raise JournalError("source consumption attempt identity changed")
+            original = close.setdefault("source_execution_claims", {})
+            incoming = {
+                execution["activity_id"]: execution
+                for execution in receipt["executions"]
+            }
+            if len(incoming) != len(receipt["executions"]) or not set(original) <= set(
+                incoming
+            ):
+                raise JournalError("source execution census duplicated or regressed")
+            for identity, execution in incoming.items():
+                previous = original.get(identity)
+                if previous is not None and (
+                    {key: value for key, value in previous.items() if key != "raw_refs"}
+                    != {
+                        key: value
+                        for key, value in execution.items()
+                        if key != "raw_refs"
+                    }
+                    or any(
+                        ref not in execution["raw_refs"] for ref in previous["raw_refs"]
+                    )
+                ):
+                    raise JournalError("consumed source execution changed")
+                if any(
+                    identity in other["executions"]
+                    for other_id, other in closes.items()
+                    if other_id != data["close_id"]
+                ) or any(e.execution_id == identity for e in model.executions):
+                    raise JournalError("source execution identity already assigned")
+            if set(close["executions"]) != set(original):
+                raise JournalError(
+                    "source and declared execution inventories cannot mix"
+                )
+            close["attempt"] = receipt["attempt_id"]
+            close["source_execution_claims"] = incoming
+            close["executions"] = {
+                identity: execution["quantity"]
+                for identity, execution in incoming.items()
+            }
+            close["filled"] = str(
+                sum(
+                    (
+                        _fraction(quantity, positive=True)
+                        for quantity in close["executions"].values()
+                    ),
+                    Fraction(),
+                )
+            )
+            if close["filled"] != receipt["cumulative_fill_quantity"] or _fraction(
+                close["filled"]
+            ) > _fraction(close["quantity"]):
+                raise JournalError("source consumption cumulative quantity differs")
+            close.setdefault("source_consumptions", {})[data["identity"]] = receipt
         elif state["origin"] == _SOURCE_ORIGIN:
             raise JournalError("declared exit inputs cannot clear source crossing")
         elif kind in {"OBSERVE", "PREPARE", "ATTEMPT"}:
@@ -384,15 +525,16 @@ class CrossedStopJournal:
     ) -> dict[str, Any]:
         from .crossed_stop_preparation import (
             HANDOFF_RESERVATION_CONTRACT,
-            derive_source_preparation,
+            _derive_preparation,
         )
 
-        receipt = derive_source_preparation(
+        receipt = _derive_preparation(
             self.owner,
             horizon=horizon,
             at=at,
             request=request,
-            _require_current_census=require_current_census,
+            require_current_census=require_current_census,
+            causal_risk=True,
         )
         if request.get("reservation_contract") == HANDOFF_RESERVATION_CONTRACT:
             view = self.owner.read_verified_at(horizon, at)
@@ -580,18 +722,38 @@ class CrossedStopJournal:
 
     def _replay(
         self,
+        horizon: int | None = None,
+        at: datetime | None = None,
     ) -> tuple[dict[str, Any], dict[str, str], dict[str, set[str]]]:
         with causal_risk_verification_scope(self.journal):
-            return self._replay_verified()
+            return self._replay_verified(horizon, at)
 
     def _replay_verified(
         self,
+        horizon: int | None = None,
+        at: datetime | None = None,
     ) -> tuple[dict[str, Any], dict[str, str], dict[str, set[str]]]:
+        if (horizon is None) != (at is None):
+            raise JournalError("paired crossed-stop horizon and decision required")
+        if horizon is not None:
+            if (
+                type(horizon) is not int
+                or not 0 <= horizon <= self.journal.read_evidence_sequence()
+            ):
+                raise JournalError("bounded crossed-stop horizon required")
+            assert at is not None
+            _time(at)
         state = self._empty()
         first: dict[str, str] = {}
         seen: dict[str, set[str]] = {}
         expected: dict[str, object] = {}
         for event, raw in self.journal.read_crossed_stop_events():
+            if horizon is not None and event.sequence > horizon:
+                continue
+            if at is not None and (
+                not event.visible_at(at) or event.external_clock_conflict
+            ):
+                raise JournalError("crossed-stop prefix unavailable")
             item = json.loads(raw)
             if item["binding"]["account_ref"] != self.binding["account_ref"]:
                 raise JournalError("foreign crossed-stop account")
@@ -612,28 +774,45 @@ class CrossedStopJournal:
             digest = "sha256:" + hashlib.sha256(raw).hexdigest()
             if digest in seen.get(key, set()):
                 raise JournalError("duplicate immutable crossed-stop evidence")
-            state = self._reduce(state, item, key in first and first[key] != digest)
+            state = self._reduce(
+                state,
+                item,
+                key in first and first[key] != digest,
+                sequence=event.sequence,
+            )
             first.setdefault(key, digest)
             seen.setdefault(key, set()).add(digest)
             expected.setdefault(key, {"hash": digest, "sequence": event.sequence})
         cached = self.journal.read_state(self.state_key)
-        if cached is not None and _json(cached) != _json(state):
+        current_projection = (
+            horizon is None or horizon == self.journal.read_evidence_sequence()
+        )
+        if current_projection and cached is not None and _json(cached) != _json(state):
             raise JournalError("crossed-stop projection differs from evidence")
-        if expected and cached is None:
+        if current_projection and expected and cached is None:
             raise JournalError("crossed-stop projection missing")
         scoped = {}
         for key, value in self.journal.read_crossed_stop_evidence_cache(
             self.binding["account_ref"]
         ).items():
             identity = json.loads(key)
-            if identity[0] == self.binding["entry_scope"]:
+            if identity[0] == self.binding["entry_scope"] and (
+                horizon is None or cast(dict[str, Any], value)["sequence"] <= horizon
+            ):
                 scoped[key] = value
         if _json(scoped) != _json(expected):
             raise JournalError("crossed-stop deduplication differs from evidence")
-        projected, _, _ = self.owner._verified_replay()
-        if projected is None:
-            raise JournalError("current OCO binding missing")
-        model = self.owner._view(projected).model
+        if horizon is None:
+            projected, _, _ = self.owner._verified_replay()
+            if projected is None:
+                raise JournalError("current OCO binding missing")
+            model = self.owner._view(projected).model
+        else:
+            assert at is not None
+            view = self.owner.read_verified_at(horizon, at)
+            if view is None:
+                raise JournalError("bounded OCO binding missing")
+            model = view.model
         emergency_ids = {
             identity
             for close in state["closes"].values()
@@ -686,6 +865,16 @@ class CrossedStopJournal:
                     old = json.loads(raw)
                     if old["key"] == key and old["binding"] == self.binding:
                         item["horizon"] = old["horizon"]
+                        if kind == "SOURCE_CONSUME":
+                            if at < datetime.fromisoformat(old["at"]):
+                                raise JournalError(
+                                    "source consumption retry clock regressed"
+                                )
+                            if data["close_id"] == old["data"]["close_id"]:
+                                item.clear()
+                                item.update(old)
+                                return raw
+                            data["receipt"] = old["data"]["receipt"]
                         if kind in {
                             "SOURCE_OBSERVE",
                             "SOURCE_PREPARE",
@@ -699,7 +888,7 @@ class CrossedStopJournal:
                     from .crossed_stop_source import derive_source_crossing
 
                     data["receipt"] = derive_source_crossing(
-                        self.owner, horizon=item["horizon"], at=at
+                        self.owner, horizon=item["horizon"], at=at, _causal_risk=True
                     )
                 elif kind == "SOURCE_PREPARE":
                     data["receipt"] = self._source_preparation_receipt(
@@ -710,6 +899,27 @@ class CrossedStopJournal:
                         data["request"],
                         require_current_census=True,
                     )
+                elif kind == "SOURCE_CONSUME":
+                    from .account_risk_owner import AccountRiskOwner
+                    from .crossed_stop_consumption import (
+                        derive_source_close_consumption,
+                    )
+
+                    data["receipt"] = derive_source_close_consumption(
+                        self.journal,
+                        self.owner.initial,
+                        close_id=data["close_id"],
+                        through_sequence=item["horizon"],
+                        decision_at=at,
+                    )
+                    reader = object.__new__(AccountRiskOwner)
+                    reader.journal = self.journal
+                    if _json(reader._census()) != _json(
+                        data["receipt"]["intent_census"]
+                    ):
+                        raise JournalError(
+                            "local intents require a fresh source account observation"
+                        )
                 elif kind == "SOURCE_BIND_INTENT":
                     data["receipt"] = self._source_intent_receipt(
                         result, data["close_id"], item["horizon"], at
@@ -755,7 +965,7 @@ class CrossedStopJournal:
                         binding=self.binding,
                         close_id=data["close_id"],
                     )
-                result = self._reduce(result, item, conflict)
+                result = self._reduce(result, item, conflict, sequence=sequence)
                 return result
 
         try:
@@ -871,6 +1081,26 @@ class CrossedStopJournal:
             at,
             {"close_id": close_id, "receipt": None},
         )
+
+    def consume_source_fills(
+        self, identity: str, close_id: str, at: datetime
+    ) -> dict[str, Any]:
+        """Consume proven reported facts once; retain incident and risk budget."""
+        state = self._record(
+            "SOURCE_CONSUME",
+            identity,
+            at,
+            {"identity": _text(identity), "close_id": _text(close_id), "receipt": None},
+        )
+        receipt = (
+            state["closes"]
+            .get(close_id, {})
+            .get("source_consumptions", {})
+            .get(identity)
+        )
+        if receipt is None:
+            raise JournalError("source consumption command conflict retained")
+        return cast(dict[str, Any], receipt)
 
     def mark_attempt(
         self, close_id: str, attempt_id: str, evidence: DeclaredExitEvidence

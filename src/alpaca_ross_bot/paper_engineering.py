@@ -8,6 +8,7 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 from .journal import Journal, JournalError
 from .order_reconciliation import OrderReconciler, ReconciliationPolicy
@@ -143,11 +144,19 @@ class EngineeringHarness:
     ) -> dict[str, object]:
         """One bounded GET-only capture; unknown orders are never submitted again."""
         self.verify_scope()
+        source_rows, callback_count = self._source_recovery_inventory(api)
         if formal_api is not None:
             # A previous sidecar proof is never a substitute for this call.
             self.verify_formal_account(formal_api)
         api.verify_account(self.journal, expected_reference=self.scope.account_ref)
+        source_recovery = self._recover_source_http(api, source_rows, callback_count)
         native_recovery = self._recover_native_http(api)
+        if source_recovery:
+            native_unresolved = native_recovery["native_http_unresolved_count"]
+            assert type(native_unresolved) is int
+            source_recovery["tracked_exit_unresolved_count"] = (
+                len(source_rows) + callback_count + native_unresolved
+            )
         lifecycle = OrderReconciler(
             self.journal, self.scope.account_ref, clock=self.now
         )
@@ -179,6 +188,7 @@ class EngineeringHarness:
                 for cid in self.journal.read_order_intent_ids()
             ),
             **native_recovery,
+            **source_recovery,
             "rebuild_verified": True,
             "broker_writes_performed": False,
             "runtime_authorized": False,
@@ -194,6 +204,120 @@ class EngineeringHarness:
             processed_at=now,
         )
         return result
+
+    def _source_recovery_inventory(
+        self, api: PaperOrderHttp
+    ) -> tuple[list[dict[str, Any]], int]:
+        # Inventory validates immutable transport evidence without constructing
+        # a sender or entering current source/risk prequalification.
+        from .crossed_stop_attempts import SOURCE as CALLBACK_SOURCE
+        from .crossed_stop_attempts import source_close_fences
+        from .source_close_http import source_http_inventory
+
+        fences = source_close_fences(self.journal)
+        if not fences:
+            return [], 0
+        rows = source_http_inventory(self.journal)
+        for row in rows:
+            self._check_source_recovery_api(api, row["precall"])
+        return rows, sum(source == CALLBACK_SOURCE for source in fences.values())
+
+    def _check_source_recovery_api(
+        self, api: PaperOrderHttp, pre: dict[str, Any]
+    ) -> None:
+        if (
+            type(api) is not PaperOrderHttp
+            or api.native_http_origin != "INJECTED_EXCHANGE"
+            or api.native_http_origin != pre["origin"]
+            or pre["account_ref"] != self.scope.account_ref
+            or self.journal.read_paper_account_ref() != pre["account_ref"]
+            or api._paper_account_ref not in (None, pre["account_ref"])
+        ):
+            raise JournalError("source HTTP recovery account or actual origin differs")
+
+    def _recover_source_http(
+        self, api: PaperOrderHttp, rows: list[dict[str, Any]], callback_count: int
+    ) -> dict[str, object]:
+        if not rows and not callback_count:
+            return {}
+        refs: list[dict[str, object]] = []
+        for row in rows:
+            pre = row["precall"]
+            self._check_source_recovery_api(api, pre)
+            started = self.now()
+            response = None
+            error = None
+            identity_failed = False
+            try:
+                response = api.read_native_oco_by_client_id(pre["client_order_id"])
+            except Exception as exc:
+                error = type(exc).__name__
+            try:
+                # The exchange can change during either callback. A fresh account
+                # GET and actual-origin checks prevent relabeling those bytes.
+                self._check_source_recovery_api(api, pre)
+                api.verify_account(self.journal, expected_reference=pre["account_ref"])
+                self._check_source_recovery_api(api, pre)
+            except Exception as exc:
+                error = type(exc).__name__
+                identity_failed = True
+            completed = self.now()
+            if completed < started:
+                error, identity_failed = "CLOCK_REGRESSION", True
+            payload = {
+                "schema": 1,
+                "classification": "SOURCE_HTTP_GET_ONLY_NOT_DISPOSITION",
+                "attempt_ref": row["attempt_ref"],
+                "account_ref": pre["account_ref"],
+                "origin": pre["origin"],
+                "method": "GET",
+                "client_order_id": pre["client_order_id"],
+                "started_at": started.isoformat(),
+                "completed_at": completed.isoformat(),
+                "http_status": None if response is None else response.status,
+                "body_base64": None
+                if response is None
+                else base64.b64encode(response.body).decode(),
+                "error_category": error,
+                "account_and_origin_reverified": not identity_failed,
+                "ownership_accepted": False,
+                "protection_accepted": False,
+                "retry_authorized": False,
+                "cancel_authorized": False,
+                "cleanup_accepted": False,
+                "runtime_authorized": False,
+                "formal_accepted": False,
+            }
+            event = self.journal.append_next(
+                source_id="ALPACA_SOURCE_CLOSE_HTTP_RECOVERY",
+                feed="paper",
+                event_kind="LOOKUP_OBSERVATION",
+                payload=json.dumps(
+                    payload, sort_keys=True, separators=(",", ":")
+                ).encode(),
+                system_first_seen_at=started,
+                processed_at=max(started, completed),
+            )
+            refs.append({"sequence": event.sequence, "hash": event.payload_ref})
+            if identity_failed:
+                raise JournalError("source HTTP recovery identity or clock changed")
+        return {
+            "recovery_schema": 2,
+            "recovery_profile": "SOURCE_HTTP_GET_ONLY_V1",
+            "source_http_attempt_count": len(rows),
+            "source_http_unresolved_count": len(rows),
+            "source_http_missing_outcome_count": sum(
+                row["outcome"] is None for row in rows
+            ),
+            "source_http_lookup_refs": refs,
+            "source_http_transport_provenance_verified": True,
+            "source_http_source_replay_verified": False,
+            "source_http_disposition_accepted": False,
+            "source_callback_inventory": "RAW_FENCE_ONLY_NOT_PROVENANCE",
+            "source_callback_consumed_count": callback_count,
+            "source_callback_unresolved_count": callback_count,
+            "source_callback_lookup_performed": False,
+        }
 
     def _recover_native_http(self, api: PaperOrderHttp) -> dict[str, object]:
         """Retain one GET per consumed native attempt; absence never releases it."""

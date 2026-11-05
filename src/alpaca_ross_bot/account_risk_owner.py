@@ -118,6 +118,9 @@ class AccountRiskOwner:
             raise JournalError("source risk cache differs from immutable evidence")
 
     def view(self) -> dict[str, Any] | None:
+        from .source_close_completion import require_completion_contract
+
+        require_completion_contract(self.journal)
         raw = self.journal.read_state(self.state_key)
         if raw is not None and (
             not isinstance(raw, dict)
@@ -187,6 +190,9 @@ class AccountRiskOwner:
             or journal.read_paper_account_ref() != account_ref
         ):
             raise JournalError("bound causal risk horizon required")
+        from .source_close_completion import require_completion_contract
+
+        require_completion_contract(journal, through_sequence)
         return memoized_causal_risk_prefix(
             journal,
             account_ref=account_ref,
@@ -249,6 +255,7 @@ class AccountRiskOwner:
             actions = {
                 "OBSERVE": set(),
                 "OBSERVE_NATIVE": {"native_policy_requested"},
+                "COMPLETE_SOURCE": {"completion_contract", "completion_proof"},
                 "OBSERVE_SOURCE": {"source_policy_requested"},
                 "OBSERVE_SOURCE_NATIVE": {
                     "source_policy_requested",
@@ -362,6 +369,27 @@ class AccountRiskOwner:
             source_policy_requested=SOURCE_POLICY,
             native_policy_requested=NATIVE_POLICY,
         )
+
+    def complete_source_close(
+        self, event_id: str, selection: IncidentRiskRequest, at: datetime
+    ) -> None:
+        """Explicit accepted as-of settlement of the original fully consumed slot."""
+        from .source_close_completion import completion_identity
+
+        if self.journal._db.in_transaction:
+            raise JournalError("source completion requires its own transaction")
+        try:
+            self._record(
+                event_id,
+                at,
+                "COMPLETE_SOURCE",
+                selection,
+                completion_contract=completion_identity(),
+            )
+        except BaseException:
+            if self.journal._db.in_transaction:
+                self.journal._db.rollback()
+            raise
 
     def _source_context(self, state: dict[str, Any], horizon: int) -> dict[str, Any]:
         from .crossed_stop_preparation import source_close_handoff_lineage
@@ -941,6 +969,7 @@ class AccountRiskOwner:
             # Retry identity is the caller's command, not later observations.
             # Preserve the original locked source census and assessment bytes.
             first_for_key = True
+            completion_conflict_origin = None
             for _event, raw in self.journal.read_account_risk_events():
                 saved = json.loads(raw)
                 if saved["key"] != event_id:
@@ -960,21 +989,49 @@ class AccountRiskOwner:
                         "_native_policy",
                         "_source_policy",
                         "_source_context",
+                        "completion_proof",
                     }
                 }
-                if _bytes(caller) == _bytes(item):
+                same_completion = (
+                    kind == "COMPLETE_SOURCE"
+                    and saved["kind"] == "COMPLETE_SOURCE"
+                    and _bytes({k: v for k, v in caller.items() if k != "at"})
+                    == _bytes({k: v for k, v in item.items() if k != "at"})
+                )
+                if same_completion and at < datetime.fromisoformat(saved["at"]):
+                    raise JournalError("source completion retry clock regressed")
+                if _bytes(caller) == _bytes(item) or same_completion:
                     if not first_for_key:
                         raise _KnownRiskConflict
                     item.clear()
                     item.update(saved)
                     return raw
                 first_for_key = False
+                if kind == "COMPLETE_SOURCE" and saved["kind"] == "COMPLETE_SOURCE":
+                    completion_conflict_origin = saved
+            if completion_conflict_origin is not None:
+                # A changed completion command remains a durable identity veto,
+                # even after the original slot has been settled. No new proof is
+                # manufactured from a later account or a missing held slot.
+                for key, value in completion_conflict_origin.items():
+                    if key not in {
+                        "key",
+                        "account_ref",
+                        "version",
+                        "kind",
+                        "at",
+                        "selection",
+                        "completion_contract",
+                    }:
+                        item[key] = value
+                return _bytes(item)
             item["census"] = self._census()
             item["source_horizon"] = self.journal.read_evidence_sequence()
             item["quantity_incident_policy"] = "LATCH_UNSUPPORTED_FRACTION_V1"
             previous = self.view()
             if (
                 selection is not None
+                and kind != "COMPLETE_SOURCE"
                 and isinstance(previous, dict)
                 and isinstance(previous.get("held"), dict)
                 and previous["held"].get("source_close_bindings")
@@ -1004,6 +1061,18 @@ class AccountRiskOwner:
                 )
             if selection is not None:
                 item["snapshot"] = self._snapshot(item)
+            if kind == "COMPLETE_SOURCE":
+                from .source_close_completion import derive_source_close_completion
+
+                if previous is None:
+                    raise JournalError("original source risk slot required")
+                item["completion_proof"] = derive_source_close_completion(
+                    self.journal,
+                    previous,
+                    item["snapshot"],
+                    through_sequence=item["source_horizon"],
+                    decision_at=at,
+                )
             if kind == "BIND_EXIT":
                 item["exit_request"] = self._request(str(item["exit_id"]))
             return _bytes(item)
@@ -1066,6 +1135,17 @@ class AccountRiskOwner:
         )
         at = datetime.fromisoformat(item["at"])
         _utc(at)
+        if item["kind"] == "COMPLETE_SOURCE":
+            from .source_close_completion import completion_identity
+
+            if item.get("completion_contract") != completion_identity():
+                raise JournalError("pinned source completion identity differs")
+            if not conflict and item["source_horizon"] != sequence - 1:
+                raise JournalError(
+                    "source completion requires immediately preceding horizon"
+                )
+        elif "completion_contract" in item or "completion_proof" in item:
+            raise JournalError("source completion fields require explicit completion")
         research_signal = item.get("research_signal")
         if item.get("kind") == "BIND_EMERGENCY_POLICY":
             if type(item.get("execution_binding")) is not dict or _bytes(
@@ -1083,6 +1163,8 @@ class AccountRiskOwner:
             ):
                 raise JournalError("research-derived risk plan differs")
         reasons: set[str] = set()
+        if "source_completion_incident" in state:
+            reasons.add("SOURCE_COMPLETION_RECOVERY_REQUIRED")
         if conflict:
             state.update(
                 veto=True,
@@ -1370,6 +1452,23 @@ class AccountRiskOwner:
                         raise JournalError("research/risk session calendar differs")
             if not snapshot["qualified"]:
                 reasons.update(snapshot["issues"])
+                if any("source_context" in row for row in state["completed"].values()):
+                    state.setdefault(
+                        "source_completion_incident",
+                        {
+                            "first_risk_ref": [
+                                sequence,
+                                "sha256:" + hashlib.sha256(_bytes(item)).hexdigest(),
+                            ],
+                            "source_horizon": item["source_horizon"],
+                            "at": item["at"],
+                            "selection": item["selection"],
+                            "issues": snapshot["issues"],
+                            "recovery_required": True,
+                            "runtime_authorized": False,
+                        },
+                    )
+                    reasons.add("SOURCE_COMPLETION_RECOVERY_REQUIRED")
             else:
                 if state["session"] != snapshot["session"]:
                     if state["session"] is not None and (
@@ -1410,6 +1509,20 @@ class AccountRiskOwner:
                     reasons.add("UNBOUND_EXECUTION")
                 if Fraction(state["net"]) <= -Fraction(state["e0"]) / 100:
                     state["daily_stop_latched"] = True
+                if kind == "COMPLETE_SOURCE":
+                    from .source_close_completion import derive_source_close_completion
+
+                    if not isinstance(old, dict):
+                        raise JournalError("original source completion slot missing")
+                    proof = derive_source_close_completion(
+                        self.journal,
+                        old,
+                        snapshot,
+                        through_sequence=item["source_horizon"],
+                        decision_at=at,
+                    )
+                    if proof != item.get("completion_proof"):
+                        raise JournalError("source completion immutable proof differs")
                 if held is not None:
                     if item.get("_source_policy") == SOURCE_POLICY:
                         self._sync_source_held(state, snapshot, reasons)
@@ -1417,7 +1530,16 @@ class AccountRiskOwner:
                         self._sync_native_held(state, snapshot, reasons)
                     else:
                         self._sync_held(state, snapshot, reasons)
+                    if kind == "COMPLETE_SOURCE":
+                        reasons.discard("SOURCE_CLOSE_OWNERSHIP_PENDING")
+                        if reasons - {"DAILY_STOP_LATCHED"}:
+                            raise JournalError(
+                                "independent source completion veto remains"
+                            )
+                        self._complete_source_held(state, item, sequence)
                     held = state["held"]
+                elif kind == "COMPLETE_SOURCE":
+                    raise JournalError("original source completion slot missing")
                 elif not snapshot["flat"]:
                     reasons.add("UNBOUND_POSITION_OR_ORDER")
                 if kind == "ABANDON_UNSENT":
@@ -1460,6 +1582,14 @@ class AccountRiskOwner:
         held = state["held"]
         source = snapshot["source"]
         scope = held["client_order_id"]
+        if not held.get("source_close_bindings") and any(
+            "source_context" in row for row in state["completed"].values()
+        ):
+            if isinstance(snapshot.get("native"), dict):
+                self._sync_native_held(state, snapshot, reasons)
+            else:
+                self._sync_held(state, snapshot, reasons)
+            return
         entry = snapshot["orders"].get(scope)
         if entry is None:
             reasons.add("SOURCE_ENTRY_OWNERSHIP_UNAVAILABLE")
@@ -1542,6 +1672,45 @@ class AccountRiskOwner:
         # This reported-account adapter never consumes/reallocates the basket or
         # clears the separately versioned source-completion latch.
         reasons.add("SOURCE_CLOSE_OWNERSHIP_PENDING")
+
+    def _complete_source_held(
+        self, state: dict[str, Any], item: dict[str, Any], sequence: int
+    ) -> None:
+        held, proof = state["held"], item["completion_proof"]
+        scope = held["client_order_id"]
+        if scope in state["completed"]:
+            raise JournalError("source slot already completed")
+        net = Fraction(proof["net"])
+        state["losing_streak"] = (
+            state["losing_streak"] + 1
+            if net < 0
+            else 0
+            if net > 0
+            else state["losing_streak"]
+        )
+        state["daily_stop_latched"] = (
+            state["daily_stop_latched"] or state["losing_streak"] >= 3
+        )
+        ref = [sequence, "sha256:" + hashlib.sha256(_bytes(item)).hexdigest()]
+        episode = dict(
+            proof["source_context"],
+            closed=True,
+            completion_ref=ref,
+            completion_contract=item["completion_contract"],
+        )
+        completed = {
+            "net": proof["net"],
+            "filled": int(Fraction(proof["entry_filled_quantity"])),
+            "order_ids": sorted({scope, *held["exits"]}),
+            "source_context": episode,
+            "completion_ref": ref,
+            "completion_contract": item["completion_contract"],
+            "source_completion": proof,
+        }
+        if proof["native_context"] is not None:
+            completed["native_context"] = proof["native_context"]
+        state["completed"][scope] = completed
+        state["held"] = None
 
     def _sync_native_held(
         self, state: dict[str, Any], snapshot: dict[str, Any], reasons: set[str]
@@ -1900,6 +2069,9 @@ class AccountRiskOwner:
         )
 
     def verify_rebuild(self) -> bool:
+        from .source_close_completion import require_completion_contract
+
+        require_completion_contract(self.journal)
         return memoized_current_risk_verification(
             self.journal,
             account_ref=self.account_ref,

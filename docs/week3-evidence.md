@@ -5149,3 +5149,149 @@ and formal-paper authority stays false. No real account/credential access,
 broker order/cancel, service installation, data purchase or formal paper start
 occurred. Ross remains separate, IEX remains NOT_SIP_EQUIVALENT, and W3-06/07/08
 parents stay incomplete.
+
+
+### Source HTTP recovery, canonical consumption and as-of accounting completion — 2026-11-04
+
+The user's November 4 acceptance introduces the separately pinned
+SOURCE_CLOSE_ASOF_ACCOUNTING_COMPLETION_V1 contract. Original crossed-stop and
+OCO research manifests remain unchanged. This version can settle the original
+slot and release its original local reserve only from a newest qualified, flat,
+complete account prefix with exact simple/native/source execution and conservative
+fee agreement. It does not confer order, protection, runtime or formal-paper
+authority, establish immutable broker execution finality, or clear the original
+emergency/protection interlock.
+
+Three deterministic integration components are now implemented:
+
+- GET-only source HTTP recovery validates the original once fence and transport/account
+  identity, performs one original-CID lookup per HTTP fence, and stores private
+  observations. Unknown, rejected and missing outcomes stay unresolved. Callback
+  fences remain local raw-fence evidence. Recovery neither reposts a request nor
+  turns a GET into ownership, finality or cleanup authority; reports without source
+  history retain their original schema.
+- Canonical SOURCE_CONSUME joins current HTTP attribution, original attempt/outcome,
+  exact cumulative FILL identities, original basket and newest qualified account
+  observation under one locked prefix. Unchanged cumulative rows count once;
+  fractional reported facts retain their quantity incident. It updates the existing
+  source book without FIFO selection, lot debit or risk release. Historical replay
+  is bounded and constructor-free; current reads also check the current projection.
+  An older good observation cannot hide a newer bad one.
+- Explicit AccountRiskOwner.complete_source_close uses COMPLETE_SOURCE with an
+  internally derived pinned proof. Terminal source orders must be fully filled and
+  canonically consumed; partially filled/canceled source orders do not qualify.
+  Native residual census, original entry, complete empty open book, exact fees and
+  existing daily/streak arithmetic must agree. Identical retry is event-free and
+  cannot settle twice. Later evidence disagreement durably latches
+  SOURCE_COMPLETION_RECOVERY_REQUIRED; restoring matching observations cannot
+  silently clear it or restore capacity.
+
+Completion freezes original ENTRY and bound simple-exit order identities,
+terminal states/quantities and type-aware complete FILL-row identities, as well
+as existing source/native claims. A matching correction to both entry price and
+account cash must still reject; unrelated later order UUIDs are excluded from
+this frozen set. Independent review found and the implementation corrected an
+earlier incident auto-clear defect. A retained diagnostic also confirmed that
+price/cash correction could evade the earlier incomplete basis; the final proof
+now freezes that basis and passed focused independent review. Old unreleased
+prototype COMPLETE_SOURCE fixtures lack the final basis fields and are not
+retagged, migrated or claimed as final proof.
+
+Validation is deliberately split; no full-repository or single combined
+final-byte suite is claimed:
+
+- Recovery: six selected cases passed in 140.17s, including four new grouped
+  source/callback profiles and existing empty/native behavior. Receipt:
+  /tmp/source-http-recovery-407e483-final2.{log,xml}. The initial failure was a
+  test-only exception expectation: PaperOrderHttp wraps the timeout.
+- Consumption: the original positive fixture recorded real fractional/terminal
+  consumption at prefixes 50/58, then a newer bad observation. Its expensive
+  initial run was intentionally interrupted and is not a pass. Final retained
+  continuation passed in 812.09s using that exact original journal: bounded
+  constructor-denied replay, newest-bad rejection, cache corruption/rollback,
+  original retry, one intentional changed-close conflict and physical reopen.
+  Receipt: /tmp/alpaca-source-consumption-continuation-20261104-a3.{log,xml}.
+  Earlier continuation failures were diagnostic overbroad constructor-denial
+  scope; normal current views were moved outside the bounded-reader assertion.
+- Remaining consumption profiles: native/source ownership and unknown/rejected/missing
+  outcomes passed all four selected nodes in 308.16s. Receipt:
+  /tmp/alpaca-source-consumption-profiles-20261104-a1.{log,xml}. Startup and
+  post-run guards verified all 303 snapshot/current files and actual imports;
+  this is functional snapshot evidence, not source-root throughput acceptance.
+- Completion: final code generated one successful completion from the retained
+  PRE-COMPLETE fixture, preserving the original fixture and immutable completed
+  base. Three final retained stages passed: primary remaining assertions
+  (1009.544s), independent cash contradiction/restore (256.517s), and independent
+  ENTRY-basis contradiction/restore (257.166s). Each has a separate terminal
+  report; /tmp/source-completion-final-flow/report.json and result.xml aggregate
+  those three stages with artifact hashes, not a single pytest run. They verify
+  constructor-free physical reopen, original/completed prefix equality, unchanged
+  original completion after ENTRY/source corrections, persistent incidents after
+  matching restored accounts, zero new reserve with no held slot, and changed
+  command conflict/event-free retry. The later COMPLETE_SOURCE identity-conflict
+  event is not a second successful settlement.
+- Completion failures remain classified: the original premature-completion run
+  exposed incorrect outer transaction placement; integration then exposed current
+  owner reentry during historical SOURCE_OBSERVE/PREPARE derivation. The fixes
+  retain canonical writer transaction ownership and use bounded causal readers,
+  preserving current census/projection checks. Both preceded the final proof.
+  Later prototype tests used a wrong gross-net expectation instead of existing
+  conservative fee accounting. Retained continuation scripts separately failed
+  on missing local variables and an incorrect expectation that accounting
+  completion permits a new intent; these are not passing runs. The corrected
+  test requires the existing emergency intent/send veto and uses an empty book
+  for its provisional ordinary plan. An interrupted continuation preserved its
+  completed checkpoints; the final stages verified and continued that same
+  journal without generating a second successful completion or repeating the
+  expensive fixture. The unchanged pure provider-position shape guard passed
+  separately (one case, 2.10s).
+- Existing default paths: crossed-stop regression passed 48 in 3.03s and the
+  four-file account/owned-equity/risk regression passed 76 in 8.71s. Receipts:
+  /tmp/alpaca-crossed-stop-legacy-407e483.{log,xml} and
+  /tmp/alpaca-completion-legacy-407e483.{log,xml}. These preceded later
+  source-completion-only guards; unchanged default behavior is not represented
+  as a new full final-byte suite. The two completion-negative prototype nodes
+  passed separately in 769.48s before the final ENTRY/simple basis addition;
+  their scope is not upgraded to final-proof acceptance.
+- Final scoped Ruff check, format and strict mypy pass for seven production and
+  three new test files; after the final test-only authority correction, its Ruff
+  check/format and four-path strict mypy also pass. Independent reviews approve
+  GET recovery, canonical
+  consumption and the corrected completion/ENTRY basis. Whitespace checks pass.
+
+Functional validation acceleration used an exact-byte Linux snapshot at
+/tmp/alpaca-w3-source-snapshot-b037cef65057, bundle SHA256
+b037cef650571eda44917a13211d9f8dfe1cb4f8fc1c468fd9633beeb252fd31.
+Production modules are loaded from its verified src; original test helpers,
+virtual environment, fee-document path and original synthetic raw evidence are
+retained. It is not the canonical repository, a runtime-root migration or a
+real-time throughput qualification. Source-path I/O was observed waiting in
+p9_client_rpc; application verification was not weakened or cached around it.
+Any subsequent test-only expectation correction is recorded separately from this
+snapshot. Production/config/evidence hashes are rechecked before commit.
+
+Resolved ENV_FAULT packet: category=SANDBOX_CACHE_WRITE; evidence=Ruff format
+check attempted the repository cache and received PermissionError;
+affected_scope=that format invocation; safe_to_continue=yes with supported
+--no-cache; recommended_action=use --no-cache. The exact affected format check
+then passed, followed by the final scoped checks. No global permission or
+application safety change was made.
+
+Official retail WebSocket, Activity SSE and order timeout contracts were
+rechecked on November 4 in the linked completion proposal. Broker-credential SSE
+replay/correction support is not this retail account's proven entitlement.
+The required public-only Cloud route was verified by current remote metadata
+and an actual gemma4:31b response. The coordinator rejected its unsupported
+Broker-SSE-to-retail extrapolation; no private account or repository material was
+exported and model output supplied no reconciliation authority.
+
+This closes these synthetic accounting/recovery components only. Actual source
+eligibility and input deadlines, broker-native initial/late-fill protection,
+stop continuity through amendments, protected timed close/disposal and safe
+operational recovery remain unaccepted. The original emergency continues to
+block new intent/send even when the new accounting contract releases its old
+local reserve; a provisional subsequent risk plan does not override that gate.
+No real credential/account access, broker request/cancel, protective-order
+cleanup, purchase, service installation or formal paper start occurred. Ross
+remains separate, IEX remains NOT_SIP_EQUIVALENT, runtime_authorized stays false,
+and W3-06/07/08 parents remain incomplete.

@@ -935,7 +935,7 @@ def source_close_handoff_lineage(
         "emergency_version",
         "emergency_manifest_sha256",
     }
-    rows = []
+    rows: list[tuple[Any, dict[str, Any]]] = []
     relevant = []
     for event, raw in journal._read_private_events(
         "ALPACA_CROSSED_STOP_RESEARCH", through_sequence
@@ -960,7 +960,15 @@ def source_close_handoff_lineage(
             )
         ):
             raise JournalError("source close lineage binding schema differs")
-        _validate_crossed_stop_item(binding, item)
+        _validate_crossed_stop_item(
+            binding,
+            item,
+            sequence=event.sequence,
+            conflict=any(
+                prior["binding"] == binding and prior["key"] == item["key"]
+                for _, prior in rows
+            ),
+        )
         if (
             _json(item) != raw
             or event.feed != "paper"

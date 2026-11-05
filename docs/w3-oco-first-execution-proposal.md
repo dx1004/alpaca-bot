@@ -575,3 +575,83 @@ limit default queries to the current halt day and distinguish multiday history.
 Absence from that query cannot establish absence of an active earlier halt. No
 provider is adopted, no safe TTL is inferred, and no SIP-equivalence or assertion
 that buying SIP would supply the missing guarantee follows.
+
+
+### Operational source completion policy — accepted implementation scope, 2026-11-04
+
+Status: ACCEPTED_FOR_SEPARATE_IMPLEMENTATION_AND_VALIDATION_ONLY. On November 4
+the user selected the independent completion rules after reviewing these
+predicates. This separately versioned accounting/recovery contract preserves
+both accepted research manifests. Synthetic accounting/recovery validation is
+recorded in [Week 3 evidence](week3-evidence.md#source-http-recovery-canonical-consumption-and-as-of-accounting-completion--2026-11-04).
+This acceptance is not broker-write, runtime, protection or formal-paper authority.
+
+The current crossed-stop research manifest explicitly requires
+`NO_REENTRY_NO_RISK_RELEASE_NO_NEW_BUDGET`; it supplies no reconciliation
+exception. Source-FILL consumption may therefore update the canonical reported
+execution book while retaining the incident and original reserve floors. A
+source slot cannot be released under that unchanged version. The separately accepted
+operational version uses **reported completion as of a verified
+immutable journal prefix**, with later contradictory evidence causing a renewed
+veto. It would not claim that an execution can never be corrected or busted.
+
+Accepted implementation predicates, all required together:
+
+1. Preserve the original entry version, positive risk reservation, stop/limit,
+   exact execution basket and account identity. Derive all inputs internally
+   from one locked visible prefix; no caller-written acceptance flags.
+2. Require the newest full-account observation and source/native index/capture
+   histories to be fresh and qualified under their existing age policies. Do
+   not search backward for an older passing observation. Cash, conservative
+   fees, signed quantities, activity identities and the complete open book must
+   agree with the canonical simple/native/source exit union exactly once. Freeze
+   the original entry and bound simple-exit order facts and complete type-aware
+   FILL identities with the source/native claims; matching later price/cash
+   corrections still require a veto. Unrelated subsequent order identities do
+   not belong to this frozen original-trade basis.
+3. Require terminal entry reconciliation, complete original native group census,
+   and every bound source close fully consumed from confirmed HTTP outcome plus
+   matching raw order/FILL evidence: each execution is accounted for exactly once,
+   cumulative fills equal the original requested quantity, and that source order
+   is terminal filled. A partially filled then canceled source order does not
+   qualify under this proposal; retain its incident and reservation. No uncertain
+   POST, pending cancel/replace,
+   missing outcome, unindexed execution, conflicting identity, unexplained
+   quantity or unsupported sizing incident may be cleared by this policy.
+   `done_for_day` or `calculated` alone is not terminal completion.
+4. Require the entire owned book to be flat with no working entry, exit, orphan
+   or unknown reservation. Keep valid protection until this condition is
+   established; never cancel it to manufacture a flat/empty observation.
+5. At that point only, record once-only completion of the original slot using
+   current exact net/fee evidence and the existing daily-loss/losing-streak
+   arithmetic. Allow its original local reserve floors to be released in this
+   separate version. Do not change risk limits, size, leverage, capital stage,
+   entry eligibility, strategy rules, or any live/formal release gate. A stream
+   gap, protection incident or runtime veto remains independently binding.
+6. Preserve all earlier completion evidence. Once new evidence is locally
+   available, require verification before any subsequent exposure reservation or
+   submission. A new/corrected/missing activity, reopened order, quantity/cash
+   discrepancy, unknown commitment or incomplete verification keeps new exposure
+   frozen and retains protection of any remaining position. This does not promise
+   immediate detection of an unseen broker event. Never silently rewrite the
+   earlier trade, invent an execution
+   finality watermark, replay a timed-out POST, or automatically clear the new
+   incident. Resumption needs its own verified recovery evidence.
+
+The current official [retail WebSocket contract](https://docs.alpaca.markets/us/docs/websocket-streaming)
+distinguishes fills and completed-for-day settlement calculations. The
+[Activity SSE integration guide](https://docs.alpaca.markets/us/docs/activity-sse)
+documents replay cursors and corrections/busts using Broker API credentials;
+that does not establish this retail account's entitlement or a permanent
+execution-finality watermark. The [order timeout guidance](https://docs.alpaca.markets/us/docs/working-with-orders)
+requires treating a timed-out submission as uncertain. These sources were
+retrieved on November 4; the proposed policy does not turn a pagination token,
+client-ID lookup, GET snapshot or finite paper test into irreversible finality.
+
+This proposal addresses accounting completion only. Initial/late-fill
+protection, companion-stop preservation during target amendments, supported
+session-bound closing and safe crash cleanup still require their own evidence.
+It neither approves an extra uncovered interval nor substitutes Broker SSE for
+the selected retail data/account interfaces. The original continuous-protection
+candidate and the separately accepted research emergency interval remain as
+previously specified.

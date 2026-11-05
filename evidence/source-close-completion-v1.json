@@ -1,0 +1,31 @@
+{
+  "acceptance_basis": "USER_ACCEPTED_INDEPENDENTLY_REVIEWED_AS_OF_ACCOUNTING_COMPLETION_RULES_NO_ORDER_OR_PROTECTION_AUTHORITY",
+  "accepted_on": "2026-11-04",
+  "accounting_semantics_accepted": true,
+  "authority": {
+    "broker_order_authority": false,
+    "formal_paper_accepted": false,
+    "immutable_execution_finality_accepted": false,
+    "live_trading_authority": false,
+    "protection_authority": false,
+    "runtime_authorized": false
+  },
+  "classification": "AS_OF_REPORTED_ACCOUNTING_NOT_IMMUTABLE_EXECUTION_FINALITY",
+  "completion_predicates": [
+    "ORIGINAL_WHOLE_SLOT_AND_BASKET",
+    "NEWEST_FRESH_QUALIFIED_ACCOUNT_PREFIX",
+    "CANONICAL_HTTP_SOURCE_CONSUMED_FULL_AND_FILLED",
+    "EXACT_SIMPLE_NATIVE_SOURCE_UNION",
+    "FLAT_COMPLETE_OPEN_BOOK",
+    "EXACT_NET_AND_CONSERVATIVE_FEES",
+    "NO_IDENTITY_QUANTITY_OR_PROTECTION_VETO"
+  ],
+  "later_evidence_policy": "VERIFY_BEFORE_NEW_EXPOSURE_FREEZE_ON_UNKNOWN_OR_CONFLICT",
+  "parent_emergency_sha256": "6f5c6fe8796e9abad2f88edcee46d13e337f762765f45f6ba08c6959e01fc0b1",
+  "parent_emergency_version": "CROSSED_STOP_RESIDUAL_EXIT_RESEARCH_V1",
+  "parent_execution_sha256": "fa6e29ede5a92428308ad19ba794be5e6e3f0b2a3c216818a54f3ffc9a112d80",
+  "parent_execution_version": "OCO_FIRST_EXECUTION_RESEARCH_V1",
+  "reserve_policy": "RELEASE_ORIGINAL_COMPLETED_SLOT_ONLY",
+  "source_document": "docs/w3-oco-first-execution-proposal.md",
+  "version": "SOURCE_CLOSE_ASOF_ACCOUNTING_COMPLETION_V1"
+}
