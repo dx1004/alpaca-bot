@@ -5068,3 +5068,84 @@ paper gates remain closed. Existing risk/cash floors, stops and ownership latch
 are preserved; no actual account/credential access, broker request, data purchase,
 service or formal paper start occurred. Ross stays separate, NOT_SIP_EQUIVALENT
 remains, and W3-06/07/08 parents remain incomplete.
+
+
+### HTTP FILL attribution and reported account-risk integration — 2026-11-04
+
+The authenticated synthetic HTTP family now has its own canonical FILL derivation
+and durable account-wide attribution index. Public entry points are
+`derive_source_http_close_fills`, `SourceHttpCloseAttributions`, and the bounded
+HTTP attribution reader. Their fixed origin is INJECTED_EXCHANGE; original
+callback schemas, namespaces, proofs and history are retained. A callback label
+cannot establish HTTP provenance. Every accepted claim keeps the original lot
+basket and full raw-row identity; cumulative observations count each unchanged
+execution once, with no FIFO selection, lot debit or risk release.
+
+HTTP attribution permits exact account REST corroboration for its own unsent
+source CID only: canonical intent, POST order UUID, activity-map UUID and full
+row hash must agree. Another owner, an already simple-projected source CID,
+changed raw contents, entry/native identity reuse, or ambiguous stream identity
+still vetoes. Unknown/rejected/missing POST outcomes cannot become ownership
+through a GET. Callback guards retain their original behavior.
+
+The explicit SOURCE_HTTP_ACCOUNT_RISK_OBSERVATION_V1 policy introduces
+`AccountRiskOwner.observe_source` and `observe_source_native`. The owner derives
+one bounded canonical source inventory from its preceding held slot under the
+writer lock, then passes the same inventory into ownership, marks and the full
+owned-equity audit. Native/source exits form one union; only proven source CIDs
+are partitioned out of generic unsent-intent reconciliation. No generic send
+marker is invented and no third exit debit is added. All account-wide HTTP
+attempts and indexed claims must be covered. Actual raw V2 origin, open orders,
+positions, execution rows, cash, bid valuation and the existing conservative fee
+policy must agree. Identical repeated provider observations retain existing
+exact-identity deduplication; conflicting contents or owners remain failures.
+
+The source-policy raw account census rejects conflicting same-ID full rows before map folding; identical repeated rows remain one observation. This closes an independent input-qualification gap even though the existing full-account audit already vetoed changed duplicates. Legacy/native default census behavior is unchanged.
+
+Current qualification rederives the latest index proof, so a newer omitted GET
+or an unindexed/unknown commitment cannot hide behind an older receipt. The
+existing selection max_age applies to every start/end clock in the latest
+canonical source capture; a fresh final FILL page cannot refresh an old order
+GET. Historical reads remain bounded and constructor-free. Later failed account
+captures do not rewrite earlier qualified observations.
+
+Synthetic end-to-end acceptance covers source partial and terminal reports, and
+the mixed case entry 3 = native exit 1 + source exit 1 + open 1. Reported economic
+facts can qualify; this is not operational source ownership or broker finality.
+A flat terminal report retains the original held slot, frozen cash/risk floors,
+SOURCE_CLOSE_OWNERSHIP_PENDING and zero new capacity. Existing daily/streak and
+fractional-risk vetoes remain. OCO allocations, emergency reservations and their
+original protection references are unchanged.
+
+Validation and receipt boundaries:
+
+- HTTP FILL/index: `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_source_http_fills.py tests/test_source_http_attribution.py --junitxml=/tmp/http-fill-claim-final.xml` — authoritative session 54071 passed all five grouped nodes in 269.44s. Log/XML retained. An earlier invocation's tool response was lost during output truncation; its outcome is unclaimed. Termination was checked before the authoritative run; no live fixture was duplicated.
+- Source-only account integration: the exact `tests/test_source_account_risk_owner.py::test_source_http_account_economics_partial_terminal_and_faults` node passed in session 33926, 591.60s. It covers partial/terminal raw account qualification, stale index followed by a fresh index, raw price/extra-row and origin faults, no premature completion, physical second-connection reopen, and historical replay. The first run 92151 failed at the canonical OCO binding boundary because the source context included emergency-only extension fields; the corrected context preserves separate handoff identity and original basket validation.
+- Two narrow guards were finalized during that source-only run: complete HTTP-attempt/index coverage and per-request freshness. Final-byte read-only verification 91522 reopened its retained synthetic journal, rebuilt the current state and qualified partial/terminal prefixes 49/56, and proved the logical SQLite dump unchanged. Both prefixes retain held=true and capacity=0, including flat=true for the terminal prefix. Receipt: `/tmp/alpaca-source-account-retained-final.log`. Diagnostic 61947 stopped before replay because the outer causal memo lacked a read transaction; adding BEGIN/rollback corrected only that diagnostic. The conflicting-duplicate helper was added afterward. Pytest later removed the older source-only temporary DB; no second source-only final-byte claim or regenerated fixture is made. That final helper is separately verified by its pure fault regression, reviewed canonical call-site and retained mixed-journal replay.
+- Per-request freshness: `tests/test_source_account_risk_owner.py::test_fresh_fill_page_does_not_refresh_old_order_get` passed in session 14152, 1.79s. The earlier 75947 invocation selected a not-yet-written node and exited at collection; no fixture or production change occurred. The final test separately rejects stale starts and stale ends despite fresh packet/final-page clocks.
+- Conflicting duplicate raw account rows: `tests/test_source_account_risk_owner.py::test_source_account_activity_fold_rejects_changed_first_row` passed in session 98059, 1.70s. Identical repeated rows count once; changed-first/exact-last rows and optional numeric/text changes reject before map folding.
+- Mixed native/source and unknown POST: initial two-node session 38879 passed the unknown-source account veto and failed the native fixture before SOURCE POST because its preparation omitted the existing NATIVE_POLICY. The test-only correction supplies that same original native policy; no producer or acceptance gate was weakened. Only the failed native node was rerun in session 17284 with `/tmp/alpaca-source-account-native-final.xml`; the exact native node passed in 323.51s. The unknown node was not repeated. Combined initial log/XML: `/tmp/alpaca-source-account-native-unknown.{log,xml}`.
+- Final mixed-journal replay session 30390 opened the ORIGINAL pytest-77 root under the final conflicting-duplicate guard, verified the current qualified source/native state and original observation prefix 85, retained held/pending/zero-capacity semantics, and proved the logical SQLite dump unchanged. Receipt: `/tmp/alpaca-source-account-native-replay-final.log`. A logically equal synthetic backup is retained only as evidence; no copied root was retagged or treated as a new canonical identity.
+- Existing default account paths: `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --junitxml=/tmp/alpaca-source-account-legacy-20261104.xml tests/test_account_risk_owner.py tests/test_owned_equity_ledger.py tests/test_risk_ownership.py tests/test_risk_input_evidence.py` — session 66941 passed 76 in 8.29s on the final production changes. Durable log/XML retained.
+- Frozen callback compatibility session 86985 compared both persisted OBSERVE proofs with current output and the frozen cb7282b reader. All match; old index replay and the complete read-only SQLite dump are unchanged. Receipt: `/tmp/source-http-frozen-compat.log`. This reused retained synthetic evidence without regenerating an account fixture.
+- Scoped Ruff/format and strict mypy pass for the two attribution modules/two tests and the five account modules/account test. Final account strict session 1314 covers all six paths; after the native test-only fix, session 26992 checks that changed test again. After the conflicting-duplicate delta, final session 20369 checks source_risk_registry.py and the account test; their final Ruff/format checks also pass. Independent scoped review found no actionable production defect and separately approved the latest-capture freshness call-site. No full-repository or single combined final-byte suite is claimed.
+
+The current official [order contract](https://docs.alpaca.markets/us/docs/orders-at-alpaca),
+[replacement contract](https://docs.alpaca.markets/us/reference/patchorderbyorderid-1)
+and [paper limitations](https://docs.alpaca.markets/us/docs/paper-trading) were
+rechecked on November 4. They do not close the remaining protection gates:
+bracket exits wait for complete parent fill; advanced stop-price constraints
+still affect crossed-S admission; target replacement and timed close/restart
+have no newly established stop-continuity or race-free cleanup guarantee.
+Finite simulated observations cannot establish those guarantees. The accepted
+independent emergency version retains its separately disclosed uncovered
+interval; it is not relabeled as continuous protection or Ross equivalence.
+
+This acceptance closes HTTP attribution and reported-account integration only.
+Operational source eligibility/ownership, posting/native residual finality,
+protected disposal/recovery and runtime throughput remain unaccepted. Builtin
+source dispatch is still refused; all source order/runtime/protection/release
+and formal-paper authority stays false. No real account/credential access,
+broker order/cancel, service installation, data purchase or formal paper start
+occurred. Ross remains separate, IEX remains NOT_SIP_EQUIVALENT, and W3-06/07/08
+parents stay incomplete.

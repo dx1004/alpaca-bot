@@ -17,6 +17,7 @@ from .order_lifecycle import OrderProjection
 from .order_reconciliation import OrderReconciler
 from .paper_order_contract import decode_broker_json, validate_order_snapshot
 from .risk_account_inputs import inspect_account_inputs
+from .source_risk_registry import SourceRiskRegistry
 
 PROFILE = "ALPACA_PAPER_REPORTED_1X_AVAILABILITY_V1"
 
@@ -64,6 +65,7 @@ def qualify_ownership(
     _intent_ids: tuple[str, ...] | None = None,
     _source_horizon: int | None = None,
     _native_registry: NativeRiskRegistry | None = None,
+    _source_registry: SourceRiskRegistry | None = None,
 ) -> OwnershipFacts:
     """Inspect immutable account bytes and independently replayed lifecycle proof.
 
@@ -77,6 +79,8 @@ def qualify_ownership(
         or capture_sequence > _source_horizon
     ):
         raise ValueError("account capture exceeds immutable source horizon")
+    registry = _source_registry if _source_registry is not None else _native_registry
+    source_cids = set() if _source_registry is None else _source_registry.source_cids
     facts = inspect_account_inputs(
         journal,
         capture_sequence,
@@ -95,8 +99,8 @@ def qualify_ownership(
     positions_views: list[list[object]] = []
     orders_views: list[list[object]] = []
     issues: set[str] = set()
-    if _native_registry is not None:
-        issues.update(_native_registry.issues)
+    if registry is not None:
+        issues.update(registry.issues)
     limitations = {"NOT_SETTLEMENT_PROOF", "NON_ATOMIC_HTTP_SNAPSHOTS"}
     for request in requests:
         assert isinstance(request, dict)
@@ -178,7 +182,7 @@ def qualify_ownership(
         sorted(
             {
                 capture_sequence,
-                *(() if _native_registry is None else _native_registry.source_refs),
+                *(() if registry is None else registry.source_refs),
             }
         )
     )
@@ -195,10 +199,8 @@ def qualify_ownership(
             or state.get("issues")
             or not isinstance(report, dict)
             or report.get("status")
-            not in (
-                {"MATCHED"} if _native_registry is None else {"MATCHED", "DIFFERENCES"}
-            )
-            or (_native_registry is None and report.get("differences"))
+            not in ({"MATCHED"} if registry is None else {"MATCHED", "DIFFERENCES"})
+            or (registry is None and report.get("differences"))
             or report.get("watermark") != state.get("watermark")
         ):
             issues.add("LIFECYCLE_OWNERSHIP_UNQUALIFIED")
@@ -219,16 +221,16 @@ def qualify_ownership(
                 or set(last_item["intents"]) != set(intents)
             ):
                 issues.add("LOCAL_INTENT_SOURCE_COVERAGE")
-            if _native_registry is not None and (
+            if registry is not None and (
                 not isinstance(last_item, dict)
-                or not _native_registry.covers_batch(last_item.get("batch"), observed)
+                or not registry.covers_batch(last_item.get("batch"), observed)
             ):
                 issues.add("LIFECYCLE_NATIVE_SOURCE_DISAGREEMENT")
         orders = state.get("orders")
         if not isinstance(orders, dict):
             issues.add("LIFECYCLE_ORDERS_UNQUALIFIED")
             orders = {}
-        if set(orders) != set(intents):
+        if set(orders) != set(intents) - source_cids:
             issues.add("LOCAL_INTENT_COVERAGE")
         projections = {
             cid: OrderProjection.from_dict(row)
@@ -259,19 +261,19 @@ def qualify_ownership(
                 "REJECTED",
             }:
                 expected_open.add(cid)
-        if _native_registry is not None:
+        if registry is not None:
             if isinstance(report, dict) and any(
-                not _native_registry.covers_difference(row, expected, observed)
+                not registry.covers_difference(row, expected, observed)
                 for row in report.get("differences", [])
             ):
                 issues.add("LIFECYCLE_NATIVE_DIFFERENCE_UNCOVERED")
-            for fill in _native_registry.fills:
+            for fill in registry.fills:
                 expected[fill.symbol] = (
                     expected.get(fill.symbol, Fraction()) - fill.quantity
                 )
             expected_open.update(
                 order.client_order_id
-                for order in _native_registry.orders
+                for order in registry.orders
                 if order.status not in NATIVE_TERMINAL
             )
         if {key: value for key, value in expected.items() if value} != observed:
@@ -285,9 +287,9 @@ def qualify_ownership(
             if cid in seen:
                 issues.add("DUPLICATE_OPEN_ORDER")
             seen.add(cid)
-            if _native_registry is not None and any(
+            if registry is not None and any(
                 order.order_id == row.get("id") and order.client_order_id == cid
-                for order in _native_registry.orders
+                for order in registry.orders
             ):
                 continue  # Independently exact-checked by the native registry.
             intent = journal.read_order_intent(cid)

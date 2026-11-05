@@ -40,6 +40,8 @@ from .risk_baseline import read_baseline, session_open_from_evidence
 from .risk_evidence_request import IncidentRiskRequest
 from .risk_input_evidence import inspect_risk_inputs
 from .risk_ledger_audit import _activities
+from .source_risk_registry import POLICY as SOURCE_POLICY
+from .source_risk_registry import derive_source_registry
 from .strategy_risk import VERSION
 
 SOURCE = "ALPACA_ACCOUNT_RISK"
@@ -247,6 +249,11 @@ class AccountRiskOwner:
             actions = {
                 "OBSERVE": set(),
                 "OBSERVE_NATIVE": {"native_policy_requested"},
+                "OBSERVE_SOURCE": {"source_policy_requested"},
+                "OBSERVE_SOURCE_NATIVE": {
+                    "source_policy_requested",
+                    "native_policy_requested",
+                },
                 "RESERVE": {"plan"},
                 "ABANDON_UNSENT": set(),
                 "BIND_EXIT": {"exit_id", "role", "exit_request"},
@@ -263,6 +270,8 @@ class AccountRiskOwner:
                 "research_signal",
                 "_native_policy",
                 "_native_context",
+                "_source_policy",
+                "_source_context",
             }
             if not required <= set(item) or set(item) - required - optional:
                 raise JournalError("causal risk exact event schema differs")
@@ -328,6 +337,77 @@ class AccountRiskOwner:
             selection,
             native_policy_requested=NATIVE_POLICY,
         )
+
+    def observe_source(
+        self, event_id: str, selection: IncidentRiskRequest, at: datetime
+    ) -> None:
+        """Opt in to reported HTTP source economics, never source completion."""
+        self._record(
+            event_id,
+            at,
+            "OBSERVE_SOURCE",
+            selection,
+            source_policy_requested=SOURCE_POLICY,
+        )
+
+    def observe_source_native(
+        self, event_id: str, selection: IncidentRiskRequest, at: datetime
+    ) -> None:
+        """Join source and native exit facts once under the same account origin."""
+        self._record(
+            event_id,
+            at,
+            "OBSERVE_SOURCE_NATIVE",
+            selection,
+            source_policy_requested=SOURCE_POLICY,
+            native_policy_requested=NATIVE_POLICY,
+        )
+
+    def _source_context(self, state: dict[str, Any], horizon: int) -> dict[str, Any]:
+        from .crossed_stop_preparation import source_close_handoff_lineage
+
+        episodes = [
+            dict(row["source_context"])
+            for row in state["completed"].values()
+            if "source_context" in row
+        ]
+        held = state["held"]
+        if held is not None and held.get("source_close_bindings"):
+            bindings = held["source_close_bindings"]
+            lineage = source_close_handoff_lineage(
+                self.journal,
+                next(iter(bindings)),
+                through_sequence=horizon,
+                at=datetime.fromisoformat(state["at"]),
+            )
+            if (
+                lineage is None
+                or lineage["binding"]["entry_scope"] != held["client_order_id"]
+            ):
+                raise JournalError("original source risk slot lineage required")
+            episodes.append(
+                {
+                    "entry_scope": held["client_order_id"],
+                    "binding": {
+                        key: value
+                        for key, value in lineage["binding"].items()
+                        if key not in {"emergency_version", "emergency_manifest_sha256"}
+                    },
+                    "source_close_bindings": bindings,
+                }
+            )
+        if not episodes:
+            raise JournalError("original source-close risk episode required")
+        prior = self.journal.read_event(state["watermark"])
+        if prior is None or prior[0].sequence > horizon:
+            raise JournalError("source risk preceding slot unavailable")
+        return {
+            "policy": SOURCE_POLICY,
+            "episodes": episodes,
+            "prior_risk_ref": [prior[0].sequence, prior[0].payload_ref],
+            "frozen_risk_reserve": state["pending_open_loss_reserve"],
+            "frozen_cash_hold": state["additional_local_cash_hold"],
+        }
 
     def _native_context(self, state: dict[str, Any], horizon: int) -> dict[str, Any]:
         episodes = [
@@ -617,6 +697,17 @@ class AccountRiskOwner:
                     max_age=selection.max_age,
                     through_sequence=horizon,
                 )
+            source_registry = None
+            if item.get("_source_policy") == SOURCE_POLICY:
+                source_registry = derive_source_registry(
+                    self.journal,
+                    item["_source_context"],
+                    capture_sequence=selection.capture_sequence,
+                    decision_at=at,
+                    max_age=selection.max_age,
+                    through_sequence=horizon,
+                    native=native,
+                )
             audit = audit_owned_equity(
                 self.journal,
                 selection.capture_sequence,
@@ -630,6 +721,7 @@ class AccountRiskOwner:
                 _intent_ids=ids,
                 _source_horizon=horizon,
                 _native_registry=native,
+                _source_registry=source_registry,
             )
             baseline = read_baseline(
                 self.journal,
@@ -658,6 +750,7 @@ class AccountRiskOwner:
                 _intent_ids=ids,
                 _source_horizon=horizon,
                 _native_registry=native,
+                _source_registry=source_registry,
             )
             lifecycle, _ = OrderReconciler.read_evidence_at(
                 self.journal, self.account_ref, at, through_sequence=horizon
@@ -689,6 +782,14 @@ class AccountRiskOwner:
                         order.status
                         not in {"filled", "canceled", "expired", "rejected"}
                         for order in native.orders
+                    )
+                )
+                and (
+                    source_registry is None
+                    or not any(
+                        order.status
+                        not in {"filled", "canceled", "expired", "rejected"}
+                        for order in source_registry.source_orders
                     )
                 )
             )
@@ -746,9 +847,35 @@ class AccountRiskOwner:
                     ],
                     "runtime_authorized": False,
                 }
+            if source_registry is not None:
+                result["source"] = {
+                    "policy": SOURCE_POLICY,
+                    "context": item["_source_context"],
+                    "exit_by_scope": {
+                        scope: str(qty) for scope, qty in source_registry.exit_by_scope
+                    },
+                    "orders": [
+                        {
+                            "client_order_id": order.client_order_id,
+                            "broker_order_id": order.order_id,
+                            "filled_quantity": str(order.filled_quantity),
+                            "status": order.status,
+                        }
+                        for order in source_registry.source_orders
+                    ],
+                    "source_refs": [
+                        [seq, saved[0].payload_ref]
+                        for seq in source_registry.source_refs
+                        if (saved := self.journal.read_event(seq)) is not None
+                    ],
+                    "runtime_authorized": False,
+                }
             return result
         except JournalError:
-            if item.get("_native_policy") == NATIVE_POLICY:
+            if (
+                item.get("_native_policy") == NATIVE_POLICY
+                or item.get("_source_policy") == SOURCE_POLICY
+            ):
                 return {
                     "qualified": False,
                     "issues": ["NATIVE_SOURCE_INVALID_OR_UNAVAILABLE"],
@@ -831,6 +958,8 @@ class AccountRiskOwner:
                         "source_close_ownership_policy",
                         "_native_context",
                         "_native_policy",
+                        "_source_policy",
+                        "_source_context",
                     }
                 }
                 if _bytes(caller) == _bytes(item):
@@ -851,7 +980,7 @@ class AccountRiskOwner:
                 and previous["held"].get("source_close_bindings")
             ):
                 item["source_close_ownership_policy"] = _SOURCE_CLOSE_OWNERSHIP_POLICY
-            if kind == "OBSERVE_NATIVE" or (
+            if kind in {"OBSERVE_NATIVE", "OBSERVE_SOURCE_NATIVE"} or (
                 isinstance(previous, dict)
                 and previous.get("_native_policy") == NATIVE_POLICY
             ):
@@ -861,6 +990,16 @@ class AccountRiskOwner:
                     )
                 item["_native_policy"] = NATIVE_POLICY
                 item["_native_context"] = self._native_context(
+                    previous, item["source_horizon"]
+                )
+            if kind in {"OBSERVE_SOURCE", "OBSERVE_SOURCE_NATIVE"} or (
+                isinstance(previous, dict)
+                and previous.get("_source_policy") == SOURCE_POLICY
+            ):
+                if previous is None:
+                    raise JournalError("existing risk slot required for source opt-in")
+                item["_source_policy"] = SOURCE_POLICY
+                item["_source_context"] = self._source_context(
                     previous, item["source_horizon"]
                 )
             if selection is not None:
@@ -976,7 +1115,14 @@ class AccountRiskOwner:
                 item["source_close_ownership_policy"] != _SOURCE_CLOSE_OWNERSHIP_POLICY
                 or item.get("selection") is None
                 or item["kind"]
-                not in {"OBSERVE", "OBSERVE_NATIVE", "RESERVE", "ABANDON_UNSENT"}
+                not in {
+                    "OBSERVE",
+                    "OBSERVE_NATIVE",
+                    "OBSERVE_SOURCE",
+                    "OBSERVE_SOURCE_NATIVE",
+                    "RESERVE",
+                    "ABANDON_UNSENT",
+                }
                 or held is None
                 or not held.get("source_close_bindings")
             ):
@@ -1000,11 +1146,11 @@ class AccountRiskOwner:
             if (
                 not isinstance(old, dict)
                 or (
-                    kind == "OBSERVE_NATIVE"
+                    kind in {"OBSERVE_NATIVE", "OBSERVE_SOURCE_NATIVE"}
                     and item.get("native_policy_requested") != NATIVE_POLICY
                 )
                 or (
-                    kind != "OBSERVE_NATIVE"
+                    kind not in {"OBSERVE_NATIVE", "OBSERVE_SOURCE_NATIVE"}
                     and state.get("_native_policy") != NATIVE_POLICY
                 )
             ):
@@ -1018,6 +1164,32 @@ class AccountRiskOwner:
             state["_native_policy"] = NATIVE_POLICY
         elif state.get("_native_policy") == NATIVE_POLICY:
             raise JournalError("enabled native accounting cannot silently downgrade")
+        if (
+            kind in {"OBSERVE_SOURCE", "OBSERVE_SOURCE_NATIVE"}
+            and item.get("_source_policy") != SOURCE_POLICY
+        ):
+            raise JournalError("explicit versioned source observation required")
+        if "_source_context" in item and "_source_policy" not in item:
+            raise JournalError("source context requires explicit source policy")
+        if "_source_policy" in item:
+            if (
+                item["_source_policy"] != SOURCE_POLICY
+                or not isinstance(old, dict)
+                or (
+                    kind in {"OBSERVE_SOURCE", "OBSERVE_SOURCE_NATIVE"}
+                    and item.get("source_policy_requested") != SOURCE_POLICY
+                )
+                or (
+                    kind not in {"OBSERVE_SOURCE", "OBSERVE_SOURCE_NATIVE"}
+                    and state.get("_source_policy") != SOURCE_POLICY
+                )
+                or _bytes(item.get("_source_context"))
+                != _bytes(self._source_context(state, item["source_horizon"]))
+            ):
+                raise JournalError("explicit original source account policy required")
+            state["_source_policy"] = SOURCE_POLICY
+        elif state.get("_source_policy") == SOURCE_POLICY:
+            raise JournalError("source accounting cannot silently downgrade")
         if kind == "BIND_EMERGENCY_POLICY":
             reasons.update(state.get("issues", []))
             declaration = None if held is None else held.get("research_signal")
@@ -1239,7 +1411,9 @@ class AccountRiskOwner:
                 if Fraction(state["net"]) <= -Fraction(state["e0"]) / 100:
                     state["daily_stop_latched"] = True
                 if held is not None:
-                    if item.get("_native_policy") == NATIVE_POLICY:
+                    if item.get("_source_policy") == SOURCE_POLICY:
+                        self._sync_source_held(state, snapshot, reasons)
+                    elif item.get("_native_policy") == NATIVE_POLICY:
                         self._sync_native_held(state, snapshot, reasons)
                     else:
                         self._sync_held(state, snapshot, reasons)
@@ -1279,6 +1453,95 @@ class AccountRiskOwner:
         )
         self._totals(state, bool(reasons))
         return state
+
+    def _sync_source_held(
+        self, state: dict[str, Any], snapshot: dict[str, Any], reasons: set[str]
+    ) -> None:
+        held = state["held"]
+        source = snapshot["source"]
+        scope = held["client_order_id"]
+        entry = snapshot["orders"].get(scope)
+        if entry is None:
+            reasons.add("SOURCE_ENTRY_OWNERSHIP_UNAVAILABLE")
+            return
+        request = self._request(scope)
+        if (
+            request["side"] != "buy"
+            or request["type"] != "limit"
+            or request["symbol"] != held["symbol"]
+            or Fraction(str(request["qty"])) != held["quantity"]
+            or Fraction(str(request["limit_price"])) != Fraction(held["limit"])
+        ):
+            raise JournalError("source account entry differs from frozen risk plan")
+        known = {scope, *held["exits"]} | {
+            cid
+            for completed in state["completed"].values()
+            for cid in completed["order_ids"]
+        }
+        if set(snapshot["positions"]) - {held["symbol"]}:
+            reasons.add("UNBOUND_POSITION")
+        if any(
+            cid not in known
+            and (
+                row["state"] not in TERMINAL
+                or row["broker_order_id"] in snapshot["session_order_ids"]
+            )
+            for cid, row in snapshot["orders"].items()
+        ):
+            reasons.add("UNBOUND_ORDER_OR_EXECUTION")
+        filled = Fraction(entry["filled_quantity"])
+        opened = Fraction(snapshot["positions"].get(held["symbol"], "0"))
+        source_exit = Fraction(source["exit_by_scope"].get(scope, "0"))
+        native = snapshot.get("native")
+        native_exit = (
+            Fraction()
+            if native is None
+            else Fraction(native["exit_by_scope"].get(scope, "0"))
+        )
+        simple_exit = sum(
+            (
+                Fraction(snapshot["orders"][cid]["filled_quantity"])
+                for cid in held["exits"]
+                if cid in snapshot["orders"]
+            ),
+            Fraction(),
+        )
+        if opened != filled - source_exit - native_exit - simple_exit:
+            reasons.add("SOURCE_RISK_SLOT_QUANTITY_MISMATCH")
+        held["source_account_observation"] = {
+            "policy": SOURCE_POLICY,
+            "filled_quantity": str(filled),
+            "open_quantity": str(opened),
+            "source_exit_quantity": str(source_exit),
+            "native_exit_quantity": str(native_exit),
+            "source_refs": source["source_refs"],
+            "reported_account_agreement": opened
+            == filled - source_exit - native_exit - simple_exit,
+            "observed_at": snapshot["observed_at"],
+            "source_fill_ownership_accepted": False,
+            "runtime_authorized": False,
+        }
+        if native is not None:
+            reasons.update(native["risk_issues"])
+        if (
+            "quantity_incident" in held
+            or filled.denominator != 1
+            or opened.denominator != 1
+        ):
+            reasons.add("UNSUPPORTED_FRACTIONAL_RISK_QUANTITY")
+            return
+        held.update(
+            filled=int(filled),
+            open_quantity=int(opened),
+            pending_quantity=0
+            if entry["state"] in TERMINAL
+            else held["quantity"] - int(filled),
+            broker_hold_represented=entry["state"] not in TERMINAL,
+            bid=snapshot["bids"].get(held["symbol"], held["stop"]),
+        )
+        # This reported-account adapter never consumes/reallocates the basket or
+        # clears the separately versioned source-completion latch.
+        reasons.add("SOURCE_CLOSE_OWNERSHIP_PENDING")
 
     def _sync_native_held(
         self, state: dict[str, Any], snapshot: dict[str, Any], reasons: set[str]

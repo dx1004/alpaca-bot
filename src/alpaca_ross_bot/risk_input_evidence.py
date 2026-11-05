@@ -8,6 +8,7 @@ from .journal import Journal
 from .native_risk_registry import NativeRiskRegistry
 from .risk_marks import BidMark, inspect_bid_mark
 from .risk_ownership import OwnershipFacts, qualify_ownership
+from .source_risk_registry import SourceRiskRegistry
 
 
 @dataclass(frozen=True, repr=False)
@@ -56,6 +57,7 @@ def inspect_risk_inputs(
     _intent_ids: tuple[str, ...] | None = None,
     _source_horizon: int | None = None,
     _native_registry: NativeRiskRegistry | None = None,
+    _source_registry: SourceRiskRegistry | None = None,
 ) -> RiskInputEvidence:
     """Accept references, never caller-supplied positions or qualification flags.
 
@@ -74,6 +76,7 @@ def inspect_risk_inputs(
         _intent_ids=_intent_ids,
         _source_horizon=_source_horizon,
         _native_registry=_native_registry,
+        _source_registry=_source_registry,
     )
     if type(mark_refs) is not tuple:
         raise ValueError("immutable mark references required")
@@ -91,6 +94,7 @@ def inspect_risk_inputs(
         ):
             raise ValueError("invalid or duplicate mark reference")
         by_symbol[row[0]] = row[1:]
+    registry = _source_registry if _source_registry is not None else _native_registry
     positions = dict(ownership.owned_long_positions)
     if set(by_symbol) - set(positions):
         raise ValueError("mark reference is outside source-owned inventory")
@@ -104,7 +108,7 @@ def inspect_risk_inputs(
     refs = set(ownership.source_refs)
     total = Fraction(0)
     for symbol, quantity in positions.items():
-        if quantity <= 0 or (quantity.denominator != 1 and _native_registry is None):
+        if quantity <= 0 or (quantity.denominator != 1 and registry is None):
             issues.add("NONWHOLE_OWNED_POSITION_UNQUALIFIED")
             continue
         if symbol not in by_symbol:
@@ -124,7 +128,7 @@ def inspect_risk_inputs(
         marks.append(mark)
         refs.update(mark.source_refs)
         limitations.update(mark.limitations)
-        if quantity.denominator != 1 and _native_registry is not None:
+        if quantity.denominator != 1 and registry is not None:
             limitations.add("NATIVE_FRACTIONAL_ECONOMICS_NOT_RISK_SIZING")
             total += quantity * mark.bid
         else:

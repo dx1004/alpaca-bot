@@ -7,6 +7,9 @@ Partial quantities do not choose entry lots or release any part of that basket.
 from __future__ import annotations
 
 import base64
+import json
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
 from fractions import Fraction
 from typing import Any, cast
@@ -29,7 +32,55 @@ from .native_oco_requests import _clock, _copy, _digest, _json, _text, _utc
 from .oco_journal import OcoJournalView, _causal_oco_reader
 from .oco_research import OcoResearchState, load_oco_research_contract
 from .order_reconciliation import OrderReconciler
-from .paper_order_contract import decode_broker_json, validate_saved_request
+from .paper_order_contract import (
+    decode_broker_json,
+    validate_order_snapshot,
+    validate_saved_request,
+)
+from .source_close_http import ORIGIN as HTTP_ORIGIN
+from .source_close_http import read_source_close_http_at
+from .source_close_http_capture import read_source_close_http_captures_at
+
+
+@dataclass(frozen=True)
+class _FillFamily:
+    origin: str
+    capture_origin: str
+    response_kind: str
+    association: str
+    classification: str
+    attempts: Callable[..., list[dict[str, Any]]]
+    captures: Callable[..., list[dict[str, Any]]]
+    http: bool = False
+
+
+_CALLBACK_FAMILY = _FillFamily(
+    ORIGIN,
+    GET_ORIGIN,
+    "INJECTED_RESPONSE",
+    "INJECTED_POST_GET_IDENTITY_CONSISTENT",
+    "INJECTED_SOURCE_CLOSE_FILL_ATTRIBUTION_COMPONENT",
+    read_source_close_attempts_at,
+    read_source_close_captures_at,
+)
+_HTTP_FAMILY = _FillFamily(
+    HTTP_ORIGIN,
+    HTTP_ORIGIN,
+    "HTTP_RESPONSE",
+    "HTTP_POST_GET_IDENTITY_CONSISTENT",
+    "INJECTED_SOURCE_HTTP_CLOSE_FILL_ATTRIBUTION_COMPONENT",
+    read_source_close_http_at,
+    read_source_close_http_captures_at,
+    True,
+)
+
+
+@dataclass(frozen=True)
+class _HttpCorroboration:
+    intent: dict[str, Any]
+    hashes: dict[str, str]
+    posted: dict[str, Any]
+    filled_quantity: Fraction
 
 
 def _raw_fills(
@@ -205,6 +256,8 @@ def _simple_guard(
     activity_ids: set[str],
     horizon: int,
     at: datetime,
+    *,
+    corroboration: _HttpCorroboration | None = None,
 ) -> list[str]:
     # This canonical reader retains its current nonrecursive transport-integrity
     # check. Only its bounded DTO/raw prefix contributes identity claims here.
@@ -221,6 +274,8 @@ def _simple_guard(
             or projection.get("client_order_id") != other_cid
         ):
             raise JournalError("bounded simple lifecycle order identity differs")
+        if corroboration is not None and other_cid == cid:
+            issues.append("SOURCE_CID_ALREADY_SIMPLE_PROJECTED")
         if other_cid != cid and projection.get("broker_order_id") == order_id:
             issues.append("SIMPLE_ORDER_UUID_REUSE")
         if other_cid == cid and projection.get("broker_order_id") != order_id:
@@ -247,14 +302,23 @@ def _simple_guard(
         if type(item) is not dict:
             raise JournalError("bounded simple lifecycle evidence is malformed")
         if item["kind"] == "REST_BATCH":
-            for rows in item["batch"]["activities"].values():
+            if corroboration is not None:
+                issues += _http_rest_order_claims(item, cid, order_id, corroboration)
+            for group, rows in item["batch"]["activities"].items():
                 for row in rows:
                     if type(row) is not dict:
                         raise JournalError(
                             "bounded REST activity identity is malformed"
                         )
                     if row.get("id") in activity_ids:
-                        issues.append("SIMPLE_REST_ACTIVITY_ID_REUSE")
+                        if corroboration is None or not _http_corroborates(
+                            item, group, row, cid, order_id, corroboration
+                        ):
+                            issues.append("SIMPLE_REST_ACTIVITY_ID_REUSE")
+                    elif corroboration is not None and (
+                        group == order_id or row.get("order_id") == order_id
+                    ):
+                        issues.append("SOURCE_REST_ACTIVITY_UNBOUND")
         elif item["kind"] == "FRAME":
             frame = decode_broker_json(base64.b64decode(item["raw"], validate=True))
             if type(frame) is dict and frame.get("stream") == "trade_updates":
@@ -263,6 +327,96 @@ def _simple_guard(
                     # Equality is conservative ambiguity, not a claim that the
                     # account-activity and stream execution namespaces coincide.
                     issues.append("STREAM_EXECUTION_ACTIVITY_ID_AMBIGUITY")
+    return issues
+
+
+def _http_corroborates(
+    item: dict[str, Any],
+    group: object,
+    row: dict[str, Any],
+    cid: str,
+    order_id: str,
+    context: _HttpCorroboration,
+) -> bool:
+    local = item.get("intents")
+    record = local.get(cid) if type(local) is dict else None
+    identity = row.get("id")
+    return (
+        type(identity) is str
+        and type(record) is dict
+        and record.get("sent") is False
+        and _json(record.get("intent")) == _json(context.intent)
+        and group == order_id
+        and row.get("order_id") == order_id
+        and context.hashes.get(identity) == _digest(_json(_tagged(row)))
+    )
+
+
+def _http_rest_order_claims(
+    item: dict[str, Any],
+    cid: str,
+    order_id: str,
+    context: _HttpCorroboration,
+) -> list[str]:
+    issues: list[str] = []
+    local = item.get("intents")
+    record = local.get(cid) if type(local) is dict else None
+    batch = item["batch"]
+
+    def source_order(raw: bytes) -> None:
+        snapshot = validate_order_snapshot(context.intent["request_body"], raw)
+        order = decode_broker_json(raw)
+        if type(order) is not dict:
+            raise ValueError
+        if snapshot.broker_order_id != order_id:
+            issues.append("SOURCE_REST_UUID_CONFLICT")
+        if tuple(
+            _stamp(order.get(key)) for key in ("created_at", "submitted_at")
+        ) != tuple(
+            _stamp(context.posted.get(key)) for key in ("created_at", "submitted_at")
+        ):
+            issues.append("SOURCE_REST_IMMUTABLE_IDENTITY_CONFLICT")
+        if Fraction(snapshot.filled_quantity) > context.filled_quantity:
+            issues.append("SOURCE_REST_FILLED_QUANTITY_UNBOUND")
+
+    observed_source_order = False
+    for other_cid, response in batch["lookups"].items():
+        if type(response) is not dict or response.get("status") not in (200, 201):
+            continue
+        try:
+            raw = base64.b64decode(response["body"], validate=True)
+            order = decode_broker_json(raw)
+            if type(order) is not dict:
+                raise ValueError
+            if order.get("id") == order_id and other_cid != cid:
+                issues.append("SIMPLE_REST_ORDER_UUID_REUSE")
+            if other_cid == cid:
+                observed_source_order = True
+                source_order(raw)
+        except (ValueError, TypeError, KeyError):
+            issues.append("SIMPLE_REST_ORDER_IDENTITY_UNRESOLVED")
+    for order in batch["open_orders"]:
+        if type(order) is not dict:
+            raise JournalError("raw REST open-order identity is malformed")
+        if order.get("id") == order_id:
+            observed_source_order = True
+            if order.get("client_order_id") != cid:
+                issues.append("SIMPLE_REST_ORDER_UUID_REUSE")
+            else:
+                try:
+                    # Quantity validation stays exact; optional numeric fields
+                    # are not used as a source-activity identity signature.
+                    source_order(
+                        json.dumps(order, default=str, allow_nan=False).encode()
+                    )
+                except (ValueError, TypeError, KeyError):
+                    issues.append("SOURCE_REST_ORDER_IDENTITY_UNRESOLVED")
+    if (observed_source_order or record is not None) and (
+        type(record) is not dict
+        or record.get("sent") is not False
+        or _json(record.get("intent")) != _json(context.intent)
+    ):
+        issues.append("SOURCE_REST_INTENT_OR_SEND_CONFLICT")
     return issues
 
 
@@ -398,7 +552,49 @@ def derive_injected_source_close_fills(
     through_sequence: int,
     decision_at: datetime,
 ) -> dict[str, Any]:
-    """Derive an injected attribution component; never update any journal state."""
+    """Derive the original callback component without changing its schema."""
+    return _derive_at(
+        journal,
+        initial,
+        client_order_id=client_order_id,
+        capture_sequences=capture_sequences,
+        through_sequence=through_sequence,
+        decision_at=decision_at,
+        family=_CALLBACK_FAMILY,
+    )
+
+
+def derive_source_http_close_fills(
+    journal: Journal,
+    initial: OcoResearchState,
+    *,
+    client_order_id: str,
+    capture_sequences: tuple[int, ...],
+    through_sequence: int,
+    decision_at: datetime,
+) -> dict[str, Any]:
+    """Derive authenticated HTTP-family facts with exact account corroboration."""
+    return _derive_at(
+        journal,
+        initial,
+        client_order_id=client_order_id,
+        capture_sequences=capture_sequences,
+        through_sequence=through_sequence,
+        decision_at=decision_at,
+        family=_HTTP_FAMILY,
+    )
+
+
+def _derive_at(
+    journal: Journal,
+    initial: OcoResearchState,
+    *,
+    client_order_id: str,
+    capture_sequences: tuple[int, ...],
+    through_sequence: int,
+    decision_at: datetime,
+    family: _FillFamily,
+) -> dict[str, Any]:
     at, cid = _utc(decision_at), _text(client_order_id)
     if (
         type(capture_sequences) is not tuple
@@ -422,7 +618,7 @@ def derive_injected_source_close_fills(
     try:
         with causal_risk_verification_scope(journal):
             return _derive(
-                journal, initial, cid, capture_sequences, through_sequence, at
+                journal, initial, cid, capture_sequences, through_sequence, at, family
             )
     finally:
         if owns:
@@ -436,11 +632,15 @@ def _derive(
     selected: tuple[int, ...],
     horizon: int,
     at: datetime,
+    family: _FillFamily = _CALLBACK_FAMILY,
 ) -> dict[str, Any]:
-    attempts = read_source_close_attempts_at(
+    attempts = family.attempts(
         journal, initial, through_sequence=horizon, decision_at=at
     )
-    packets = read_source_close_captures_at(
+    packets = family.captures(
+        journal, initial, through_sequence=horizon, decision_at=at
+    )
+    foreign = (_CALLBACK_FAMILY if family.http else _HTTP_FAMILY).captures(
         journal, initial, through_sequence=horizon, decision_at=at
     )
     found = [row for row in attempts if row["precall"]["client_order_id"] == cid]
@@ -449,11 +649,11 @@ def _derive(
     row = found[0]
     pre, out = row["precall"], row["outcome"]
     if (
-        pre["origin"] != ORIGIN
+        pre["origin"] != family.origin
         or pre["account_ref"] != initial.account_ref
         or pre["entry_scope"] != initial.entry_scope
         or out is None
-        or out["result_kind"] != "INJECTED_RESPONSE"
+        or out["result_kind"] != family.response_kind
         or out["http_status"] not in (200, 201)
     ):
         raise JournalError("confirmed injected source POST response required")
@@ -468,7 +668,7 @@ def _derive(
         != lineage
     ):
         raise JournalError("original source handoff differs")
-    _source_inventory(packets)
+    _source_inventory(packets + foreign)
     history = [
         packet
         for packet in packets
@@ -499,7 +699,7 @@ def _derive(
     for packet in history:
         pin, assessment = packet["pin"], packet["assessment"]
         if (
-            packet["origin"] != GET_ORIGIN
+            packet["origin"] != family.capture_origin
             or pin["account_ref"] != initial.account_ref
             or pin["entry_scope"] != initial.entry_scope
             or pin["request_body"] != pre["request_body"]
@@ -536,7 +736,7 @@ def _derive(
             continue
         if (
             pin["outcome_ref"] != row["outcome_ref"]
-            or assessment["association"] != "INJECTED_POST_GET_IDENTITY_CONSISTENT"
+            or assessment["association"] != family.association
             or assessment["post_reported_order_id"] != order_id
         ):
             raise JournalError("selected source capture lacks exact POST association")
@@ -573,7 +773,21 @@ def _derive(
         journal, initial, lineage, models, set(observed), order_id, horizon, at
     )
     issues += _simple_guard(
-        journal, initial.account_ref, cid, order_id, set(observed), horizon, at
+        journal,
+        initial.account_ref,
+        cid,
+        order_id,
+        set(observed),
+        horizon,
+        at,
+        corroboration=_HttpCorroboration(
+            lineage["intent"],
+            {key: value["content_hash"] for key, value in observed.items()},
+            posted,
+            total,
+        )
+        if family.http
+        else None,
     )
     issues += _native_guard(journal, models, order_id, set(observed), horizon, at)
     return cast(
@@ -581,8 +795,8 @@ def _derive(
         _copy(
             {
                 "schema": 1,
-                "classification": "INJECTED_SOURCE_CLOSE_FILL_ATTRIBUTION_COMPONENT",
-                "origin": ORIGIN,
+                "classification": family.classification,
+                "origin": family.origin,
                 "account_ref": initial.account_ref,
                 "entry_scope": initial.entry_scope,
                 "client_order_id": cid,
@@ -608,7 +822,9 @@ def _derive(
                 "authority": dict(AUTHORITY),
                 "basket_policy": "PRESERVE_ENTIRE_ORIGINAL_BASKET",
                 "limitations": [
-                    "INJECTED_CALLBACKS_NOT_BROKER_PROOF",
+                    "INJECTED_EXCHANGE_NOT_BROKER_PROOF"
+                    if family.http
+                    else "INJECTED_CALLBACKS_NOT_BROKER_PROOF",
                     "NO_ACCOUNTING_ADAPTER",
                     "NO_PER_LOT_FILL_ALLOCATION",
                     "NO_POSTING_FINALITY_OR_RISK_RELEASE",

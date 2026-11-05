@@ -13,12 +13,16 @@ from typing import Any, Never, cast
 from ._causal_risk_memo import causal_risk_verification_scope
 from .crossed_stop_attempts import ORIGIN
 from .crossed_stop_capture import AUTHORITY
-from .crossed_stop_fills import derive_injected_source_close_fills
+from .crossed_stop_fills import (
+    derive_injected_source_close_fills,
+    derive_source_http_close_fills,
+)
 from .journal import Journal, JournalError
 from .native_oco_requests import _clock, _copy, _digest, _json, _text, _utc
 from .oco_journal import _causal_oco_reader
 from .oco_research import OcoResearchState, load_oco_research_contract
 from .paper_order_contract import decode_broker_json
+from .source_close_http import ORIGIN as HTTP_ORIGIN
 
 SOURCE = "ALPACA_SOURCE_CLOSE_ATTRIBUTION"
 EVENT_KIND = "SOURCE_CLOSE_ATTRIBUTION"
@@ -72,10 +76,10 @@ def _command(
     }
 
 
-def _empty(account_ref: str) -> dict[str, Any]:
+def _empty(account_ref: str, *, classification: str = CLASSIFICATION) -> dict[str, Any]:
     return {
         "schema": 1,
-        "classification": CLASSIFICATION,
+        "classification": classification,
         "account_ref": account_ref,
         "observations": [],
         "operations": {},
@@ -91,8 +95,21 @@ def _empty(account_ref: str) -> dict[str, Any]:
 
 
 def _derive(journal: Journal, item: dict[str, Any]) -> dict[str, Any]:
+    return _derive_checked(journal, item, http=False)
+
+
+def _derive_http(journal: Journal, item: dict[str, Any]) -> dict[str, Any]:
+    return _derive_checked(journal, item, http=True)
+
+
+def _derive_checked(
+    journal: Journal, item: dict[str, Any], *, http: bool
+) -> dict[str, Any]:
     command = item["command"]
-    proof = derive_injected_source_close_fills(
+    component = (
+        derive_source_http_close_fills if http else derive_injected_source_close_fills
+    )
+    proof = component(
         journal,
         _initial(journal, command["binding"]),
         client_order_id=command["client_order_id"],
@@ -104,7 +121,7 @@ def _derive(journal: Journal, item: dict[str, Any]) -> dict[str, Any]:
         proof["component_attributed"] is not True
         or proof["issues"] != []
         or proof["finality"] != "UNKNOWN"
-        or proof["origin"] != ORIGIN
+        or proof["origin"] != (HTTP_ORIGIN if http else ORIGIN)
         or _json(proof["authority"]) != _json(AUTHORITY)
         or any(value is not False for value in proof["authority"].values())
         or proof["account_ref"] != item["account_ref"]
@@ -234,6 +251,16 @@ def _project(
 
 
 class SourceCloseAttributions:
+    _source = SOURCE
+    _event_kind = EVENT_KIND
+    _namespace = NAMESPACE
+    _dedupe = DEDUPE
+    _classification = CLASSIFICATION
+    _origin = ORIGIN
+
+    def _derive_proof(self, item: dict[str, Any]) -> dict[str, Any]:
+        return _derive(self.journal, item)
+
     def __init__(self, journal: Journal, initial: OcoResearchState) -> None:
         self._initialize(journal, initial)
         self.view()
@@ -242,7 +269,7 @@ class SourceCloseAttributions:
         self.journal, self.initial = journal, initial
         self.binding = _binding(journal, initial)
         self.account_ref = initial.account_ref
-        self.state_key = NAMESPACE + ":" + self.account_ref
+        self.state_key = self._namespace + ":" + self.account_ref
 
     def view(self) -> dict[str, Any]:
         return self._read(None, None)
@@ -275,7 +302,7 @@ class SourceCloseAttributions:
     def _replay(self, horizon: int | None, at: datetime | None) -> dict[str, Any]:
         if self.journal.read_paper_account_ref() != self.account_ref:
             raise JournalError("attribution account differs")
-        projected = _empty(self.account_ref)
+        projected = _empty(self.account_ref, classification=self._classification)
         first: dict[str, dict[str, Any]] = {}
         previous: datetime | None = None
         unavailable = False
@@ -294,7 +321,7 @@ class SourceCloseAttributions:
             "proof",
             "original_ref",
         }
-        for event, raw in self.journal._read_private_events(SOURCE, horizon):
+        for event, raw in self.journal._read_private_events(self._source, horizon):
             if at is not None and not event.visible_at(at):
                 unavailable = True
                 continue
@@ -323,14 +350,14 @@ class SourceCloseAttributions:
                 or _json(item) != raw
                 or type(item["schema"]) is not int
                 or item["schema"] != 1
-                or item["classification"] != CLASSIFICATION
-                or item["origin"] != ORIGIN
+                or item["classification"] != self._classification
+                or item["origin"] != self._origin
                 or item["account_ref"] != self.account_ref
                 or _json(item["authority"]) != _json(AUTHORITY)
                 or any(value is not False for value in item["authority"].values())
                 or item["kind"] not in {"OBSERVE", "CONFLICT"}
                 or event.feed != "paper"
-                or event.event_kind != EVENT_KIND
+                or event.event_kind != self._event_kind
                 or event.payload_ref != _digest(raw)
                 or event.source_event_at is not None
                 or event.provider_received_at is not None
@@ -351,7 +378,7 @@ class SourceCloseAttributions:
             previous = recorded
             if item["kind"] == "OBSERVE":
                 if item["original_ref"] is not None or _json(
-                    _derive(self.journal, item)
+                    self._derive_proof(item)
                 ) != _json(item["proof"]):
                     raise JournalError("attribution original proof differs")
             elif item["proof"] is not None:
@@ -366,7 +393,7 @@ class SourceCloseAttributions:
             )
         actual = {}
         for key, value in self.journal._read_evidence_cache(
-            DEDUPE, self.account_ref
+            self._dedupe, self.account_ref
         ).items():
             if (
                 type(value) is not dict
@@ -448,9 +475,9 @@ class SourceCloseAttributions:
                     )
                 item.update(
                     schema=1,
-                    classification=CLASSIFICATION,
+                    classification=self._classification,
                     account_ref=self.account_ref,
-                    origin=ORIGIN,
+                    origin=self._origin,
                     authority=dict(AUTHORITY),
                     kind="OBSERVE" if original is None else "CONFLICT",
                     at=recorded.isoformat(),
@@ -464,7 +491,7 @@ class SourceCloseAttributions:
                     else original["observation_ref"],
                 )
                 if original is None:
-                    item["proof"] = _derive(self.journal, item)
+                    item["proof"] = self._derive_proof(item)
                 return _json(item)
 
         def reduce(old: object, conflict: bool, sequence: int) -> dict[str, Any]:
@@ -485,14 +512,14 @@ class SourceCloseAttributions:
                 account_ref=self.account_ref,
                 state_key=self.state_key,
                 dedupe_key=_key(command),
-                event_kind=EVENT_KIND,
+                event_kind=self._event_kind,
                 payload=b"{}",
                 received_at=recorded,
                 reduce=reduce,
                 identity_payload=_json(command),
-                namespace=NAMESPACE,
-                source_id=SOURCE,
-                dedupe_namespace=DEDUPE,
+                namespace=self._namespace,
+                source_id=self._source,
+                dedupe_namespace=self._dedupe,
                 prepare_payload=prepare,
             )
         except _ConflictRetry as retry:
@@ -530,5 +557,39 @@ def read_source_close_attributions_at(
     decision_at: datetime,
 ) -> dict[str, Any]:
     reader = object.__new__(_ReadOnlyAttributions)
+    reader._initialize(journal, initial)
+    return reader.read_verified_at(through_sequence, decision_at)
+
+
+class SourceHttpCloseAttributions(SourceCloseAttributions):
+    """Durable authenticated HTTP claims; no callback-family upgrades."""
+
+    _source = "ALPACA_SOURCE_CLOSE_HTTP_ATTRIBUTION"
+    _event_kind = "SOURCE_CLOSE_HTTP_ATTRIBUTION"
+    _namespace = "source_close_http_attribution"
+    _dedupe = "source_close_http_attribution_evidence"
+    _classification = "INJECTED_HTTP_ATTRIBUTION_INDEX_NOT_OPERATIONAL_OWNERSHIP"
+    _origin = HTTP_ORIGIN
+
+    def _derive_proof(self, item: dict[str, Any]) -> dict[str, Any]:
+        return _derive_http(self.journal, item)
+
+
+class _ReadOnlyHttpAttributions(SourceHttpCloseAttributions):
+    def observe(self, *args: Any, **kwargs: Any) -> Never:
+        raise JournalError("bounded HTTP attribution reader cannot write")
+
+    def view(self) -> Never:
+        raise JournalError("bounded HTTP attribution reader requires explicit horizon")
+
+
+def read_source_http_close_attributions_at(
+    journal: Journal,
+    initial: OcoResearchState,
+    *,
+    through_sequence: int,
+    decision_at: datetime,
+) -> dict[str, Any]:
+    reader = object.__new__(_ReadOnlyHttpAttributions)
     reader._initialize(journal, initial)
     return reader.read_verified_at(through_sequence, decision_at)

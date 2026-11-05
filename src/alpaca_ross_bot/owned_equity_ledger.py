@@ -16,6 +16,7 @@ from .posted_ledger import _exact, _timestamp, inspect_posted_ledger
 from .risk_baseline import read_baseline, session_open_from_evidence
 from .risk_input_evidence import inspect_risk_inputs
 from .risk_ledger_audit import _activities
+from .source_risk_registry import SourceRiskRegistry
 
 
 @dataclass(frozen=True, repr=False)
@@ -69,6 +70,7 @@ def audit_owned_equity(
     _intent_ids: tuple[str, ...] | None = None,
     _source_horizon: int | None = None,
     _native_registry: NativeRiskRegistry | None = None,
+    _source_registry: SourceRiskRegistry | None = None,
 ) -> OwnedEquityAudit:
     """Reconcile a flat-E0 paper account's observed fills, cash and owned bids.
 
@@ -83,6 +85,7 @@ def audit_owned_equity(
         or calendar_sequence > _source_horizon
     ):
         raise ValueError("owned-equity reference exceeds immutable source horizon")
+    registry = _source_registry if _source_registry is not None else _native_registry
     day = decision_at.astimezone(ZoneInfo("America/New_York")).date()
     fee_document_ref = verify_fee_policy(fee_policy)
     opened = session_open_from_evidence(
@@ -100,6 +103,7 @@ def audit_owned_equity(
         _intent_ids=_intent_ids,
         _source_horizon=_source_horizon,
         _native_registry=_native_registry,
+        _source_registry=_source_registry,
     )
     current = inspect_posted_ledger(
         journal,
@@ -176,8 +180,8 @@ def audit_owned_equity(
         }
         native_orders = (
             {}
-            if _native_registry is None
-            else {order.order_id: order for order in _native_registry.orders}
+            if registry is None
+            else {order.order_id: order for order in registry.orders}
         )
         if set(native_orders) & set(orders):
             issues.add("NATIVE_SIMPLE_BROKER_ID_COLLISION")
@@ -208,6 +212,10 @@ def audit_owned_equity(
             target: dict[str, tuple[object, ...]] = {}
             for batch_rows in activities.values():
                 for row in batch_rows:
+                    if _source_registry is not None and str(row["order_id"]) in {
+                        order.order_id for order in _source_registry.source_orders
+                    }:
+                        continue
                     identity = str(row["id"])
                     sig = signature(row)
                     if identity in target and target[identity] != sig:
@@ -220,10 +228,10 @@ def audit_owned_equity(
             }
             if posted != target:
                 issues.add("FILL_SOURCE_DISAGREEMENT")
-        if _native_registry is not None:
+        if registry is not None:
             # Raw activity IDs belong to one account-wide canonical fact; a
             # native order must never create another copy of a simple fill.
-            native_ids = {fill.activity_id for fill in _native_registry.fills}
+            native_ids = {fill.activity_id for fill in registry.fills}
             simple_ids = {
                 str(row["id"])
                 for row in rows.values()
