@@ -5000,3 +5000,71 @@ LATCH_UNRECONCILED_SOURCE_CLOSE_V1 are unchanged. There was no actual account or
 credential access, broker order/cancel, purchase, service or formal paper start.
 Ross remains separate and NOT_SIP_EQUIVALENT remains. W3-06/07/08 parents stay
 incomplete; this acceptance closes the durable injected index component only.
+
+
+### Controlled source HTTP provenance and GET capture — 2026-11-04
+
+The account-ownership integration has a provenance prerequisite: the existing
+naked-callback history cannot become V2 account transport evidence by changing a
+label. A separate source HTTP family now authenticates both isolated synthetic
+accounts through canonical PaperOrderHttp, binds the original source-close bytes
+and current prequalification, and commits its own PRECALL fence before one
+controlled exchange invocation. Origin comes from the actual configured exchange;
+this schema accepts INJECTED_EXCHANGE only. Builtin and mixed formal transports
+are refused before any authentication request or POST. No caller override, CLI,
+runner or new order authorization was added. Old callback records stay separate.
+
+The narrow wire references are [create order](https://docs.alpaca.markets/us/reference/postorder)
+and [client-ID lookup](https://docs.alpaca.markets/us/reference/getorderbyclientorderid),
+inspected from official US docs on October 29 UTC. These identify wire interfaces;
+no safe retry, protection or cleanup guarantee is inferred from lookup results.
+
+The producer reuses canonical source intent/preparation and the original risk
+basket. It checks actual post-authentication time under the shared writer lock and
+checks freshness again immediately before invocation. Unknown, rejected and missing
+outcomes keep the consumed fence. Callback and HTTP PRECALLs share a nonrecursive
+account-wide exclusion validator in writers and replay, including bounded
+counterpart visibility. No generic simple send marker is manufactured. Full causal
+prequalification replay remains separate from current nonrecursive transport/cache
+integrity. Bounded read handles expose no sender capability; interruptions clean
+up writer-owned transactions. Current scope, proofs, raw refs and projection maps
+are independently reconstructible.
+
+The new GET adapter accepts canonical PaperOrderHttp only, with matching transport
+origin and configured-account constraint checked before and after each GET. It
+records the same bounded account/CID/order/FILL plan in an independent namespace.
+Unknown outcomes remain candidates, including after a later genuine outcome is
+stored. HTTP_RESPONSE gets a distinct association label; old INJECTED_RESPONSE
+receipts keep their original defaults. Shared private capture mechanics preserve
+raw bytes, explicit errors/truncation, clocks, page budgets and strict replay.
+An origin/configuration switch aborts the incomplete collection and cannot produce
+an accepted packet. No GET adapter can submit an order.
+
+Independent review required two producer fixes: source scope must start at global
+event 1 (before authentication and in raw replay), and response bodies must respect
+the PRECALL's frozen cap even if the injected exchange changes the API object's
+cap during POST. An over-budget response becomes a consumed TRANSPORT_UNKNOWN,
+leaving durable replay valid. Both fixes were approved; subsequent review also
+approved the test-only setup corrections below. Native transport history was not
+reinterpreted or modified.
+
+Validation scope and retained evidence:
+
+- Producer jobs from October 29 (46219/76449) were authoritatively missing on resume; no final result was inferred from their temporary directories or stopped agents. November 4 command `rtk proxy env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider --junitxml=/tmp/alpaca-source-http-20261104.xml tests/test_source_close_http.py` completed with 10 passed, 1 failed, 1 setup error in 286.01s. The two failures were test setup: an OUTCOME hook indexed an initially empty PRECALL dictionary, and normal harness construction already rejected the proposed late-SCOPE fixture. Production code was unchanged. The hook now uses get; the fault fixture explicitly simulates a persisted malformed late SCOPE/cache to exercise the source-specific guard without weakening the real harness.
+- Only those two exact producer nodes were rerun, with `/tmp/alpaca-source-http-targets-20261104.xml`: 2 passed in 42.47s. Together the runs cover all twelve producer nodes: exact bytes/authentication, builtin refusal, account/cap/expiry failures, rejection/unknown/missing outcome durability, reopen, dual-fence forgery, both writer directions/race, metadata/dedupe/projection faults, constructor-free history, interruption cleanup, late scope and mutable response caps. No final full twelve-node rerun is claimed.
+- Capture module: initial seven-node job 52955 passed six, then failed one missing-OUTCOME test hook before source preparation (6 passed, 1 failed in 286.64s). Its test-only hook correction was verified by exact target 96442: 1 passed in 40.04s, including a later legitimate HTTP_RESPONSE that does not upgrade the old capture. The other six cases cover positive fractional raw capture/reopen/no repost/risk-state preservation, transport/account switches, raw errors/pagination, refs/origin tampering and unknown outcomes. No final full seven-node rerun is claimed. Capture production code stayed frozen.
+- Legacy compatibility diagnostic `/tmp/test_source_capture_frozen_compat.py` executes the existing old-profile positive/reopen/retag test once, then replays its exact current raw bytes through the frozen c2e0a33 capture validator. Valid prefix acceptance and forged-tail rejection passed: 1 in 63.51s. The first attempt only failed collection because the temporary diagnostic lacked the shared-tests import path; correcting that temporary path required no repository/environment workaround. The frozen reference came from Git, not a second repository version file.
+- Final scoped Ruff check/format and strict mypy with `/tmp/alpaca-source-http-final-mypy` pass for five production and two test files; git whitespace checks pass. Independent scoped review approved producer/capture behavior and both production fixes, then approved the two test-only corrections. All referenced process handles are terminal or authoritatively missing; no duplicate live process was restarted.
+
+This closes controlled transport/capture provenance only. It is not actual broker
+compatibility, source FILL ownership, account conservation, posting finality,
+protection continuity or runtime-throughput acceptance. Next derive canonical
+FILL/claim proof for this authenticated family, then join the same verified
+inventory to full-account intent/equity/risk checks and a single exit union.
+Original callback claims cannot be relabeled to cross that boundary.
+
+All source/local ownership, protection, risk release, runtime, dispatch and formal
+paper gates remain closed. Existing risk/cash floors, stops and ownership latch
+are preserved; no actual account/credential access, broker request, data purchase,
+service or formal paper start occurred. Ross stays separate, NOT_SIP_EQUIVALENT
+remains, and W3-06/07/08 parents remain incomplete.

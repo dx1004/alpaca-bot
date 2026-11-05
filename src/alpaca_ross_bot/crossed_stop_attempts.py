@@ -29,6 +29,8 @@ from .oco_research import OcoResearchState, load_oco_research_contract
 from .paper_engineering import EngineeringHarness, EngineeringScope
 
 SOURCE = "ALPACA_SOURCE_CLOSE_INJECTED_ATTEMPTS"
+HTTP_SOURCE = "ALPACA_SOURCE_CLOSE_HTTP"
+HTTP_ORIGIN = "INJECTED_EXCHANGE"
 ORIGIN = "INJECTED_TEST_CALLBACK_NOT_BROKER_PROOF"
 AUTHORITY = dict.fromkeys(
     (
@@ -165,6 +167,9 @@ class SourceCloseAttempts:
         through_sequence: int | None = None,
         decision_at: datetime | None = None,
     ) -> list[dict[str, Any]]:
+        source_close_fences(
+            self.journal, through_sequence=through_sequence, decision_at=decision_at
+        )
         rows: dict[str, dict[str, Any]] = {}
         expected_dedupe = {}
         projections: dict[str, list[dict[str, Any]]] = {}
@@ -490,6 +495,8 @@ class SourceCloseAttempts:
         item: dict[str, Any] = {}
 
         def prepare() -> None:
+            if source_close_fences(self.journal).get(cid) == HTTP_SOURCE:
+                raise JournalError("source CID already fenced by authenticated HTTP")
             prior = next(
                 (r for r in self.view() if r["precall"]["client_order_id"] == cid), None
             )
@@ -643,3 +650,53 @@ def read_source_close_attempts_at(
     return _source_attempt_reader(journal, initial).read_verified_at(
         through_sequence, decision_at
     )
+
+
+def source_close_fences(
+    journal: Journal,
+    *,
+    through_sequence: int | None = None,
+    decision_at: datetime | None = None,
+) -> dict[str, str]:
+    """Nonrecursive raw once-exclusion, never source qualification or ownership."""
+    result: dict[str, str] = {}
+    for source, origin in ((SOURCE, ORIGIN), (HTTP_SOURCE, HTTP_ORIGIN)):
+        for event, raw in journal._read_private_events(source, through_sequence):
+            if decision_at is not None and not event.visible_at(decision_at):
+                continue
+            try:
+                item = json.loads(raw)
+                if item.get("kind") != "PRECALL" and event.event_kind != "PRECALL":
+                    continue
+                recorded = _clock(item["recorded_at"])
+                cid = _text(item["client_order_id"])
+                if (
+                    item["kind"] != "PRECALL"
+                    or event.event_kind != "PRECALL"
+                    or item["origin"] != origin
+                    or type(item["schema"]) is not int
+                    or item["schema"] != 1
+                    or item["account_ref"] != journal.read_paper_account_ref()
+                    or _json(item) != raw
+                    or event.payload_ref != _digest(raw)
+                    or event.feed != "paper"
+                    or event.source_event_at is not None
+                    or event.provider_received_at is not None
+                    or event.external_clock_conflict
+                    or event.system_first_seen_at != recorded
+                    or event.processed_at != recorded
+                    or event.available_at != recorded
+                    or type(item["source_horizon"]) is not int
+                    or not 0 <= item["source_horizon"] < event.sequence
+                    or type(item["authority"]) is not dict
+                    or any(value is not False for value in item["authority"].values())
+                ):
+                    raise ValueError
+                if cid in result:
+                    raise JournalError("source CID has duplicate callback/HTTP fences")
+                result[cid] = source
+            except JournalError:
+                raise
+            except (ValueError, TypeError, KeyError, AttributeError) as exc:
+                raise JournalError("source close raw fence is malformed") from exc
+    return result

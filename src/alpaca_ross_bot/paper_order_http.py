@@ -36,6 +36,7 @@ _PAPER_HOST = "paper-api.alpaca.markets"
 if TYPE_CHECKING:
     from .native_oco_http import NativeOcoHttp
     from .paper_engineering import EngineeringHarness
+    from .source_close_http import SourceCloseHttp
 
 
 class PaperOrderHttpError(ValueError):
@@ -132,6 +133,49 @@ class PaperOrderHttp:
             harness,
             formal_api=formal_api,
             group_id=group_id,
+            decision_at=decision_at,
+            started_at=started_at,
+            clock=clock,
+        )
+
+    def validate_source_close_http_body(self, body: str) -> None:
+        """Validate only the existing bounded simple source-close request shape."""
+        if (
+            type(body) is not str
+            or not 0 < len(body.encode()) <= self._max_request_bytes
+        ):
+            raise PaperOrderHttpError("source HTTP request exceeds its cap")
+        request = validate_saved_request(body)
+        if request["side"] != "sell" or request["type"] != "market":
+            raise PaperOrderHttpError(
+                "source HTTP requires the simple market sell shape"
+            )
+
+    def post_source_close_once(
+        self,
+        owner: SourceCloseHttp,
+        harness: EngineeringHarness,
+        *,
+        formal_api: PaperOrderHttp,
+        client_order_id: str,
+        attempt_id: str,
+        preparation: dict[str, Any],
+        decision_at: datetime,
+        started_at: datetime,
+        clock: Callable[[], datetime],
+    ) -> dict[str, Any]:
+        """Manual synthetic source transport; builtin dispatch remains disabled."""
+        from .source_close_http import SourceCloseHttp
+
+        if type(owner) is not SourceCloseHttp:
+            raise PaperOrderHttpError("canonical source HTTP owner required")
+        return owner.post_once(
+            self,
+            harness,
+            formal_api=formal_api,
+            client_order_id=client_order_id,
+            attempt_id=attempt_id,
+            preparation=preparation,
             decision_at=decision_at,
             started_at=started_at,
             clock=clock,

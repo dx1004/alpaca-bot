@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from fractions import Fraction
-from typing import Any, cast
+from typing import Any, Protocol, cast
 from urllib.parse import urlencode
 
 from .crossed_stop_attempts import ORIGIN, SourceCloseAttempts, _source_attempt_reader
@@ -127,7 +127,12 @@ def _body(row: dict[str, Any]) -> bytes | None:
     return base64.b64decode(row["body_base64"], validate=True)
 
 
-def _walk(pin: dict[str, Any], read: Callable[[str], dict[str, Any]]) -> dict[str, Any]:
+def _walk(
+    pin: dict[str, Any],
+    read: Callable[[str], dict[str, Any]],
+    *,
+    http_source: bool = False,
+) -> dict[str, Any]:
     """Shared deterministic GET plan: malformed identity never becomes a path."""
     result: dict[str, Any] = {
         "association": "UNESTABLISHED",
@@ -144,7 +149,9 @@ def _walk(pin: dict[str, Any], read: Callable[[str], dict[str, Any]]) -> dict[st
     }
     issues = result["issues"]
     posted = None
-    if pin["outcome_kind"] == "INJECTED_RESPONSE" and pin["outcome_status"] in (
+    if pin["outcome_kind"] == (
+        "HTTP_RESPONSE" if http_source else "INJECTED_RESPONSE"
+    ) and pin["outcome_status"] in (
         200,
         201,
     ):
@@ -183,7 +190,11 @@ def _walk(pin: dict[str, Any], read: Callable[[str], dict[str, Any]]) -> dict[st
         issues.append("POST_GET_UUID_CONFLICT")
         return result
     result["association"] = (
-        "INJECTED_POST_GET_IDENTITY_CONSISTENT"
+        (
+            "HTTP_POST_GET_IDENTITY_CONSISTENT"
+            if http_source
+            else "INJECTED_POST_GET_IDENTITY_CONSISTENT"
+        )
         if posted is not None
         else "LOCAL_NOT_INVOKED_GET_CANDIDATE"
         if pin["outcome_kind"] == "LOCAL_NOT_INVOKED"
@@ -326,13 +337,30 @@ def _walk(pin: dict[str, Any], read: Callable[[str], dict[str, Any]]) -> dict[st
     return result
 
 
-class SourceCloseCaptures:
-    """Append observations in a dedicated namespace; replay their exact GET plan."""
+class _CaptureAttemptReader(Protocol):
+    @property
+    def journal(self) -> Journal: ...
 
-    def __init__(self, attempts: SourceCloseAttempts) -> None:
-        if type(attempts) is not SourceCloseAttempts:
-            raise JournalError("canonical source attempts required")
+    def read_verified_at(
+        self, through_sequence: int, decision_at: datetime, /
+    ) -> list[dict[str, Any]]: ...
+
+
+class _SourceCloseCaptureCore:
+    """Private raw-capture mechanics; public adapters fix the provenance profile."""
+
+    _source = SOURCE
+    _kind = KIND
+    _origin = GET_ORIGIN
+    _attempt_origin = ORIGIN
+
+    def __init__(self, attempts: _CaptureAttemptReader) -> None:
         self.attempts, self.journal = attempts, attempts.journal
+
+    def _walk(
+        self, pin: dict[str, Any], read: Callable[[str], dict[str, Any]]
+    ) -> dict[str, Any]:
+        return _walk(pin, read)
 
     def _pin(
         self,
@@ -371,7 +399,7 @@ class SourceCloseCaptures:
         pre = row["precall"]
         intent = validate_saved_request(pre["request_body"])
         if (
-            pre["origin"] != ORIGIN
+            pre["origin"] != self._attempt_origin
             or intent["type"] != "market"
             or intent["side"] != "sell"
             or pre["account_ref"] != self.journal.read_paper_account_ref()
@@ -399,7 +427,7 @@ class SourceCloseCaptures:
             "account_ref": pre["account_ref"],
             "entry_scope": pre["entry_scope"],
             "client_order_id": pre["client_order_id"],
-            "attempt_origin": ORIGIN,
+            "attempt_origin": self._attempt_origin,
             "request_body": pre["request_body"],
             "request_sha256": _digest(pre["request_body"].encode()),
             "scope_sha256": _digest(pre["scope_payload"].encode()),
@@ -414,7 +442,7 @@ class SourceCloseCaptures:
             "page_size": page_size,
         }
 
-    def capture(
+    def _capture(
         self,
         *,
         attempt_ref: dict[str, Any],
@@ -424,6 +452,7 @@ class SourceCloseCaptures:
         max_body_bytes: int,
         max_fill_pages: int,
         page_size: int,
+        before_read: Callable[[], None] | None = None,
     ) -> dict[str, Any]:
         if self.journal._db.in_transaction or not callable(get) or not callable(clock):
             raise JournalError(
@@ -459,6 +488,8 @@ class SourceCloseCaptures:
             if began < previous:
                 raise JournalError("source GET clock rewound")
             status = encoded = error = size = None
+            if before_read is not None:
+                before_read()
             try:
                 response = get(path)
                 if (
@@ -475,6 +506,8 @@ class SourceCloseCaptures:
                         error = "BODY_LIMIT_EXCEEDED_PREFIX_ONLY"
             except Exception:
                 error = "CALLBACK_EXCEPTION"
+            if before_read is not None:
+                before_read()
             completed = _utc(clock())
             if completed < began:
                 raise JournalError("source GET clock rewound")
@@ -493,7 +526,7 @@ class SourceCloseCaptures:
             requests.append(row)
             return row
 
-        assessment = _walk(pin, read)
+        assessment = self._walk(pin, read)
         completed = _utc(clock())
         if completed < previous:
             raise JournalError("source GET completion clock rewound")
@@ -513,7 +546,7 @@ class SourceCloseCaptures:
             raise JournalError("source GET provenance changed")
         payload = {
             "schema": 1,
-            "origin": GET_ORIGIN,
+            "origin": self._origin,
             "authority": dict(AUTHORITY),
             "pin": pin,
             "started_at": started.isoformat(),
@@ -522,9 +555,9 @@ class SourceCloseCaptures:
             "assessment": assessment,
         }
         event = self.journal.append_next(
-            source_id=SOURCE,
+            source_id=self._source,
             feed="paper",
-            event_kind=KIND,
+            event_kind=self._kind,
             payload=_json(payload),
             system_first_seen_at=started,
             processed_at=completed,
@@ -555,7 +588,7 @@ class SourceCloseCaptures:
         decision_at: datetime | None,
     ) -> list[dict[str, Any]]:
         result = []
-        for event, raw in self.journal._read_private_events(SOURCE, horizon):
+        for event, raw in self.journal._read_private_events(self._source, horizon):
             if decision_at is not None and not event.visible_at(decision_at):
                 continue
             try:
@@ -581,13 +614,13 @@ class SourceCloseCaptures:
                     }
                     or type(item["schema"]) is not int
                     or item["schema"] != 1
-                    or item["origin"] != GET_ORIGIN
+                    or item["origin"] != self._origin
                     or item["authority"] != AUTHORITY
                     or any(v is not False for v in item["authority"].values())
                     or _json(item) != raw
                     or event.payload_ref != _digest(raw)
                     or event.feed != "paper"
-                    or event.event_kind != KIND
+                    or event.event_kind != self._kind
                     or event.source_event_at is not None
                     or event.provider_received_at is not None
                     or event.system_first_seen_at != started
@@ -684,7 +717,7 @@ class SourceCloseCaptures:
                     read(envelope["path"])
                 iterator[0] = iter(item["requests"])
                 previous = started
-                rebuilt = _walk(pin, read)
+                rebuilt = self._walk(pin, read)
                 if next(iterator[0], None) is not None or _json(rebuilt) != _json(
                     item["assessment"]
                 ):
@@ -707,6 +740,36 @@ class SourceCloseCaptures:
             ) as exc:
                 raise JournalError("source GET capture provenance malformed") from exc
         return cast(list[dict[str, Any]], _copy(result))
+
+
+class SourceCloseCaptures(_SourceCloseCaptureCore):
+    """Append injected callback observations; preserve their original profile."""
+
+    def __init__(self, attempts: SourceCloseAttempts) -> None:
+        if type(attempts) is not SourceCloseAttempts:
+            raise JournalError("canonical source attempts required")
+        super().__init__(attempts)
+
+    def capture(
+        self,
+        *,
+        attempt_ref: dict[str, Any],
+        decision_at: datetime,
+        get: Callable[[str], SourceCloseGetResponse],
+        clock: Callable[[], datetime],
+        max_body_bytes: int,
+        max_fill_pages: int,
+        page_size: int,
+    ) -> dict[str, Any]:
+        return self._capture(
+            attempt_ref=attempt_ref,
+            decision_at=decision_at,
+            get=get,
+            clock=clock,
+            max_body_bytes=max_body_bytes,
+            max_fill_pages=max_fill_pages,
+            page_size=page_size,
+        )
 
 
 def read_source_close_captures_at(
