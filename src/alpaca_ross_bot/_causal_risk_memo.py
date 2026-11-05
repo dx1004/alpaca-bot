@@ -85,7 +85,7 @@ def _inputs(paths: tuple[Path, ...]) -> tuple[_DiskInput, ...]:
     return tuple(
         (
             str(path.absolute()),
-            str(path.resolve()),
+            str(path.resolve(strict=True)),
             hashlib.sha256(path.read_bytes()).hexdigest(),
         )
         for path in paths

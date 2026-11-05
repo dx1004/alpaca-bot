@@ -1,5 +1,7 @@
 """Successful prefix reuse never survives changed evidence or root scope."""
 
+import errno
+import hashlib
 import json
 import sqlite3
 from collections.abc import Iterator
@@ -10,6 +12,8 @@ from typing import Any
 import pytest
 
 from alpaca_ross_bot._causal_risk_memo import (
+    _inputs,
+    _resolutions,
     causal_risk_verification_scope,
     memoized_causal_risk_prefix,
 )
@@ -21,6 +25,45 @@ from test_native_oco_http import native_http as native_http
 from test_native_oco_http import submit
 from test_observation_candidate_binding import AT
 from test_risk_ledger_audit import POLICY, REF
+
+
+def test_input_identity_keeps_bytes_and_symlink_target(tmp_path: Path) -> None:
+    first, second = tmp_path / "first.json", tmp_path / "second.json"
+    body = b'{"fee":"0"}'
+    first.write_bytes(body)
+    second.write_bytes(body)
+    digest = hashlib.sha256(body).hexdigest()
+    assert _inputs((first,)) == ((str(first), str(first), digest),)
+    link = tmp_path / "fees.json"
+    link.symlink_to(first)
+    original = _inputs((link,))
+    assert original == ((str(link), str(first), digest),)
+    link.unlink()
+    link.symlink_to(second)
+    changed = _inputs((link,))
+    assert changed == ((str(link), str(second), digest),)
+    assert changed != original
+
+
+@pytest.mark.parametrize("case", ["missing", "dangling", "loop"])
+def test_input_identity_refuses_unresolvable_files(tmp_path: Path, case: str) -> None:
+    path = tmp_path / "fees.json"
+    if case == "dangling":
+        path.symlink_to(tmp_path / "absent.json")
+    elif case == "loop":
+        path.symlink_to(path)
+    if case == "loop":
+        with pytest.raises(RuntimeError, match="Symlink loop"):
+            _inputs((path,))
+    else:
+        with pytest.raises(FileNotFoundError) as caught:
+            _inputs((path,))
+        assert caught.value.errno == errno.ENOENT
+
+
+def test_scope_resolution_still_allows_absent_root(tmp_path: Path) -> None:
+    absent = tmp_path / "not-created" / "runtime"
+    assert _resolutions((absent,)) == ((str(absent), str(absent)),)
 
 
 @pytest.fixture

@@ -146,6 +146,7 @@ class OcoJournalView:
     watermark: int
     entry_binding: dict[str, Any] | None = None
     native_exit_bindings: tuple[dict[str, Any], ...] = ()
+    final_target_preparations: tuple[dict[str, Any], ...] = ()
 
     @property
     def issues(self) -> tuple[str, ...]:
@@ -236,7 +237,7 @@ class OcoJournal:
             ids = [_text(value) for value in _list(row["entry_execution_ids"])]
             if ids != sorted(set(ids)):
                 raise JournalError("canonical exact OCO terminal census required")
-        elif kind in {"BOUND_ENTRY", "BOUND_NATIVE_EXIT"}:
+        elif kind in {"BOUND_ENTRY", "BOUND_NATIVE_EXIT", "PREPARE_FINAL_TARGET"}:
             row = _object(
                 operation, {"request", "source_horizon", "receipt", "outcome"}
             )
@@ -247,7 +248,7 @@ class OcoJournal:
                     "event_id",
                     "decision_at",
                     "group_id",
-                    "capture_sequence",
+                    *(("capture_sequence",) if kind == "BOUND_NATIVE_EXIT" else ()),
                     "max_age_microseconds",
                 }
             )
@@ -293,9 +294,10 @@ class OcoJournal:
                     raise JournalError("canonical entry-census fee path required")
             else:
                 _text(request["group_id"])
-                if not _integer(request["capture_sequence"]) or not _integer(
-                    request["max_age_microseconds"]
-                ):
+                if (
+                    kind == "BOUND_NATIVE_EXIT"
+                    and not _integer(request["capture_sequence"])
+                ) or not _integer(request["max_age_microseconds"]):
                     raise JournalError("positive native exit capture/age required")
             if pending:
                 if (
@@ -312,7 +314,9 @@ class OcoJournal:
                 not in {
                     "BOUND_ENTRY_CENSUS"
                     if kind == "BOUND_ENTRY"
-                    else "BOUND_NATIVE_EXIT_CENSUS",
+                    else "BOUND_NATIVE_EXIT_CENSUS"
+                    if kind == "BOUND_NATIVE_EXIT"
+                    else "SEMANTIC_FINAL_TARGET_PREPARATION",
                     "REQUEST_IDENTITY_CONFLICT",
                 }
             ):
@@ -394,18 +398,23 @@ class OcoJournal:
             base
             | (
                 {"entry_binding"}
-                if isinstance(value, dict) and value.get("schema") in (2, 3)
+                if isinstance(value, dict) and value.get("schema") in (2, 3, 4)
                 else set()
             )
             | (
                 {"native_exit_bindings"}
-                if isinstance(value, dict) and value.get("schema") == 3
+                if isinstance(value, dict) and value.get("schema") in (3, 4)
+                else set()
+            )
+            | (
+                {"final_target_preparations"}
+                if isinstance(value, dict) and value.get("schema") == 4
                 else set()
             ),
         )
         if (
             type(row["schema"]) is not int
-            or row["schema"] not in (1, 2, 3)
+            or row["schema"] not in (1, 2, 3, 4)
             or row["binding"] != self.binding
         ):
             raise JournalError("OCO frozen binding or cache schema differs")
@@ -419,16 +428,34 @@ class OcoJournal:
         if not watermark:
             raise JournalError("OCO cache watermark missing")
         binding = row.get("entry_binding")
-        if row["schema"] in (2, 3) and type(binding) is not dict:
+        if row["schema"] in (2, 3, 4) and type(binding) is not dict:
             raise JournalError("source-bound entry projection missing")
-        exits = tuple(_list(row["native_exit_bindings"])) if row["schema"] == 3 else ()
+        exits = (
+            tuple(_list(row["native_exit_bindings"])) if row["schema"] in (3, 4) else ()
+        )
         if any(type(item) is not dict for item in exits):
             raise JournalError("native exit binding projection differs")
-        return OcoJournalView(model, conflicts, watermark, binding, exits)
+        proposals = (
+            tuple(_list(row["final_target_preparations"])) if row["schema"] == 4 else ()
+        )
+        if any(type(item) is not dict for item in proposals):
+            raise JournalError("final-target preparation projection differs")
+        return OcoJournalView(model, conflicts, watermark, binding, exits, proposals)
 
     def _derive_bound(
         self, kind: str, request: dict[str, Any], horizon: int
     ) -> dict[str, Any]:
+        if kind == "PREPARE_FINAL_TARGET":
+            from .native_oco_amendment import derive_final_target_preparation
+
+            return derive_final_target_preparation(
+                self.journal,
+                self.initial,
+                group_id=request["group_id"],
+                decision_at=datetime.fromisoformat(request["decision_at"]),
+                max_age=timedelta(microseconds=request["max_age_microseconds"]),
+                through_sequence=horizon,
+            )
         if kind == "BOUND_ENTRY":
             derive = (
                 derive_native_owned_entry_census
@@ -549,7 +576,29 @@ class OcoJournal:
             if prior is None
             else {row["group_id"]: row for row in prior.native_exit_bindings}
         )
+        proposals = {
+            row["request"]["event_id"]: row
+            for row in (() if prior is None else prior.final_target_preparations)
+        }
         conflicts = set(() if prior is None else prior.conflict_keys)
+        if kind == "PREPARE_FINAL_TARGET":
+            original = proposals.get(operation["request"]["event_id"])
+            if conflict:
+                if (
+                    original is None
+                    or operation["outcome"] != "REQUEST_IDENTITY_CONFLICT"
+                    or operation["request"] == original["request"]
+                    or _json(operation["receipt"]) != _json(original["receipt"])
+                    or operation["source_horizon"] != original["source_horizon"]
+                ):
+                    raise JournalError("amendment conflict reinterprets original proof")
+            elif (
+                operation["source_horizon"] != sequence - 1
+                or operation["outcome"] != "SEMANTIC_FINAL_TARGET_PREPARATION"
+                or _json(operation["receipt"])
+                != _json(self._derive_bound(kind, operation["request"], sequence - 1))
+            ):
+                raise JournalError("final-target preparation source proof differs")
         if conflict:
             conflicts.add(item["dedupe_key"])
         elif kind == "EXECUTION":
@@ -598,10 +647,16 @@ class OcoJournal:
                 raise JournalError("source-bound native exit prerequisites differ")
             model = self._bound_exit_model(model, operation["receipt"])
             native_exits[operation["receipt"]["group_id"]] = operation["receipt"]
+        elif kind == "PREPARE_FINAL_TARGET":
+            proposals[operation["request"]["event_id"]] = operation
         elif kind != "BIND":
             raise JournalError("unsupported OCO research operation")
         result: dict[str, object] = {
-            "schema": 3 if native_exits else (1 if entry_binding is None else 2),
+            "schema": 4
+            if proposals
+            else 3
+            if native_exits
+            else (1 if entry_binding is None else 2),
             "binding": self.binding,
             "model": self._model_dict(model),
             "conflict_keys": sorted(conflicts),
@@ -613,6 +668,10 @@ class OcoJournal:
         if native_exits:
             result["native_exit_bindings"] = [
                 native_exits[key] for key in sorted(native_exits)
+            ]
+        if proposals:
+            result["final_target_preparations"] = [
+                proposals[key] for key in sorted(proposals)
             ]
         return result
 
@@ -785,7 +844,11 @@ class OcoJournal:
                 or item["schema"] != 1
             ):
                 raise JournalError("OCO frozen binding differs from immutable evidence")
-            if item["kind"] in {"BOUND_ENTRY", "BOUND_NATIVE_EXIT"}:
+            if item["kind"] in {
+                "BOUND_ENTRY",
+                "BOUND_NATIVE_EXIT",
+                "PREPARE_FINAL_TARGET",
+            }:
                 operation = item["operation"]
                 if event.available_at < datetime.fromisoformat(
                     operation["receipt"]["decision_at"]
@@ -805,7 +868,10 @@ class OcoJournal:
         if type(at) is not datetime or at.utcoffset() != timedelta(0):
             raise JournalError("UTC OCO receipt clock required")
         key = self._operation_key(
-            kind, operation, pending=kind in {"BOUND_ENTRY", "BOUND_NATIVE_EXIT"}
+            kind,
+            operation,
+            pending=kind
+            in {"BOUND_ENTRY", "BOUND_NATIVE_EXIT", "PREPARE_FINAL_TARGET"},
         )
         item = {
             "schema": 1,
@@ -833,7 +899,7 @@ class OcoJournal:
                     raise JournalError(
                         "crossed-stop incident blocks new OCO allocations"
                     )
-            if kind in {"BOUND_ENTRY", "BOUND_NATIVE_EXIT"}:
+            if kind in {"BOUND_ENTRY", "BOUND_NATIVE_EXIT", "PREPARE_FINAL_TARGET"}:
                 original = originals.get(key)
                 if original is not None:
                     complete = dict(original)
@@ -853,7 +919,9 @@ class OcoJournal:
                         "receipt": receipt,
                         "outcome": "BOUND_ENTRY_CENSUS"
                         if kind == "BOUND_ENTRY"
-                        else "BOUND_NATIVE_EXIT_CENSUS",
+                        else "BOUND_NATIVE_EXIT_CENSUS"
+                        if kind == "BOUND_NATIVE_EXIT"
+                        else "SEMANTIC_FINAL_TARGET_PREPARATION",
                     }
                 item["operation"] = complete
                 if at < datetime.fromisoformat(complete["receipt"]["decision_at"]):
@@ -1035,6 +1103,43 @@ class OcoJournal:
                         if observation_policy is not None
                         else {}
                     ),
+                },
+                "source_horizon": None,
+                "receipt": None,
+                "outcome": "PENDING_DERIVATION",
+            },
+            received_at,
+        )
+
+    def prepare_final_target(
+        self,
+        event_id: str,
+        group_id: str,
+        decision_at: datetime,
+        max_age: timedelta,
+        received_at: datetime,
+    ) -> OcoJournalView:
+        """Persist a source-derived semantic proposal; never create PATCH bytes."""
+        if (
+            type(decision_at) is not datetime
+            or decision_at.utcoffset() != timedelta(0)
+            or type(received_at) is not datetime
+            or received_at.utcoffset() != timedelta(0)
+            or received_at < decision_at
+            or type(max_age) is not timedelta
+            or max_age <= timedelta(0)
+        ):
+            raise JournalError("UTC final-target decision and positive age required")
+        if self.journal._db.in_transaction:
+            raise JournalError("final-target preparation requires its own transaction")
+        return self._record(
+            "PREPARE_FINAL_TARGET",
+            {
+                "request": {
+                    "event_id": event_id,
+                    "group_id": group_id,
+                    "decision_at": decision_at.isoformat(),
+                    "max_age_microseconds": max_age // timedelta(microseconds=1),
                 },
                 "source_horizon": None,
                 "receipt": None,

@@ -5295,3 +5295,37 @@ No real credential/account access, broker request/cancel, protective-order
 cleanup, purchase, service installation or formal paper start occurred. Ross
 remains separate, IEX remains NOT_SIP_EQUIVALENT, runtime_authorized stays false,
 and W3-06/07/08 parents remain incomplete.
+
+## Source-bound final-target semantic preparation — 2026-11-05
+
+The separate OCO-first research candidate now records a `PREPARE_FINAL_TARGET`
+receipt in the existing private OCO journal. It derives the final target only
+after the source-bound entry is terminal and reconciled. Current evidence must
+show the original reservation, a qualified latest account risk observation, a
+canonical latest native exit census, exact unfilled target and companion-stop
+quantities, unchanged stop price and original client identity. A new entry
+execution or a newer account/native capture without corresponding qualified
+binding vetoes preparation. A partially filled provisional target is supported
+only for its remaining group quantity.
+
+This receipt is a semantic proposal. It contains no Alpaca PATCH bytes, send
+intent, acknowledgement, sibling-stop continuity proof, risk release or runtime
+authority. A version-4 projection is created only after the new event; older
+journal schemas retain their replay. Tests cover original-prefix replay,
+event-ID retry and conflict, physical reopen, rollback after synthetic storage
+failure, partial target fill, pending cancel and late entry. Required causal
+risk input paths now resolve strictly, so missing or looping symlinks cannot
+pass as valid inputs; the separate transaction-root resolver still permits
+absent roots.
+
+Canonical-checkout validation: the two new/changed test modules passed 24
+tests; the related OCO journal, native exit and account-risk modules passed 68
+tests. Scoped Ruff check, Ruff format check with `--no-cache`, strict mypy on
+the three changed source files and `git diff --check` passed.
+
+This closes the non-dispatch preparation component only. Actual W3-02
+source/data admission and operational W3-06 handoff still require broker
+initial/late-fill protection, target-amendment stop continuity, protected timed
+close/disposal, safe recovery and runtime deadline evidence. No broker order or
+cancel was sent. Ross stays separate, IEX stays `NOT_SIP_EQUIVALENT`, and
+`runtime_authorized=false`.
