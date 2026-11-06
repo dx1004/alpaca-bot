@@ -6,6 +6,12 @@ trading service.
 
 API integration is planned around the [official Alpaca Python SDK reuse review](docs/alpaca-existing-tools-review.md); the Ross strategy, evidence gates and reconciliation remain project-owned.
 
+## License
+
+Original project code and documentation are licensed under the [MIT License](LICENSE).
+Third-party materials, including quoted research, dependencies, and market data,
+remain subject to their respective licenses and terms.
+
 ## Development setup
 
 From the repository root, use `uv` 0.12.17 or a compatible version. The project
