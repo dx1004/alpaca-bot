@@ -185,6 +185,30 @@ interface remains necessary before actual-trigger admission. This does not
 require proving native TOPS equivalence or obtaining a vendor completeness
 watermark; local health alone also cannot replace the required reconstruction.
 
+### Current Basic/IEX discovery limit — checked 2026-11-05
+
+Alpaca's current [Trading API data-plan table](https://docs.alpaca.markets/us/docs/about-market-data-api)
+states that Basic real-time equities cover IEX and permit 30 WebSocket symbols.
+Its [most-actives](https://docs.alpaca.markets/us/reference/mostactives-1)
+and [movers](https://docs.alpaca.markets/us/reference/movers-1) references
+explicitly describe real-time **SIP-based** rankings. Those screeners cannot
+be relabeled as an IEX-only candidate-discovery source; their access and
+decision-time behavior under this specific Basic account have not been
+qualified. The [stream contract](https://docs.alpaca.markets/us/docs/streaming-market-data)
+also says a slow consumer may disconnect without first receiving error 407.
+The inspected Alpaca stream documentation supplied no replay cursor or
+sequence-gap repair contract for the selected WebSocket. This is a limit of
+the reviewed public contract, not a claim that no other provider capability
+exists.
+
+The next read-only collection may establish a genuine current-session E0 and
+bounded IEX observations. It cannot, by itself, prove full-market scanning,
+from-open coverage for newly discovered symbols, complete delivery, or an
+initial non-halted security state. An eventual bounded-universe hybrid would
+need its own sourced universe-selection rule and per-symbol coverage intervals;
+no such executable rule or data-source change is approved here. Preserve
+`NOT_SIP_EQUIVALENT` and all current source/strategy/order vetoes.
+
 ### Controlling acceptance scope — correction, 2026-10-22
 
 The October 19 accepted manifest's retained requirements control this work.
