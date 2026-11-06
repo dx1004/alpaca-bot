@@ -5362,3 +5362,22 @@ physical reopened-journal prefix; scoped Ruff lint/format, strict mypy and
 reset, live trading or formal paper evaluation was used. W3-02 source/data
 admission and W3-06 broker protection/close/recovery/runtime gates stay open;
 Ross stays separate and IEX stays `NOT_SIP_EQUIVALENT`.
+
+## November 6 W3-02 read-only collection registration — 2026-11-05
+
+After the November 5 market close, a new one-day same-chat heartbeat was
+registered as `alpaca-w3-02-nov-6-read-only-open-evidence` and its persisted
+ACTIVE schedule and target chat were read back. It targets 06:20, 06:30 and
+06:35 America/Los_Angeles on November 6. The saved prompt fixes the already
+bound dedicated paper account credential path and private journal root; it
+prohibits broker writes, substitutes, raw private output and delayed E0
+backfill. An off-window invocation of the exact pre-open collector arguments
+returned the redacted `ValueError` refusal with
+`broker_writes_performed=false`, before credential loading.
+
+This proves registration and the window refusal only. Delivery, fresh official
+calendar, genuine current-session E0, account/risk qualification and finite
+open samples remain future observations. Even successful finite samples will
+not prove from-open candidate discovery, continuous market/status coverage or
+full W3-02 source admission. Ross stays separate, IEX remains
+`NOT_SIP_EQUIVALENT`, and `runtime_authorized=false`.

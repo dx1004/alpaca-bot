@@ -117,3 +117,22 @@ heartbeat and record completion or the missed window. Keep intermediate runs
 quiet unless a phase completes meaningfully, a gate fails or user action is
 required. Registration/readback evidence belongs in Week 3 evidence; planned
 times above alone do not prove scheduler registration or future delivery.
+
+## W3-02 read-only qualification follow-up — November 6, 2026
+
+The one-day same-chat heartbeat `alpaca-w3-02-nov-6-read-only-open-evidence`
+was registered and read back on November 5. It is scheduled for 06:20, 06:30
+and 06:35 America/Los_Angeles on November 6. The existing dedicated paper
+account credentials and bound private journal are fixed in its saved prompt;
+the collector's date/window guards refuse a late run before credential loading.
+An off-window invocation on November 5 returned only a redacted `ValueError`
+failure with `broker_writes_performed=false`, confirming that refusal path.
+
+The first run may freeze a genuine pre-open E0 if the official calendar and
+account evidence qualify. The later runs may record finite IEX/status and
+account/risk diagnostics. Each run must verify its actual start time; a missed
+window is not backfilled. The heartbeat is removed only after the final open
+invocation or expiry. This schedule does not collect complete from-open
+candidate history or prove continuous feed/status coverage. All source,
+strategy, protection, broker-write and formal-paper gates remain closed until
+their separate acceptance evidence exists.
