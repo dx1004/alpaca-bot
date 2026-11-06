@@ -5381,3 +5381,66 @@ open samples remain future observations. Even successful finite samples will
 not prove from-open candidate discovery, continuous market/status coverage or
 full W3-02 source admission. Ross stays separate, IEX remains
 `NOT_SIP_EQUIVALENT`, and `runtime_authorized=false`.
+
+
+## November 6 W3-02 read-only collection — completed with risk-owner veto
+
+The one-day read-only heartbeat ran in its declared November 6 Los Angeles
+windows and was deleted after the final 06:35-started invocation. It used the
+existing dedicated paper credentials and bound private journal only. No
+broker order, cancel, amendment, account reset or formal paper evaluation
+occurred; all captured summaries report broker_writes_performed=false and
+runtime_authorized=false.
+
+The exact 06:20 pre-open collector reached the source-bound E0 freeze before
+failing at the risk-owner observation with JournalError. The existing
+read_baseline verifier later matched the bound account and confirmed the
+November 6 candidate plus immutable durability receipt, sequence 5408:
+frozen at 14:21:04.085114 UTC and observed durable at 14:21:04.095842 UTC,
+before the official 14:30 UTC open. The subsequent same-account pre-open
+collector without the risk-owner option completed and verified private
+integrity and zero order intents. Its pre_session_baseline_frozen=false
+means it did not create a second E0; the already committed candidate and
+receipt were independently verified. Its finite IEX observation received
+zero price records and proves no pre-open feed coverage.
+
+The exact scheduled 06:30 and 06:35 open collectors likewise returned only
+redacted JournalError failures. A bounded same-account collector after each
+failure omitted only the risk-owner observation, preserving source, window,
+calendar, account and no-order constraints:
+
+| Invocation | Completed UTC | Raw records | Valid/fresh price records | Status records | Continuity |
+| --- | --- | ---: | ---: | ---: | --- |
+| 06:30 open | 14:32:36.706132 | 6866 | 6866 | 0 | unresolved after close |
+| 06:35 open | 14:37:19.623309 | 8029 | 8028 | 0 (one bar record) | unresolved after close |
+
+Both bounded captures report private journal integrity, zero order intents,
+acknowledged IEX price/status subscriptions, and NOT_SIP_EQUIVALENT. The
+second stream's bar is a non-price record, not a qualified trade/quote.
+Subscription acknowledgement without status delivery cannot prove current
+no-halt status. The two disconnected finite windows cannot prove from-open
+candidate/history collection, complete delivery or continuous feed recovery.
+
+A redacted code-frame diagnostic located the risk-owner exception in
+account_risk_owner.py's cross-day transition guard (line 1481 in this
+checkout), which requires reconciled flat prior history. The guard was
+preserved; no state was reset or bypassed for risk acceptance. The read-only
+ledger assessment still reports CURRENT_FUNDS_UNQUALIFIED,
+NONATOMIC_ACCOUNT_ACTIVITY_CAPTURE,
+OWNED_NONFLAT_RECONCILIATION_UNQUALIFIED and
+POSTED_ACTIVITY_FINALITY_UNVERIFIED. The exact condition within the
+cross-day guard remains to be diagnosed against the private historical
+snapshot before a scoped repair. The source-risk owner did not pass.
+
+Redacted temporary reports:
+/tmp/alpaca-w3-20261106-preopen-1420-redacted.json,
+/tmp/alpaca-w3-20261106-preopen-no-owner-1423-redacted.json,
+/tmp/alpaca-w3-20261106-open-1430-redacted.json,
+/tmp/alpaca-w3-20261106-open-no-owner-1431-redacted.json,
+/tmp/alpaca-w3-20261106-open-1435-redacted.json, and
+/tmp/alpaca-w3-20261106-open-no-owner-1436-redacted.json.
+The bound private journal retains immutable raw evidence; the reports
+contain no account identifiers, money or raw responses.
+
+W3-02, W3-06, W3-07 and W3-08 parent gates remain open. No executable
+strategy/data/protection or release qualification follows from this capture.
